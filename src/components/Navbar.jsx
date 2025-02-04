@@ -9,6 +9,9 @@ const Navbar = () => {
         <span className="ml-2 text-lg md:text-xl font-semibold text-amber-500">Chess Master</span>
       </div>
       <div className="flex space-x-4 md:space-x-6">
+      <Link to="/" className="text-sm md:text-base hover:text-amber-400 transition duration-300">
+          Home
+        </Link>
         <Link to="/signup" className="text-sm md:text-base hover:text-amber-400 transition duration-300">
           Sign Up
         </Link>
