@@ -1,55 +1,80 @@
-import { Link } from "react-router-dom";
-import bgImage from "../assets/bgChess.jpg";
-import Typing from 'react-typing-effect';
+import { Link } from "react-router-dom"
+import { useSelector } from "react-redux"
+import Typing from "react-typing-effect"
+import bgImage from "../assets/images/bgChess.jpg"
 
-const Home = () => {
+function Home() {
+  const authStatus = useSelector((state) => state.auth.status)
+  const userData = useSelector((state) => state.auth.userData)
+
   return (
-    <div className="relative w-full min-h-screen flex flex-col">
+    <div
+      className="w-screen min-h-screen flex items-center justify-center relative overflow-hidden"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="animate-float absolute top-10 left-10 w-16 h-16 bg-contain bg-no-repeat opacity-30"
+          style={{ backgroundImage: "url('/chess-knight.png')" }}
+        ></div>
+        {/* <div
+          className="animate-float-delayed absolute bottom-10 right-10 w-16 h-16 bg-contain bg-no-repeat opacity-30"
+          style={{ backgroundImage: "url('/chess-king.png')" }}
+        ></div> */}
+      </div>
 
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${bgImage})` }}
-      />
-
-      <div className="relative flex-grow flex items-center justify-center px-4 sm:px-8">
-        <div className="max-w-3xl bg-[hsla(0,9.85%,83.57%,0.9)] shadow-[4px_4px_4px_#b3a6a6] p-8 sm:p-12 rounded-lg text-center text-black border border-gray-500">
-          <h1 className="text-3xl sm:text-5xl font-bold mb-4 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+      <div className="my-32 font-sans tracking-wide bg-gray-900 flex flex-col bg-opacity-80 backdrop-filter backdrop-blur-xl border border-amber-500/30 p-8 rounded-2xl shadow-2xl text-center w-11/12 max-w-4xl">
+      <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-transparent bg-clip-text bg-green-400">
             <Typing
-              text={['Welcome to Chess Master']}
+              text={["Welcome to Chess Master"]}
               speed={100}
               eraseSpeed={50}
               typingDelay={200}
               eraseDelay={5000}
             />
           </h1>
-          <p className="text-lg sm:text-xl mb-6 leading-relaxed">
-            Experience the ultimate chess journey. Challenge friends locally,
-            face global opponents, solve intricate puzzles, or test your
-            skills against Stockfish. Feeling frustrated? Switch to
-            "Always Win" mode for a guaranteed victory.
-          </p>
 
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+        <div className="description text-center align-middle text-lg md:text-xl lg:text-2xl text-gray-300 mb-8 leading-relaxed">
+          Experience the ultimate chess journey with Chess Master. Challenge your friends in local multiplayer, or take
+          on global opponents with our advanced socket integration. Sharpen your skills with intricate puzzles, or test
+          your strategies against Stockfish, the world's strongest chess engine. For those moments of frustration,
+          switch to "Always Win" mode and enjoy a flawless victory every time.
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-6">
+          {authStatus === "true" && userData.username ? (
             <Link
               to="/modeselector"
-              className="px-6 py-3 bg-yellow-600 text-black font-semibold rounded-full 
-              hover:bg-yellow-500 transition duration-300 transform hover:scale-105"
+              className="block bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-8 rounded-full text-xl lg:text-2xl w-full max-w-md hover:from-green-600 hover:to-emerald-700 transition duration-300 shadow-lg hover:shadow-green-500/50 transform hover:scale-105"
             >
-              Start Playing
+              Continue Your Journey
             </Link>
-            <Link
-              to="/signup"
-              className="px-6 py-3 bg-transparent border-2 border-black text-black font-semibold rounded-full 
-              hover:bg-black hover:text-white transition duration-300 transform hover:scale-105"
-            >
-              Sign Up
-            </Link>
-          </div>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="block bg-gradient-to-r from-amber-500 to-yellow-600 text-white py-4 px-8 rounded-full text-xl lg:text-2xl w-full sm:w-auto hover:from-amber-600 hover:to-yellow-700 transition duration-300 shadow-lg hover:shadow-amber-500/50 transform hover:scale-105"
+              >
+                Login
+              </Link>
+              <Link
+                to="/signup"
+                className="block bg-transparent border-2 border-amber-500 text-amber-500 py-4 px-8 rounded-full text-xl lg:text-2xl w-full sm:w-auto hover:bg-amber-500 hover:text-gray-100 transition duration-300 shadow-lg hover:shadow-amber-500/50 transform hover:scale-105"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home
+
