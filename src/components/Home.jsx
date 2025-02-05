@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom"
 import { useSelector } from "react-redux"
+import { motion } from "framer-motion"
+import bgChess from "../assets/images/bgChess.jpg"
 import Typing from "react-typing-effect"
-import bgImage from "../assets/images/bgChess.jpg"
 
 function Home() {
   const authStatus = useSelector((state) => state.auth.status)
@@ -11,42 +12,37 @@ function Home() {
     <div
       className="w-screen min-h-screen flex items-center justify-center relative overflow-hidden"
       style={{
-        backgroundImage: `url(${bgImage})`,
+        backgroundImage: `url(${bgChess})`,
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
       }}
     >
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="animate-float absolute top-10 left-10 w-16 h-16 bg-contain bg-no-repeat opacity-30"
-          style={{ backgroundImage: "url('/chess-knight.png')" }}
-        ></div>
-        {/* <div
-          className="animate-float-delayed absolute bottom-10 right-10 w-16 h-16 bg-contain bg-no-repeat opacity-30"
-          style={{ backgroundImage: "url('/chess-king.png')" }}
-        ></div> */}
-      </div>
+      <div className="absolute inset-0 bg-black bg-opacity-60" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="relative z-10 my-32 font-sans tracking-wide bg-gray-900 flex flex-col bg-opacity-80 backdrop-filter backdrop-blur-xl border border-amber-500/30 p-8 rounded-2xl shadow-2xl text-center w-11/12 max-w-4xl"
+      >
+       <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-transparent bg-clip-text bg-green-400"> <Typing text={["Welcome to Chess Master"]} speed={100} eraseSpeed={50} typingDelay={200} eraseDelay={5000} /> </h1> 
 
-      <div className="my-32 font-sans tracking-wide bg-gray-900 flex flex-col bg-opacity-80 backdrop-filter backdrop-blur-xl border border-amber-500/30 p-8 rounded-2xl shadow-2xl text-center w-11/12 max-w-4xl">
-      <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-transparent bg-clip-text bg-green-400">
-            <Typing
-              text={["Welcome to Chess Master"]}
-              speed={100}
-              eraseSpeed={50}
-              typingDelay={200}
-              eraseDelay={5000}
-            />
-          </h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.8 }}
+          className="text-center align-middle text-xl md:text-2xl lg:text-3xl text-gray-300 mb-8 leading-relaxed"
+        >
+          Experience the ultimate chess journey. Challenge friends, solve puzzles, and test your skills against the
+          world's strongest chess engine.
+        </motion.p>
 
-        <div className="description text-center align-middle text-lg md:text-xl lg:text-2xl text-gray-300 mb-8 leading-relaxed">
-          Experience the ultimate chess journey with Chess Master. Challenge your friends in local multiplayer, or take
-          on global opponents with our advanced socket integration. Sharpen your skills with intricate puzzles, or test
-          your strategies against Stockfish, the world's strongest chess engine. For those moments of frustration,
-          switch to "Always Win" mode and enjoy a flawless victory every time.
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          className="flex flex-wrap justify-center gap-6"
+        >
           {authStatus === "true" && userData.username ? (
             <Link
               to="/modeselector"
@@ -70,8 +66,8 @@ function Home() {
               </Link>
             </>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }
