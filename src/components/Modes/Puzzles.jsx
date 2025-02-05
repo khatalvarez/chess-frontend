@@ -1,84 +1,103 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { FaChessKnight, FaChessQueen, FaChessBoard } from "react-icons/fa";
 import bg from "../../assets/images/bgprofile.jpg";
 
-const Puzzles = () => {
+const topPuzzles = [
+  { path: "/puzzle1", label: "The Magician's Puzzle", icon: FaChessKnight, color: "from-blue-500 to-indigo-600" },
+  { path: "/puzzle2", label: "The Mighty Knight Puzzle", icon: FaChessQueen, color: "from-red-500 to-orange-600" },
+  { path: "/puzzle3", label: "The Enigmatic Puzzle", icon: FaChessBoard, color: "from-green-500 to-teal-600" },
+];
+
+const mateInOne = [
+  { path: "/puzzle4", label: "Easy", icon: FaChessKnight, color: "from-yellow-500 to-amber-600" },
+  { path: "/puzzle5", label: "Normal", icon: FaChessQueen, color: "from-purple-500 to-pink-600" },
+  { path: "/puzzle6", label: "Hard", icon: FaChessBoard, color: "from-gray-500 to-gray-700" },
+];
+
+function Puzzles() {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
     setAnimate(true);
   }, []);
 
-  const puzzles = [
-    { path: "/puzzle1", label: "The Magician's Puzzle", delay: "delay-100" },
-    { path: "/puzzle2", label: "The Mighty Night", delay: "delay-200" },
-    { path: "/puzzle3", label: "The Enigmatic Puzzle", delay: "delay-300" },
-    { path: "/puzzle4", label: "EASY", delay: "delay-100" },
-    { path: "/puzzle5", label: "NORMAL", delay: "delay-200" },
-    { path: "/puzzle6", label: "HARD", delay: "delay-300" },
-  ];
-
   return (
-    <div className="flex h-screen items-center justify-center w-screen">
-      <div
-        className="w-full h-screen bg-cover bg-center relative overflow-hidden"
-        style={{
-          backgroundImage: `url(${bg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        <div className="flex flex-col items-center justify-center h-full w-full">
-          <h1 className="text-5xl lg:text-5xl md:text-4xl sm:text-3xl xs:text-2xl font-bold mb-10 lg:mt-2 mt:16 text-center text-white z-10 animate-fade-in">
-            Select a Puzzle
-          </h1>
-          <div className="grid grid-cols-1 gap-4 w-full max-w-md mx-auto">
-            <h3 className="text-white text-center lg:text-2xl md:text-xl sm:text-lg xs:text-base mb-4 font-semibold animate-fade-in">
-              THE BIG THREE (Hardest puzzles)
-            </h3>
-            {puzzles.slice(0, 3).map(({ path, label, delay }) => (
-              <div
-                key={path}
-                className={`w-11/12 mx-4 game-mode ${
-                  animate ? `animate-slide-in ${delay}` : ""
-                }`}
-              >
-                <div className="transition duration-300 border border-white hover:bg-gray300 transform transition duration-300 hover:scale-105 bg-gray-800 bg-opacity-40 backdrop-filter backdrop-blur-xl border border-gray-500 p-4 rounded-xl shadow-lg w-full">
-                  <Link
-                    to={path}
-                    className="text-gray-100 lg:text-2xl md:text-xl sm:text-lg xs:text-base text-center block hover:text-green-200"
-                  >
-                    {label}
-                  </Link>
-                </div>
-              </div>
-            ))}
-            <h3 className="text-white text-center lg:text-2xl md:text-xl sm:text-lg xs:text-base mt-6 mb-4 font-semibold animate-fade-in">
-              Mate in one move
-            </h3>
-            {puzzles.slice(3).map(({ path, label, delay }) => (
-              <div
-                key={path}
-                className={`w-11/12 mx-4  game-mode ${
-                  animate ? `animate-slide-in ${delay}` : ""
-                }`}
-              >
-                <div className="transition duration-300 border border-white hover:bg-gray300 transform transition duration-300 hover:scale-105 bg-gray-800 bg-opacity-40 backdrop-filter backdrop-blur-xl border border-gray-500 p-4 rounded-xl shadow-lg w-full">
-                  <Link
-                    to={path}
-                    className="text-gray-100 lg:text-2xl md:text-xl sm:text-lg xs:text-base text-center block hover:text-green-200"
-                  >
-                    {label}
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+    <div
+      className="w-screen min-h-screen flex items-center justify-center bg-gray-900 py-16"
+      style={{ backgroundImage: `url(${bg})` }}
+    >
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Title */}
+        <motion.h1
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="text-4xl md:text-6xl font-extrabold text-center text-white mb-12 tracking-tight"
+        >
+          Solve a{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">Puzzle</span>
+        </motion.h1>
+
+        {/* The Big Three Section */}
+        <h3 className="text-white text-center text-2xl md:text-3xl font-semibold mb-6 animate-fade-in">
+          The Big Three (Hardest Puzzles)
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {topPuzzles.map(({ path, label, icon: Icon, color }, index) => (
+            <motion.div
+              key={path}
+              initial={{ y: 50, opacity: 0 }}
+              animate={animate ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.6, delay: index * 0.1 + 0.4 }}
+            >
+              <Link to={path} className="block">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`bg-gradient-to-br ${color} p-1 rounded-2xl shadow-lg`}
+                >
+                  <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl rounded-xl p-6 h-full flex flex-col items-center justify-center transition duration-300 hover:bg-opacity-70">
+                    <Icon className="text-5xl mb-4 text-white" />
+                    <h2 className="text-xl md:text-2xl font-bold text-white text-center">{label}</h2>
+                  </div>
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Mate in One Move Section */}
+        <h3 className="text-white text-center text-2xl md:text-3xl font-semibold mb-6 animate-fade-in">
+          Mate in One Move
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {mateInOne.map(({ path, label, icon: Icon, color }, index) => (
+            <motion.div
+              key={path}
+              initial={{ y: 50, opacity: 0 }}
+              animate={animate ? { y: 0, opacity: 1 } : {}}
+              transition={{ duration: 0.6, delay: index * 0.1 + 0.4 }}
+            >
+              <Link to={path} className="block">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`bg-gradient-to-br ${color} p-1 rounded-2xl shadow-lg`}
+                >
+                  <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl rounded-xl p-6 h-full flex flex-col items-center justify-center transition duration-300 hover:bg-opacity-70">
+                    <Icon className="text-5xl mb-4 text-white" />
+                    <h2 className="text-xl md:text-2xl font-bold text-white text-center">{label}</h2>
+                  </div>
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default Puzzles;

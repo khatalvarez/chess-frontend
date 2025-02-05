@@ -206,7 +206,7 @@ const ChessboardComponent = () => {
 
   return (
     <div
-      className="lg:mt-4 mt-16 flex h-fit py-32 items-center justify-center w-screen"
+      className="mt-16 flex h-fit py-24 items-center justify-center w-screen"
       style={{ backgroundImage: `url(${bg})`, backgroundSize: "contain" }}
     >
       <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">

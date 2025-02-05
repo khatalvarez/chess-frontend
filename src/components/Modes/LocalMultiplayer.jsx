@@ -7,7 +7,7 @@ import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import pieceImages from "../pieceImages";
-import boardbg from "../../assets/images/bgboard.jpeg";
+import boardbg from "../../assets/images/bgprofile.jpg";
 
 const moveSound = new Howl({ src: [moveSoundFile] });
 const captureSound = new Howl({ src: [captureSoundFile] });
@@ -168,7 +168,7 @@ const LocalMultiplayer = () => {
 
   return (
     <div
-      className="lg:mt-0 mt-16 flex h-fit py-32 items-center justify-center w-screen"
+      className="mt-16 flex h-fit py-24 items-center justify-center w-screen"
       style={{ backgroundImage: `url(${boardbg})`, backgroundSize: "cover" }}
     >
       <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
@@ -177,8 +177,7 @@ const LocalMultiplayer = () => {
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
           ></div>
-        </div>
-        <div>
+           <div>
           <label>
             <input
               type="checkbox"
@@ -188,9 +187,11 @@ const LocalMultiplayer = () => {
             Mobile Mode
           </label>
         </div>
+        </div>
+       
         {!mobileMode && (
-          <div className="lg:mx-4  w-fit mx-2 lg:w-1/3 mt-4 lg:mt-0">
-            <div className="rounded-xl shadow-lg text-center p-8 px-16 lg:w-full text-xl lg:text-2xl lg:text-3xl xl:text-4xl bg-gray-400 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
+          <div className="w-fit mx-16 lg:w-1/3 mt-4 lg:mt-0">
+            <div className="rounded-xl shadow-lg text-center p-8 px-16 lg:w-full text-xl lg:text-2xl bg-green-700 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}
             </div>
 
@@ -229,13 +230,13 @@ const LocalMultiplayer = () => {
                 </option>
               </select>
             </div>
-            <div className="mx-2 mt-3 text-center border border-gray-800 text-lg lg:text-xl text-white bg-black bg-opacity-20 p-4 rounded-lg">
+            <div className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-white bg-black bg-opacity-20 p-4 rounded-lg">
               If the game goes to start after promotion piece change, just
               attempt an illegal move, it will get OK so relax
             </div>
             <button
               onClick={toggleTable}
-              className="mt-4 bg-gray-400 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+              className="mt-8 bg-green-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
             >
               {isTableCollapsed ? "Show Moves" : "Hide Moves"}
             </button>
