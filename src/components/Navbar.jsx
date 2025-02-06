@@ -30,7 +30,7 @@ function Navbar() {
     const effectiveAuthStatus = isAuthPage ? 'false' : authStatus;
 
     return (
-      <nav className="w-full absolute top-0 z-10 bg-zinc-700 bg-opacity-40 p-2">
+      <nav className="fixed top-0 left-0 w-full z-50 bg-zinc-700 bg-opacity-90 p-3 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center text-gray-800 text-2xl font-semibold">
               <Link to="/" className="mr-2">
