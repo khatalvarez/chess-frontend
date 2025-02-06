@@ -7,6 +7,7 @@ import bgImage from "../../assets/images/bgChess.jpg"
 import axios from "axios"
 import { login } from "../../store/authSlice"
 import PieceArray from "../PieceArray"
+import { BASE_URL } from "../../url"
 
 function Login() {
   const dispatch = useDispatch()
@@ -18,7 +19,7 @@ function Login() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/profile", {
+      .get(`${BASE_URL}/profile`, {
         withCredentials: true,
       })
       .then((res) => {
@@ -33,7 +34,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault()
     try {
-      const response = await fetch("http://localhost:8080/user/login", {
+      const response = await fetch(`${BASE_URL}/user/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

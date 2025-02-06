@@ -9,6 +9,7 @@ import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import bg from "../../assets/images/bgprofile.jpg";
+import { BASE_URL } from "../../url";
 
 const moveSound = new Howl({ src: [moveSoundFile] });
 const captureSound = new Howl({ src: [captureSoundFile] });
@@ -29,7 +30,7 @@ const AgainstStockfish = () => {
   const fetchBestMove = async (FEN) => {
     try {
       const response = await axios.get(
-        "http://localhost:8080/stockfish",
+        `${BASE_URL}/stockfish`,
         {
           params: {
             fen: FEN,

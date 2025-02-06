@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import logo from "../assets/images/logo.webp";
 import { login } from '../store/authSlice';
 import axios from 'axios';
+import { BASE_URL } from '../url';
 
 function Navbar() {
     const dispatch = useDispatch();
@@ -12,7 +13,7 @@ function Navbar() {
     const location = useLocation();
 
     React.useEffect(() => {
-        axios.get("http://localhost:8080/profile", {
+        axios.get(`${BASE_URL}/profile`, {
             withCredentials: true
         })
             .then(res => {

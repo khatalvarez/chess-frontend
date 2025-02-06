@@ -6,6 +6,7 @@ import Cookies from "js-cookie"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import bg from "../assets/images/bgprofile.jpg"
+import { BASE_URL } from "../url"
 
 function Profile() {
   const userData = useSelector((state) => state.auth.userData)
@@ -14,7 +15,7 @@ function Profile() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/profile", {
+      .get(`${BASE_URL}/profile`, {
         withCredentials: true,
       })
       .then((res) => {

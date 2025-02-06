@@ -13,6 +13,7 @@ import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import boardbg from "../../assets/images/bgboard.jpeg";
+import { BASE_URL } from "../../url";
 
 // Initialize sound effects
 const moveSound = new Howl({ src: [moveSoundFile] });
@@ -25,7 +26,7 @@ const GlobalMultiplayer = () => {
     try {
       console.log("Sending data:", { userId, opponentName, status });
       const response = await axios.post(
-        `http://localhost:8080/user/${userId}/match-history`,
+        `${BASE_URL}/user/${userId}/match-history`,
         {
           opponent: opponentName,
           status,
@@ -66,7 +67,7 @@ const GlobalMultiplayer = () => {
   useEffect(() => {
     const newGame = new Chess();
     setGame(newGame);
-    const newSocket = socketIOClient("http://localhost:8080", {
+    const newSocket = socketIOClient(`${BASE_URL}`, {
       query: { user: JSON.stringify(user) },
     });
     setSocket(newSocket);
