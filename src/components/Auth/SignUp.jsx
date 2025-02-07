@@ -1,9 +1,11 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { motion } from "framer-motion"
-import { Eye, EyeOff } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Eye, EyeOff, CheckCircle } from "lucide-react"
 import bgChess from "../../assets/images/bgChess.jpg"
 import { BASE_URL } from "../../url"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 const SignUp = () => {
   const navigate = useNavigate()
@@ -16,6 +18,8 @@ const SignUp = () => {
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -38,9 +42,11 @@ const SignUp = () => {
     const { name, email, password, confirmPassword } = formData
 
     if (password !== confirmPassword) {
-      alert("Password and confirm password do not match.")
+      toast.error("Password and confirm password do not match.")
       return
     }
+
+    setIsLoading(true)
 
     try {
       const res = await fetch(`${BASE_URL}/user/register`, {
@@ -56,14 +62,19 @@ const SignUp = () => {
       })
 
       const data = await res.json()
-
       if (!res.ok) {
         throw new Error(data.message || "Something went wrong")
       }
-
-      navigate("/login")
+      setIsSuccess(true)
+      toast.success("Sign up successful! Redirecting to login...")
+      setTimeout(() => {
+        navigate("/login")
+      }, 2000)
     } catch (error) {
-      alert(error.message)
+      console.error("Error during signup:", error)
+      toast.error(error.message)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -72,6 +83,7 @@ const SignUp = () => {
       className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center"
       style={{ backgroundImage: `url(${bgChess})` }}
     >
+      <ToastContainer position="top-center" autoClose={3000} />
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -171,9 +183,36 @@ const SignUp = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-black ${
+                isLoading || isSuccess ? "bg-gray-100 hover:bg-gray-200" : "bg-blue-600 hover:bg-blue-700"
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300`}
+              disabled={isLoading || isSuccess}
             >
-              Sign Up
+              <AnimatePresence mode="wait">
+                {isLoading && (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="mr-2"
+                  >
+                    <div className="w-5 h-5 border-t-2 border-black border-solid rounded-full animate-spin"></div>
+                  </motion.div>
+                )}
+                {isSuccess && (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    className="mr-2"
+                  >
+                    <CheckCircle className="w-5 h-5 text-white" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {isLoading ? "Processing..." : isSuccess ? "Success!" : "Sign Up"}
             </motion.button>
           </div>
         </form>

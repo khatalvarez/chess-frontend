@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
-import { motion } from "framer-motion"
-import { Eye, EyeOff } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Eye, EyeOff, CheckCircle } from "lucide-react"
 import bgImage from "../../assets/images/bgChess.jpg"
 import axios from "axios"
 import { login } from "../../store/authSlice"
 import PieceArray from "../PieceArray"
 import { BASE_URL } from "../../url"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 function Login() {
   const dispatch = useDispatch()
@@ -15,7 +17,8 @@ function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   useEffect(() => {
     axios
@@ -33,6 +36,7 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault()
+    setIsLoading(true)
     try {
       const response = await fetch(`${BASE_URL}/user/login`, {
         method: "POST",
@@ -45,14 +49,20 @@ function Login() {
 
       const data = await response.json()
       if (response.ok) {
+        setIsSuccess(true)
         dispatch(login(data))
-        navigate("/profile")
+        toast.success("Login successful! Redirecting...")
+        setTimeout(() => {
+          navigate("/profile")
+        }, 2000)
       } else {
-        setError(data.error || "Login failed")
+        toast.error(data.error || "Login failed")
       }
     } catch (error) {
       console.error("Error during login:", error)
-      setError("Internal server error")
+      toast.error("Internal server error")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -65,6 +75,7 @@ function Login() {
       className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
+      <ToastContainer position="top-center" autoClose={3000} />
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -117,15 +128,41 @@ function Login() {
               </button>
             </div>
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
           <div>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              className="flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-black ${
+                isLoading || isSuccess ? "bg-gray-100 hover:bg-gray-200" : "bg-blue-600 hover:bg-blue-700"
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300`}
+              disabled={isLoading || isSuccess}
             >
-              Sign in
+              <AnimatePresence mode="wait">
+                {isLoading && (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="mr-2"
+                  >
+                    <div className="w-5 h-5 border-t-2 border-black border-solid rounded-full animate-spin"></div>
+                  </motion.div>
+                )}
+                {isSuccess && (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                    className="mr-2"
+                  >
+                    <CheckCircle className="w-5 h-5 text-white" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {isLoading ? "Processing..." : isSuccess ? "Success!" : "Sign in"}
             </motion.button>
           </div>
         </form>
