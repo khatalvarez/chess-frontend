@@ -189,7 +189,8 @@ const LocalMultiplayer = () => {
           </label>
         </div> */}
         {(
-          <div className="lg:mx-4  w-fit mx-2 lg:w-1/3 mt-4 lg:mt-0">
+          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-12 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto mt-10">
+          <div className="lg:mx-4  w-fit mx-6 mt-12 mb-10 lg:mt-0">
             <div className="rounded-xl shadow-lg text-center p-8 px-16 lg:w-full text-xl lg:text-2xl lg:text-3xl xl:text-4xl bg-gray-400 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}
             </div>
@@ -286,6 +287,7 @@ const LocalMultiplayer = () => {
                 </table>
               </div>
             </div>
+          </div>
           </div>
         )}
       </div>

@@ -182,10 +182,9 @@ const SignUp = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              type="submit"
-              className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-black ${
-                isLoading || isSuccess ? "bg-gray-100 hover:bg-gray-200" : "bg-blue-600 hover:bg-blue-700"
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300`}
+              className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                isLoading ? "bg-gray-100 text-black font-bold" : isSuccess ? "bg-gray-200 text-green-700 font-bold" : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
               disabled={isLoading || isSuccess}
             >
               <AnimatePresence mode="wait">
@@ -208,7 +207,7 @@ const SignUp = () => {
                     exit={{ opacity: 0, scale: 0.5 }}
                     className="mr-2"
                   >
-                    <CheckCircle className="w-5 h-5 text-white" />
+                    <CheckCircle className="w-5 h-5 text-green-700 font-bold" />
                   </motion.div>
                 )}
               </AnimatePresence>

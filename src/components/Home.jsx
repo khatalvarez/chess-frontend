@@ -23,7 +23,7 @@ function Home() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="relative z-10 my-32 font-sans tracking-wide bg-gray-900 flex flex-col bg-opacity-80 backdrop-filter backdrop-blur-xl border border-amber-500/30 p-8 rounded-2xl shadow-2xl text-center w-11/12 max-w-4xl"
+        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-8 lg:p-12 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg"
       >
        <h1 className="text-4xl sm:text-5xl font-extrabold mb-6 text-transparent bg-clip-text bg-green-400"> <Typing text={["Welcome to Chess Master"]} speed={100} eraseSpeed={50} typingDelay={200} eraseDelay={5000} /> </h1> 
 
@@ -41,12 +41,12 @@ function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.8 }}
-          className="flex flex-wrap justify-center gap-6"
+          className="flex justify-center gap-6"
         >
           {authStatus === "true" && userData.username ? (
             <Link
               to="/modeselector"
-              className="block bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-8 rounded-full text-xl lg:text-2xl w-full max-w-md hover:from-green-600 hover:to-emerald-700 transition duration-300 shadow-lg hover:shadow-green-500/50 transform hover:scale-105"
+              className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 px-4 rounded-full text-xl lg:text-2xl w-full max-w-md hover:from-green-600 hover:to-emerald-700 transition duration-300 shadow-lg hover:shadow-green-500/50 transform hover:scale-105"
             >
               Continue Your Journey
             </Link>
@@ -54,13 +54,13 @@ function Home() {
             <>
               <Link
                 to="/login"
-                className="block bg-gradient-to-r from-amber-500 to-yellow-600 text-white py-4 px-8 rounded-full text-xl lg:text-2xl w-full sm:w-auto hover:from-amber-600 hover:to-yellow-700 transition duration-300 shadow-lg hover:shadow-amber-500/50 transform hover:scale-105"
+                className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white py-4 px-4 rounded-full text-xl lg:text-2xl w-full sm:w-auto hover:from-amber-600 hover:to-yellow-700 transition duration-300 shadow-lg hover:shadow-amber-500/50 transform hover:scale-105"
               >
                 Login
               </Link>
               <Link
                 to="/signup"
-                className="block bg-transparent border-2 border-amber-500 text-amber-500 py-4 px-8 rounded-full text-xl lg:text-2xl w-full sm:w-auto hover:bg-amber-500 hover:text-gray-100 transition duration-300 shadow-lg hover:shadow-amber-500/50 transform hover:scale-105"
+                className="bg-transparent border-2 border-amber-500 text-amber-500 py-4 px-8 rounded-full text-xl lg:text-2xl w-full sm:w-auto hover:bg-amber-500 hover:text-gray-100 transition duration-300 shadow-lg hover:shadow-amber-500/50 transform hover:scale-105"
               >
                 Sign Up
               </Link>

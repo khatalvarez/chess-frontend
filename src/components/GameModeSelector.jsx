@@ -21,7 +21,7 @@ function GameModeSelector() {
 
   return (
       <div
-        className="w-screen min-h-screen flex items-center justify-center bg-gray-900 py-16r"
+        className="w-screen min-h-screen flex items-center justify-center bg-gray-900 py-16"
         style={{ backgroundImage: `url(${bg})` }}
       >
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
