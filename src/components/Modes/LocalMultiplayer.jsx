@@ -168,11 +168,11 @@ const LocalMultiplayer = () => {
 
   return (
     <div
-      className="mt-16 flex h-fit py-32 items-center justify-center w-screen"
+      className="mt-8 flex h-fit py-32 items-center justify-center w-screen"
       style={{ backgroundImage: `url(${boardbg})`, backgroundSize: "cover" }}
     >
       <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
-        <div className="lg:mx-16 w-full mx-auto  lg:w-1/2">
+        <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
           <div
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
@@ -189,20 +189,20 @@ const LocalMultiplayer = () => {
           </label>
         </div> */}
         {(
-          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-12 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto mt-10">
-          <div className="lg:mx-4  w-fit mx-6 mt-12 mb-10 lg:mt-0">
-            <div className="rounded-xl shadow-lg text-center p-8 px-16 lg:w-full text-xl lg:text-2xl lg:text-3xl xl:text-4xl bg-gray-400 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
+          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-12 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+          <div className="lg:mx-4 w-fit mx-6 mt-12 mb-10">
+            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}
             </div>
 
-            <div className="mt-4 ">
+            <div className="mt-4">
               <label className="mr-2 text-white text-lg lg:text-xl">
                 Promotion Piece:
               </label>
               <select
                 value={promotionPiece}
                 onChange={handlePromotionChange}
-                className="bg-gray-400 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
+                className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
               >
                 <option
                   className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
@@ -230,13 +230,13 @@ const LocalMultiplayer = () => {
                 </option>
               </select>
             </div>
-            <div className="mx-2 mt-3 text-center border border-gray-800 text-lg lg:text-xl text-white bg-black bg-opacity-20 p-4 rounded-lg">
+            <div className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-white bg-gray-200 p-4 rounded-lg">
               If the game goes to start after promotion piece change, just
               attempt an illegal move, it will get OK so relax
             </div>
             <button
               onClick={toggleTable}
-              className="mt-4 bg-gray-400 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+              className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
             >
               {isTableCollapsed ? "Show Moves" : "Hide Moves"}
             </button>

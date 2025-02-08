@@ -19,7 +19,6 @@ function Navbar() {
             .then(res => {
                 const data = res.data;
                 dispatch(login(data));
-                console.log(data);
             })
             .catch(error => {
                 console.error('Error fetching profile:', error);

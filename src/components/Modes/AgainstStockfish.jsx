@@ -225,17 +225,17 @@ const AgainstStockfish = () => {
 
   return (
     <div
-      className="w-full flex lg:flex-row flex-col items-center min-h-screen"
+      className="mt-8 flex h-fit py-32 items-center justify-center w-screen"
       style={{ backgroundImage: `url(${bg})`, backgroundSize: "contain" }}
     >
-      <div className="w-screen flex flex-col lg:flex-row mx-auto my-auto">
-        <div className="lg:mx-16 mt-16 w-full lg:w-1/2">
+      <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
+        <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
           <div
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
           ></div>
         </div>
-        <div>
+        {/* <div>
           <label>
             <input
               type="checkbox"
@@ -244,25 +244,26 @@ const AgainstStockfish = () => {
             />
             Mobile Mode
           </label>
-        </div>
-        {(!mobileMode) && (
-          <div className="w-11/12  mx-auto lg:w-1/3 mt-4 lg:mt-0">
-            <div className="rounded-xl text-center p-6 px-16 w-full text-2xl bg-green-700 text-white flex-shrink-0">
+        </div> */}
+        {(
+           <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+          <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
+            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}
             </div>
             <div className="mt-4">
-              <label className="mr-2 text-white">Promotion Piece:</label>
+              <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>
               <select
                 value={promotionPiece}
                 onChange={handlePromotionChange}
-                className="bg-green-700 text-white px-4 py-2 rounded-lg w-full"
+                className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
               >
-                <option value="q">Queen</option>
-                <option value="r">Rook</option>
-                <option value="b">Bishop</option>
-                <option value="n">Knight</option>
+                <option value="q" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">Queen</option>
+                <option value="r" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">Rook</option>
+                <option value="b" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">Bishop</option>
+                <option value="n" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">Knight</option>
               </select>
-              <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-red-500">
+              <p className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-red-400 bg-gray-300 p-4 rounded-lg">
                 If board position changes to original after promotion, just
                 attempt an illegal move ,
               </p>
@@ -273,7 +274,7 @@ const AgainstStockfish = () => {
             </div>
             <button
               onClick={toggleTable}
-              className="mt-4 bg-green-700 text-white px-4 py-2 rounded-t-lg w-full"
+              className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
             >
               {isTableCollapsed ? "Show Moves" : "Hide Moves"}
             </button>
@@ -314,14 +315,15 @@ const AgainstStockfish = () => {
                 </table>
               </div>
             </div>
-            <div className="mt-4 text-white text-center">
+            <div className="mt-8 text-white text-center">
               <button
                 onClick={() => window.location.reload()}
-                className="bg-green-700 text-white px-4 py-2 rounded-b-lg w-full"
+                className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
               >
                 Restart
               </button>
             </div>
+          </div>
           </div>
         )}
         

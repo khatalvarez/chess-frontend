@@ -215,7 +215,7 @@ const ChessboardComponent = () => {
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
           ></div>
-          <div>
+          {/* <div>
             <label>
               <input
                 type="checkbox"
@@ -224,20 +224,21 @@ const ChessboardComponent = () => {
               />
               Mobile Mode
             </label>
-          </div>
+          </div> */}
         </div>
 
-        {!mobileMode && (
-          <div className="lg:ml-4 lg:w-1/3 w-full">
-            <div className="rounded-xl text-center p-6 px-16  w-full text-2xl bg-green-700 text-white flex-shrink-0">
+        {(
+          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+          <div className="lg:mx-4 w-fit mx-6 mt-12 mb-10">
+            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}
             </div>
-            <div className="mt-4">
-              <p className="text-weight-500 mx-2 mx-3 text-center text-xl text-green-500">
+            <div className="mt-8">
+              <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-500">
                 Always promotes to queen.
               </p>
 
-              <table className="w-full border-collapse border border-gray-700 rounded-lg overflow-hidden">
+              <table className="mt-10 w-full border-collapse border border-gray-700 rounded-lg overflow-hidden">
                 <thead>
                   <tr className="bg-gray-800 text-center text-white">
                     <th className="border border-gray-700 px-6 py-3">Move</th>
@@ -269,6 +270,7 @@ const ChessboardComponent = () => {
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         )}
       </div>
