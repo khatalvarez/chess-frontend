@@ -20,6 +20,7 @@ import Puzzle3 from './components/Puzzles/Puzzle3';
 import Puzzle4 from './components/Puzzles/Puzzle4';
 import Puzzle5 from './components/Puzzles/Puzzle5';
 import Puzzle6 from './components/Puzzles/Puzzle6';
+import GameOverModal from './components/GameOverModal';
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
           <Route path="/modeselector" element={<GameModeSelector />} />
+          <Route path="/gameovermodal" element={<GameOverModal />} />
           <Route path="/profile" element={<Profile />} />
 
           <Route path="/random-play" element={<RandomPlay />} />

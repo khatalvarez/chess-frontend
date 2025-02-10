@@ -45,7 +45,7 @@ function Navbar() {
                     <li>
                         <Link
                             to="/"
-                            className="text-white text-md md:text-xl hover:text-green-500 transition duration-300 ease-in-out"
+                            className="text-white text-md md:text-xl hover:text-green-400 transition duration-300 ease-in-out"
                         >
                             Home
                         </Link>
@@ -55,7 +55,7 @@ function Navbar() {
                             <li>
                                 <Link
                                     to="/modeselector"
-                                    className="text-white text-md md:text-xl hover:text-green-500 transition duration-300 ease-in-out"
+                                    className="text-white text-md md:text-xl hover:text-green-400 transition duration-300 ease-in-out"
                                 >
                                     Mode
                                 </Link>
@@ -63,7 +63,7 @@ function Navbar() {
                             <li>
                                 <Link
                                     to="/puzzle"
-                                    className="text-white text-md md:text-xl hover:text-green-500 transition duration-300 ease-in-out"
+                                    className="text-white text-md md:text-xl hover:text-green-400 transition duration-300 ease-in-out"
                                 >
                                     Puzzles
                                 </Link>
@@ -71,7 +71,7 @@ function Navbar() {
                             <li>
                                 <Link
                                     to="/profile"
-                                    className="text-green-600 text-md md:text-xl hover:text-green-500 transition duration-300 capitalize ease-in-out"
+                                    className="text-green-400 text-md md:text-xl hover:text-green-300 transition duration-300 capitalize ease-in-out"
                                 >
                                     {userData ? userData.username.split(" ")[0] : "Profile"}
                                 </Link>

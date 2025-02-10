@@ -46,7 +46,7 @@ function Home() {
           className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden"
         >
           <div className="p-8 sm:p-12 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+            <h1 className="text-4xl sm:text-5xl text-center font-extrabold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
               {typedText}
               <AnimatePresence>
                 {typedText.length < fullText.length && (
@@ -80,7 +80,7 @@ function Home() {
               {authStatus === "true" && userData.username ? (
                 <Link
                   to="/modeselector"
-                  className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-full text-xl lg:text-2xl font-semibold hover:from-green-600 hover:to-blue-700 transition duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                  className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-full font-semibold hover:from-green-600 hover:to-blue-700 transition duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
                 >
                   Continue Your Journey
                 </Link>

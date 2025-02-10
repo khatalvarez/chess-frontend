@@ -9,6 +9,7 @@ import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import bg from "../../assets/images/bgprofile.jpg";
+import { BASE_URL } from "../../url";
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -32,7 +33,7 @@ const Puzzle1 = () => {
   const fetchBestMove = async (FEN) => {
     try {
       const response = await axios.get(
-        "https://reactchess.onrender.com/stockfish",
+        `${BASE_URL}/stockfish`,
         {
           params: {
             fen: FEN,
@@ -238,7 +239,7 @@ const Puzzle1 = () => {
 
   return (
     <div
-      className="w-full flex flex-col items-center min-min-h-screen mt-8"
+      className="w-full flex flex-col items-center min-min-h-screen"
       style={{
         backgroundImage: `url(${bg})`,
         backgroundSize: "contain",
@@ -247,10 +248,10 @@ const Puzzle1 = () => {
     >
       {(
         <>
-          <h1 className="text-3xl font-bold mt-16 lg:mt-4 z-10 bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl text-center font-bold mt-24 z-10 bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent">
             The Magician's Puzzle
           </h1>
-          <div className="w-[70%] p-12 text-lg">
+          <div className="w-[70%] p-8 text-lg text-white">
             <p>
               "Grandmasters and Engines Couldn't Solve This Puzzle. Then Came
               The Magician". This puzzle was composed by Gijs van Breukelen. It
@@ -273,7 +274,7 @@ const Puzzle1 = () => {
         <div className="lg:mx-16 w-full lg:w-1/2 mb-10">
           <div
             ref={chessRef}
-            style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
+            style={{ width: window.innerWidth > 1028 ? "36vw" : "100vw" }}
           ></div>
           {/* <div>
           <label>
@@ -288,7 +289,7 @@ const Puzzle1 = () => {
         </div>
 
         {(
-           <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-12 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+           <div className="mb-8 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
           <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
             <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}

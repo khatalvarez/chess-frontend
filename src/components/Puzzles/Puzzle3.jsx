@@ -9,6 +9,7 @@ import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import bg from "../../assets/images/bgprofile.jpg";
+import { BASE_URL } from "../../url";
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -32,7 +33,7 @@ const Puzzle3 = () => {
   const fetchBestMove = async (FEN) => {
     try {
       const response = await axios.get(
-        "https://reactchess.onrender.com/stockfish",
+       `${BASE_URL}/stockfish`,
         {
           params: {
             fen: FEN,
@@ -88,7 +89,7 @@ const Puzzle3 = () => {
       let move = game.move({
         from: source,
         to: target,
-        promotion: promotionPiece, // Use the selected promotion piece
+        promotion: promotionPiece, 
       });
 
       if (move === null) return "snapback";
@@ -237,7 +238,7 @@ const Puzzle3 = () => {
 
   return (
     <div
-      className="w-fullpy-32 flex flex-col items-center min-min-h-screen"
+      className="w-full flex flex-col items-center min-min-h-screen"
       style={{
         backgroundImage: `url(${bg})`,
         backgroundSize: "contain",
@@ -246,16 +247,16 @@ const Puzzle3 = () => {
     >
       {!mobileMode && (
         <>
-          <h1 className="text-3xl font-bold mt-16 lg:mt-4 z-10">
+          <h1 className="text-3xl font-bold mt-24 z-10 bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent">
             The Enigmatic Puzzle
           </h1>
-          <div className="w-[80%] p-4 text-lg">
+          <div className="w-[70%] p-8 text-lg text-white">
             <p>
               This puzzle was composed by Unknown. It is known for its
               complexity and strategic depth. White faces a challenging position
               against Black's resilient defense. Can you find the winning
               sequence?<br></br>
-              This one is dubbed as the "Stairway to Heaven". White may have
+              NOTE : This one is dubbed as the "Stairway to Heaven". White may have
               some positional advantage, yet if he is not careful, it's going to
               be a stalemate.
             </p>
@@ -267,14 +268,14 @@ const Puzzle3 = () => {
         </>
       )}
 
-      <div className="w-screen flex flex-col lg:flex-row mx-auto my-auto">
-        <div className="lg:mx-16 w-full lg:w-1/2">
+      <div className="w-screen flex lg:flex-row flex-col lg:flex-row mx-auto my-auto">
+        <div className="lg:mx-16 w-full lg:w-1/2 mb-10">
           <div
             ref={chessRef}
-            style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
+            style={{ width: window.innerWidth > 1028 ? "35vw" : "100vw" }}
           ></div>
         </div>
-        <div>
+        {/* <div>
           <label>
             <input
               type="checkbox"
@@ -283,18 +284,19 @@ const Puzzle3 = () => {
             />
             Mobile Mode
           </label>
-        </div>
-        {!mobileMode && (
-          <div className="lg:ml-4 w-full lg:w-1/3 mt-4 lg:mt-0">
-            <div className="rounded-xl text-center p-6 px-16 w-full text-2xl bg-green-700 text-white flex-shrink-0">
+        </div> */}
+        {(
+          <div className="mb-8 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+          <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
+            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}
             </div>
             <div className="mt-4">
-              <label className="mr-2 text-white">Promotion Piece:</label>
+              <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>
               <select
                 value={promotionPiece}
                 onChange={handlePromotionChange}
-                className="bg-green-700 text-white px-4 py-2 rounded-lg w-full"
+                className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
               >
                 <option value="q">Queen</option>
                 <option value="r">Rook</option>
@@ -304,7 +306,7 @@ const Puzzle3 = () => {
             </div>
             <button
               onClick={toggleTable}
-              className="mt-4 bg-green-700 text-white px-4 py-2 rounded-t-lg w-full"
+              className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
             >
               {isTableCollapsed ? "Show Moves" : "Hide Moves"}
             </button>
@@ -351,7 +353,7 @@ const Puzzle3 = () => {
             </div>
             <button
               onClick={toggleVideo}
-              className="mt-4 bg-green-700 text-white px-4 py-2 rounded-t-lg w-full"
+              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-t-lg w-full"
             >
               {isVideoCollapsed ? "Hide Video Solution" : "Show Video Solution"}
             </button>
@@ -368,6 +370,7 @@ const Puzzle3 = () => {
                 className="mt-4 mx-auto"
               ></iframe>
             )}
+          </div>
           </div>
         )}
       </div>

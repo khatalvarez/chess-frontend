@@ -206,11 +206,11 @@ const ChessboardComponent = () => {
 
   return (
     <div
-      className="mt-16 flex h-fit py-24 items-center justify-center w-screen"
+      className="flex h-fit py-32 items-center justify-center w-screen"
       style={{ backgroundImage: `url(${bg})`, backgroundSize: "contain" }}
     >
       <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
-        <div className="lg:mx-16 w-full lg:w-1/2">
+        <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
           <div
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
@@ -229,12 +229,12 @@ const ChessboardComponent = () => {
 
         {(
           <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
-          <div className="lg:mx-4 w-fit mx-6 mt-12 mb-10">
+          <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
             <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
               Current Status: {currentStatus ? currentStatus : "White to move"}
             </div>
             <div className="mt-8">
-              <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-500">
+              <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
                 Always promotes to queen.
               </p>
 
