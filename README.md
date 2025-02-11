@@ -10,7 +10,8 @@ Chess Master is a comprehensive web application that offers various chess-playin
 - [Features](#features)
 - [Usage](#usage)
 - [Technologies Used](#technologies-used)
-- [Contributing](#contributing)
+- [Setup & Installation](#-setup--installation)
+- [Contributing](#-contributing)
 - [License](#license)
   
 
