@@ -53,6 +53,26 @@ const AgainstStockfish = () => {
   const [promotionPiece, setPromotionPiece] = useState("q")
   const [isGameOver, setIsGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState("")
+  const [mobileMode, setMobileMode] = useState(false);
+
+  const handleCheckboxChange = () => {
+    setMobileMode((prev) => {
+      const newMode = !prev;
+  
+      if (newMode) {
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.touchAction = "none";
+      } else {
+        document.body.style.overflow = "auto";
+        document.documentElement.style.overflow = "auto";
+        document.body.style.position = "static";
+        document.body.style.touchAction = "auto";
+      }
+      return newMode;
+    });
+  };
 
   useEffect(() => {
     const game = gameRef.current
@@ -238,85 +258,94 @@ const AgainstStockfish = () => {
     >
       <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
         <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
-          <div ref={chessRef} style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}></div>
-        </div>
-        <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
-          <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
-            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
-              Current Status: {currentStatus ? currentStatus : "White to move"}
-            </div>
-            <div className="mt-4">
-              <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>
-              <select
-                value={promotionPiece}
-                onChange={handlePromotionChange}
-                className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
-              >
-                <option value="q" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
-                  Queen
-                </option>
-                <option value="r" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
-                  Rook
-                </option>
-                <option value="b" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
-                  Bishop
-                </option>
-                <option value="n" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
-                  Knight
-                </option>
-              </select>
-              <p className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-red-500 font-semibold bg-gray-100 p-4 rounded-lg">
-                If board position changes to original after promotion, just attempt an illegal move ,
-              </p>
-              <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
-                {" "}
-                Though its rare as stockfish won't give you a chance to promote.{" "}
-              </p>
-            </div>
-            <button
-              onClick={toggleTable}
-              className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
-            >
-              {isTableCollapsed ? "Show Moves" : "Hide Moves"}
-            </button>
-            <div
-              style={{
-                maxHeight: isTableCollapsed ? "0" : "40vh",
-                transition: "max-height 0.3s ease-in-out",
-                overflow: "scroll",
-              }}
-            >
-              <div style={{ height: "100%", overflowY: "auto" }}>
-                <table className="w-full border-collapse border border-gray-700 rounded-lg">
-                  <thead>
-                    <tr className="bg-gray-800 text-center text-white">
-                      <th className="border border-gray-700 px-6 py-3">Move</th>
-                      <th className="border border-gray-700 px-6 py-3">From</th>
-                      <th className="border border-gray-700 px-6 py-3">To</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {moves.map((move, index) => (
-                      <tr key={index} className="bg-gray-700 text-center text-white">
-                        <td className="border border-gray-700 px-6 py-3">{index + 1}</td>
-                        <td className="border border-gray-700 px-6 py-3">{move.from}</td>
-                        <td className="border border-gray-700 px-6 py-3">{move.to}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div className="mt-8 text-white text-center">
-              <button
-                onClick={handleRestart}
-                className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
-              >
-                Restart
-              </button>
-            </div>
+          <div ref={chessRef} style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}>
+          </div>
+          <div className="mt-6">
+            <label className="inline-flex items-center gap-2 text-black font-semibold bg-gray-300 p-2 rounded-md">
+              <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
+              Mobile Mode
+            </label>
           </div>
         </div>
+        {!mobileMode && (
+          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+            <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
+              <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
+                Current Status: {currentStatus ? currentStatus : "White to move"}
+              </div>
+              <div className="mt-4">
+                <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>
+                <select
+                  value={promotionPiece}
+                  onChange={handlePromotionChange}
+                  className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
+                >
+                  <option value="q" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
+                    Queen
+                  </option>
+                  <option value="r" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
+                    Rook
+                  </option>
+                  <option value="b" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
+                    Bishop
+                  </option>
+                  <option value="n" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
+                    Knight
+                  </option>
+                </select>
+                <p className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-red-500 font-semibold bg-gray-100 p-4 rounded-lg">
+                  If board position changes to original after promotion, just attempt an illegal move ,
+                </p>
+                <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
+                  {" "}
+                  Though its rare as stockfish won't give you a chance to promote.{" "}
+                </p>
+              </div>
+              <button
+                onClick={toggleTable}
+                className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+              >
+                {isTableCollapsed ? "Show Moves" : "Hide Moves"}
+              </button>
+              <div
+                style={{
+                  maxHeight: isTableCollapsed ? "0" : "40vh",
+                  transition: "max-height 0.3s ease-in-out",
+                  overflow: "scroll",
+                }}
+              >
+                <div style={{ height: "100%", overflowY: "auto" }}>
+                  <table className="w-full border-collapse border border-gray-700 rounded-lg">
+                    <thead>
+                      <tr className="bg-gray-800 text-center text-white">
+                        <th className="border border-gray-700 px-6 py-3">Move</th>
+                        <th className="border border-gray-700 px-6 py-3">From</th>
+                        <th className="border border-gray-700 px-6 py-3">To</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {moves.map((move, index) => (
+                        <tr key={index} className="bg-gray-700 text-center text-white">
+                          <td className="border border-gray-700 px-6 py-3">{index + 1}</td>
+                          <td className="border border-gray-700 px-6 py-3">{move.from}</td>
+                          <td className="border border-gray-700 px-6 py-3">{move.to}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="mt-8 text-white text-center">
+                <button
+                  onClick={handleRestart}
+                  className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+                >
+                  Restart
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
     </div>

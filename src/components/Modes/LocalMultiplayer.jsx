@@ -8,6 +8,7 @@ import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import pieceImages from "../pieceImages";
 import boardbg from "../../assets/images/bgboard.jpeg";
+import GameOverModal from "../GameOverModal"
 
 const moveSound = new Howl({ src: [moveSoundFile] });
 const captureSound = new Howl({ src: [captureSoundFile] });
@@ -33,9 +34,28 @@ const LocalMultiplayer = () => {
   const [isTableCollapsed, setIsTableCollapsed] = useState(false);
   const [promotionPiece, setPromotionPiece] = useState("q");
   const [mobileMode, setMobileMode] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false)
+  const [gameOverMessage, setGameOverMessage] = useState("")
+
   const handleCheckboxChange = () => {
-    setMobileMode(!mobileMode);
+    setMobileMode((prev) => {
+      const newMode = !prev;
+  
+      if (newMode) {
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.touchAction = "none";
+      } else {
+        document.body.style.overflow = "auto";
+        document.documentElement.style.overflow = "auto";
+        document.body.style.position = "static";
+        document.body.style.touchAction = "auto";
+      }
+      return newMode;
+    });
   };
+
   useEffect(() => {
     const game = gameRef.current;
 
@@ -100,26 +120,36 @@ const LocalMultiplayer = () => {
 
     const updateStatus = debounce(() => {
       let status = "";
-      let moveColor = "White";
+      let moveColor = game.turn() === "w" ? "White" : "Black";
 
-      if (game.turn() === "b") {
-        moveColor = "Black";
-      }
-
-      if (game.isGameOver()) {
-        status = "Game over";
+      if (game.isCheckmate()) {
+        status = `${moveColor === "White" ? "Black" : "White"} wins!`;
+        setIsGameOver(true);
+        setGameOverMessage(status);
+        checkmateSound.play();
+      } else if (game.isStalemate()) {
+        status = "It's a draw! Stalemate.";
+        setIsGameOver(true);
+        setGameOverMessage(status);
+      } else if (game.isThreefoldRepetition()) {
+        status = "It's a draw! Threefold repetition.";
+        setIsGameOver(true);
+        setGameOverMessage(status);
+      } else if (game.isInsufficientMaterial()) {
+        status = "It's a draw! Insufficient material.";
+        setIsGameOver(true);
+        setGameOverMessage(status);
+      } else if (game.isDraw()) {
+        status = "It's a draw!";
+        setIsGameOver(true);
+        setGameOverMessage(status);
       } else {
-        status = moveColor + " to move";
-
-        if (game.isCheckmate()) {
-          status += ", " + moveColor + " is in checkmate";
-          checkmateSound.play();
-        } else if (game.inCheck()) {
-          status += ", " + moveColor + " is in check";
+        status = `${moveColor} to move`;
+        if (game.inCheck()) {
+          status += `, ${moveColor} is in check!`;
           checkSound.play();
         }
       }
-
       setCurrentStatus(status);
     }, 100);
 
@@ -166,6 +196,15 @@ const LocalMultiplayer = () => {
     setPromotionPiece(e.target.value);
   };
 
+  const handleRestart = () => {
+    setIsGameOver(false)
+    setGameOverMessage("")
+    gameRef.current = new Chess()
+    boardRef.current.position("start")
+    setMoves([])
+    setCurrentStatus("White to move")
+  }
+
   return (
     <div
       className="flex h-fit py-32 items-center justify-center w-screen"
@@ -177,120 +216,125 @@ const LocalMultiplayer = () => {
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
           ></div>
+          <div className="mt-6">
+            <label className="inline-flex items-center gap-2 font-semibold text-black bg-gray-300 p-2 rounded-md">
+              <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
+              Mobile Mode
+            </label>
+          </div>
         </div>
-        {/* <div>
-          <label>
-            <input
-              type="checkbox"
-              checked={mobileMode}
-              onChange={handleCheckboxChange}
-            />
-            Mobile Mode
-          </label>
-        </div> */}
-        {(
+        {!mobileMode && (
           <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-2 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
-          <div className="lg:mx-4 w-fit mx-6 mt-12 mb-10">
-            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
-              Current Status: {currentStatus ? currentStatus : "White to move"}
-            </div>
+            <div className="lg:mx-4 w-fit mx-6 mt-12 mb-10">
+              <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
+                Current Status: {currentStatus ? currentStatus : "White to move"}
+              </div>
 
-            <div className="mt-8">
-              <label className="mr-2 text-white text-lg lg:text-xl">
-                Promotion Piece:
-              </label>
-              <select
-                value={promotionPiece}
-                onChange={handlePromotionChange}
-                className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
+              <div className="mt-8">
+                <label className="mr-2 text-white text-lg lg:text-xl">
+                  Promotion Piece:
+                </label>
+                <select
+                  value={promotionPiece}
+                  onChange={handlePromotionChange}
+                  className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
+                >
+                  <option
+                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
+                    value="q"
+                  >
+                    Queen
+                  </option>
+                  <option
+                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
+                    value="r"
+                  >
+                    Rook
+                  </option>
+                  <option
+                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
+                    value="b"
+                  >
+                    Bishop
+                  </option>
+                  <option
+                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
+                    value="n"
+                  >
+                    Knight
+                  </option>
+                </select>
+              </div>
+              <div className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-red-500 font-semibold bg-gray-100 p-4 rounded-lg">
+                If the game goes to start after promotion piece change, just
+                attempt an illegal move, it will get OK so relax
+              </div>
+              <button
+                onClick={toggleTable}
+                className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
               >
-                <option
-                  className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                  value="q"
-                >
-                  Queen
-                </option>
-                <option
-                  className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                  value="r"
-                >
-                  Rook
-                </option>
-                <option
-                  className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                  value="b"
-                >
-                  Bishop
-                </option>
-                <option
-                  className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                  value="n"
-                >
-                  Knight
-                </option>
-              </select>
-            </div>
-            <div className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-red-500 font-semibold bg-gray-100 p-4 rounded-lg">
-              If the game goes to start after promotion piece change, just
-              attempt an illegal move, it will get OK so relax
-            </div>
-            <button
-              onClick={toggleTable}
-              className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
-            >
-              {isTableCollapsed ? "Show Moves" : "Hide Moves"}
-            </button>
-            <div
-              style={{
-                maxHeight: isTableCollapsed ? "0" : "40vh",
-                transition: "max-height 0.3s ease-in-out",
-                overflow: "scroll",
-              }}
-            >
-              <div style={{ height: "100%", overflowY: "auto" }}>
-                <table className="w-full border-collapse border border-gray-700 rounded-lg bg-gray-400 bg-opacity-30 text-white">
-                  <thead>
-                    <tr className="bg-gray-800 bg-opacity-30 text-center text-white">
-                      <th className="border border-gray-400 px-6 py-3 text-lg lg:text-xl">
-                        Move
-                      </th>
-                      <th className="border border-gray-400 px-6 py-3 text-lg lg:text-xl">
-                        From
-                      </th>
-                      <th className="border border-gray-400 px-6 py-3 text-lg lg:text-xl">
-                        To
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {moves.map((move, index) => (
-                      <tr
-                        key={index}
-                        className={
-                          index % 2 === 0
-                            ? "bg-gray-700 bg-opacity-30 text-white text-center"
-                            : "bg-gray-600 bg-opacity-30 text-gray-200 text-center"
-                        }
-                      >
-                        <td className="border border-gray-400 px-6 py-4 text-lg lg:text-xl">
-                          {index + 1}
-                        </td>
-                        <td className="border border-gray-400 px-6 py-4 text-lg lg:text-xl">
-                          {move.from}
-                        </td>
-                        <td className="border border-gray-400 px-6 py-4 text-lg lg:text-xl">
-                          {move.to}
-                        </td>
+                {isTableCollapsed ? "Show Moves" : "Hide Moves"}
+              </button>
+              <div
+                style={{
+                  maxHeight: isTableCollapsed ? "0" : "40vh",
+                  transition: "max-height 0.3s ease-in-out",
+                  overflow: "scroll",
+                }}
+              >
+                <div style={{ height: "100%", overflowY: "auto" }}>
+                  <table className="w-full border-collapse border border-gray-700 rounded-lg bg-gray-400 bg-opacity-30 text-white">
+                    <thead>
+                      <tr className="bg-gray-800 bg-opacity-30 text-center text-white">
+                        <th className="border border-gray-400 px-6 py-3 text-lg lg:text-xl">
+                          Move
+                        </th>
+                        <th className="border border-gray-400 px-6 py-3 text-lg lg:text-xl">
+                          From
+                        </th>
+                        <th className="border border-gray-400 px-6 py-3 text-lg lg:text-xl">
+                          To
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {moves.map((move, index) => (
+                        <tr
+                          key={index}
+                          className={
+                            index % 2 === 0
+                              ? "bg-gray-700 bg-opacity-30 text-white text-center"
+                              : "bg-gray-600 bg-opacity-30 text-gray-200 text-center"
+                          }
+                        >
+                          <td className="border border-gray-400 px-6 py-4 text-lg lg:text-xl">
+                            {index + 1}
+                          </td>
+                          <td className="border border-gray-400 px-6 py-4 text-lg lg:text-xl">
+                            {move.from}
+                          </td>
+                          <td className="border border-gray-400 px-6 py-4 text-lg lg:text-xl">
+                            {move.to}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="mt-8 text-white text-center">
+                <button
+                  onClick={handleRestart}
+                  className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+                >
+                  Restart
+                </button>
               </div>
             </div>
           </div>
-          </div>
         )}
       </div>
+      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
     </div>
   );
 };

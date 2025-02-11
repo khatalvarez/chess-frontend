@@ -10,6 +10,7 @@ import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import bg from "../../assets/images/bgprofile.jpg";
 import { BASE_URL } from "../../url";
+import GameOverModal from "../GameOverModal"
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -58,8 +59,26 @@ const Puzzle1 = () => {
   const [isVideoCollapsed, setIsVideoCollapsed] = useState(false);
   const [promotionPiece, setPromotionPiece] = useState("q");
   const [mobileMode, setMobileMode] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [gameOverMessage, setGameOverMessage] = useState("");
+
   const handleCheckboxChange = () => {
-    setMobileMode(!mobileMode);
+    setMobileMode((prev) => {
+      const newMode = !prev;
+  
+      if (newMode) {
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.touchAction = "none";
+      } else {
+        document.body.style.overflow = "auto";
+        document.documentElement.style.overflow = "auto";
+        document.body.style.position = "static";
+        document.body.style.touchAction = "auto";
+      }
+      return newMode;
+    });
   };
 
   useEffect(() => {
@@ -167,28 +186,19 @@ const Puzzle1 = () => {
       boardRef.current.position(game.fen());
     };
 
-    const updateStatus = debounce(() => {
-      let status = "";
-      let moveColor = "White";
-
-      if (game.turn() === "b") {
-        moveColor = "Black";
-      }
-
+    const updateStatus = () => {
       if (game.isGameOver()) {
-        status = "Game over";
-        checkmateSound.play();
-      } else {
-        status = moveColor + " to move";
-
+        setIsGameOver(true);
         if (game.isCheckmate()) {
-          status += ", " + moveColor + " is in check";
-          checkSound.play();
+          checkmateSound.play();
+          setGameOverMessage("Checkmate! The game is over.");
+        } else {
+          setGameOverMessage("Game over! It's a draw.");
         }
+      } else {
+        setCurrentStatus(`${game.turn() === "w" ? "White" : "Black"} to move`);
       }
-
-      setCurrentStatus(status);
-    }, 100);
+    };
 
     const removeGreySquares = () => {
       const squares = document.querySelectorAll(".square-55d63");
@@ -237,6 +247,15 @@ const Puzzle1 = () => {
     setPromotionPiece(e.target.value);
   };
 
+  const handleRestart = () => {
+    gameRef.current = new Chess(puzzleFEN);
+    setMoves([]);
+    setIsGameOver(false);
+    setGameOverMessage("");
+    setCurrentStatus("White to move");
+    boardRef.current.position(puzzleFEN);
+  };
+
   return (
     <div
       className="w-full flex flex-col items-center min-min-h-screen"
@@ -246,7 +265,7 @@ const Puzzle1 = () => {
         backgroundRepeat: "repeat-y",
       }}
     >
-      {(
+      {!mobileMode &&(
         <>
           <h1 className="text-3xl text-center font-bold mt-24 z-10 bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent">
             The Magician's Puzzle
@@ -268,7 +287,7 @@ const Puzzle1 = () => {
           </div>
         </>
       )}
-      
+
 
       <div className="w-screen flex lg:flex-row flex-col lg:flex-row mx-auto my-auto">
         <div className="lg:mx-16 w-full lg:w-1/2 mb-10">
@@ -276,104 +295,101 @@ const Puzzle1 = () => {
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "36vw" : "100vw" }}
           ></div>
-          {/* <div>
-          <label>
-            <input
-              type="checkbox"
-              checked={mobileMode}
-              onChange={handleCheckboxChange}
-            />
-            Mobile Mode
-          </label>
-        </div> */}
+         <div className="mt-6">
+            <label className="inline-flex items-center gap-2 text-black font-semibold bg-gray-300 p-2 rounded-md">
+              <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
+              Mobile Mode
+            </label>
+          </div>
         </div>
 
-        {(
-           <div className="mb-8 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
-          <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
-            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
-              Current Status: {currentStatus ? currentStatus : "White to move"}
-            </div>
-            <div className="mt-4">
-              <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>
-              <select
-                value={promotionPiece}
-                onChange={handlePromotionChange}
-                className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
-              >
-                <option value="q">Queen</option>
-                <option value="r">Rook</option>
-                <option value="b">Bishop</option>
-                <option value="n">Knight</option>
-              </select>
-            </div>
-            <button
-              onClick={toggleTable}
-              className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
-            >
-              {isTableCollapsed ? "Show Moves" : "Hide Moves"}
-            </button>
-            <div
-              style={{
-                maxHeight: isTableCollapsed ? "0" : "40vh",
-                transition: "max-height 0.3s ease-in-out",
-                overflow: "scroll",
-              }}
-            >
-              <div style={{ height: "100%", overflowY: "auto" }}>
-                <table className="w-full border-collapse border border-gray-700 rounded-lg">
-                  <thead>
-                    <tr className="bg-gray-800 text-center text-white">
-                      <th className="border border-gray-700 px-6 py-3">Move</th>
-                      <th className="border border-gray-700 px-6 py-3">From</th>
-                      <th className="border border-gray-700 px-6 py-3">To</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {moves.map((move, index) => (
-                      <tr
-                        key={index}
-                        className={
-                          index % 2 === 0
-                            ? "bg-gray-700 text-white text-center"
-                            : "bg-gray-600 text-gray-200 text-center"
-                        }
-                      >
-                        <td className="border border-gray-700 px-6 py-4">
-                          {index + 1}
-                        </td>
-                        <td className="border border-gray-700 px-6 py-4">
-                          {move.from}
-                        </td>
-                        <td className="border border-gray-700 px-6 py-4">
-                          {move.to}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        {!mobileMode && (
+          <div className="mb-8 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+            <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
+              <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
+                Current Status: {currentStatus ? currentStatus : "White to move"}
               </div>
+              <div className="mt-4">
+                <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>
+                <select
+                  value={promotionPiece}
+                  onChange={handlePromotionChange}
+                  className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
+                >
+                  <option value="q">Queen</option>
+                  <option value="r">Rook</option>
+                  <option value="b">Bishop</option>
+                  <option value="n">Knight</option>
+                </select>
+              </div>
+              <button
+                onClick={toggleTable}
+                className="mt-8 bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+              >
+                {isTableCollapsed ? "Show Moves" : "Hide Moves"}
+              </button>
+              <div
+                style={{
+                  maxHeight: isTableCollapsed ? "0" : "40vh",
+                  transition: "max-height 0.3s ease-in-out",
+                  overflow: "scroll",
+                }}
+              >
+                <div style={{ height: "100%", overflowY: "auto" }}>
+                  <table className="w-full border-collapse border border-gray-700 rounded-lg">
+                    <thead>
+                      <tr className="bg-gray-800 text-center text-white">
+                        <th className="border border-gray-700 px-6 py-3">Move</th>
+                        <th className="border border-gray-700 px-6 py-3">From</th>
+                        <th className="border border-gray-700 px-6 py-3">To</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {moves.map((move, index) => (
+                        <tr
+                          key={index}
+                          className={
+                            index % 2 === 0
+                              ? "bg-gray-700 text-white text-center"
+                              : "bg-gray-600 text-gray-200 text-center"
+                          }
+                        >
+                          <td className="border border-gray-700 px-6 py-4">
+                            {index + 1}
+                          </td>
+                          <td className="border border-gray-700 px-6 py-4">
+                            {move.from}
+                          </td>
+                          <td className="border border-gray-700 px-6 py-4">
+                            {move.to}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
+                </div>
+              </div>
+              <button
+                onClick={toggleVideo}
+                className="mt-4 bg-green-700 text-white px-4 py-2 rounded-t-lg w-full"
+              >
+                {isVideoCollapsed ? "Hide Video Solution" : "Show Video Solution"}
+              </button>
+              {isVideoCollapsed && (
+                <iframe
+                  width="640"
+                  height="360"
+                  src="https://www.youtube.com/embed/8wCJalNkTEI?si=G7f0-adhIoT3IJFz"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  className="mt-4 mx-auto"
+                ></iframe>
+              )}
             </div>
-            <button
-              onClick={toggleVideo}
-              className="mt-4 bg-green-700 text-white px-4 py-2 rounded-t-lg w-full"
-            >
-              {isVideoCollapsed ? "Hide Video Solution" : "Show Video Solution"}
-            </button>
-            {isVideoCollapsed && (
-              <iframe
-                width="640"
-                height="360"
-                src="https://www.youtube.com/embed/8wCJalNkTEI?si=G7f0-adhIoT3IJFz"
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-                className="mt-4 mx-auto"
-              ></iframe>
-            )}
-          </div>
           </div>
         )}
       </div>

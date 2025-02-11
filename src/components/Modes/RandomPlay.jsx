@@ -8,6 +8,7 @@ import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import pieceImages from "../pieceImages";
 import bg from "../../assets/images/bgprofile.jpg";
+import GameOverModal from "../GameOverModal";
 
 // Initialize sound effects
 const moveSound = new Howl({ src: [moveSoundFile] });
@@ -18,12 +19,32 @@ const checkmateSound = new Howl({ src: [checkmateSoundFile] });
 const ChessboardComponent = () => {
   const chessRef = useRef(null); // Reference to the DOM element for the chessboard
   const boardRef = useRef(null); // Reference to the Chessboard instance
+  const gameRef = useRef(new Chess());
   const [currentStatus, setCurrentStatus] = useState(null); // State to hold the current game status
   const [moves, setMoves] = useState([]); // State to hold the list of moves
   const [mobileMode, setMobileMode] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [gameOverMessage, setGameOverMessage] = useState("");
+
   const handleCheckboxChange = () => {
-    setMobileMode(!mobileMode);
+    setMobileMode((prev) => {
+      const newMode = !prev;
+  
+      if (newMode) {
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.touchAction = "none";
+      } else {
+        document.body.style.overflow = "auto";
+        document.documentElement.style.overflow = "auto";
+        document.body.style.position = "static";
+        document.body.style.touchAction = "auto";
+      }
+      return newMode;
+    });
   };
+
   useEffect(() => {
     const game = new Chess(); // Create a new Chess instance
 
@@ -47,73 +68,41 @@ const ChessboardComponent = () => {
       if (game.isGameOver()) return;
 
       let possibleMoves = game.moves();
+      if (possibleMoves.length === 0) return; // No moves left
 
-      // Filter out non-legal moves for black
-      possibleMoves = possibleMoves.filter((move) => move.includes("b"));
-
-      // Randomly select a move
       const randomIdx = Math.floor(Math.random() * possibleMoves.length);
       try {
         const move = game.move(possibleMoves[randomIdx]);
         boardRef.current.position(game.fen());
 
         // Play sound based on move type
-        if (move.captured) {
-          captureSound.play();
-        } else {
-          moveSound.play();
-        }
+        move.captured ? captureSound.play() : moveSound.play();
 
-        // Update moves state with the latest move
-        setMoves((prevMoves) => [
-          ...prevMoves,
-          { from: move.from, to: move.to },
-        ]);
+        // Update moves
+        setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }]);
+
+        updateStatus(); // Check if game is over
       } catch (error) {
-        setCurrentStatus("Black says: Help me move please, I'm overwhelmed");
+        console.error("Error making AI move:", error);
       }
     };
 
     const onDrop = (source, target) => {
-      removeGreySquares();
-
       try {
-        let move = game.move({
-          from: source,
-          to: target,
-          promotion: "q", // Automatically promote to a queen for simplicity
-        });
+        let move = game.move({ from: source, to: target, promotion: "q" });
 
-        // Log the move result
-        console.log("The move returns: " + JSON.stringify(move));
+        if (!move) return "snapback";
 
-        // If the move is illegal, return 'snapback'
-        if (move === null) return "snapback";
+        move.captured ? captureSound.play() : moveSound.play();
+        setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }]);
 
-        // Play sound based on move type
-        if (move.captured) {
-          captureSound.play();
-        } else {
-          moveSound.play();
+        updateStatus(); // Check game status
+
+        if (!game.isGameOver() && game.turn() === "b") {
+          setTimeout(makeRandomMove, 500); // AI moves after a delay
         }
-
-        // Update moves state with the latest move
-        setMoves((prevMoves) => [
-          ...prevMoves,
-          { from: move.from, to: move.to },
-        ]);
       } catch (error) {
-        console.log(error);
         return "snapback";
-      }
-
-      updateStatus(); // Update the game status
-
-      // After white's move, make random move for black
-      if (game.turn() === "b") {
-        setTimeout(() => {
-          makeRandomMove();
-        }, 250); // Delay to ensure that the sound plays before the computer's move
       }
     };
 
@@ -145,26 +134,32 @@ const ChessboardComponent = () => {
     };
 
     const updateStatus = () => {
-      let status = "";
-      let moveColor = "White";
+      const moveColor = game.turn() === "w" ? "White" : "Black";
 
-      if (game.turn() === "b") {
-        moveColor = "Black";
-      }
-
-      // Checkmate?
       if (game.isCheckmate()) {
-        status = "Game over, " + moveColor + " is in checkmate.";
+        const winner = moveColor === "White" ? "Black" : "White";
+        setIsGameOver(true);
+        setGameOverMessage(`${winner} wins by checkmate!`);
         checkmateSound.play();
-      } else if (game.inCheck()) {
-        status = moveColor + " to move, " + moveColor + " is in check";
-        checkSound.play();
+      } else if (game.isStalemate()) {
+        setIsGameOver(true);
+        setGameOverMessage("It's a draw! Stalemate.");
+      } else if (game.isThreefoldRepetition()) {
+        setIsGameOver(true);
+        setGameOverMessage("It's a draw! Threefold repetition.");
+      } else if (game.isInsufficientMaterial()) {
+        setIsGameOver(true);
+        setGameOverMessage("It's a draw! Insufficient material.");
+      } else if (game.isDraw()) {
+        setIsGameOver(true);
+        setGameOverMessage("It's a draw!");
       } else {
-        status = moveColor + " to move";
+        setCurrentStatus(`${moveColor} to move`);
+        if (game.inCheck()) {
+          setCurrentStatus(`${moveColor} is in check!`);
+          checkSound.play();
+        }
       }
-
-      // Update the status
-      setCurrentStatus(status);
     };
 
     const removeGreySquares = () => {
@@ -204,6 +199,15 @@ const ChessboardComponent = () => {
     };
   }, []);
 
+  const handleRestart = () => {
+    setIsGameOver(false);
+    setGameOverMessage("");
+    gameRef.current = new Chess();
+    boardRef.current.position("start");
+    setMoves([]);
+    setCurrentStatus("White to move");
+  };
+
   return (
     <div
       className="flex h-fit py-32 items-center justify-center w-screen"
@@ -214,66 +218,71 @@ const ChessboardComponent = () => {
           <div
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
-          ></div>
-          {/* <div>
-            <label>
-              <input
-                type="checkbox"
-                checked={mobileMode}
-                onChange={handleCheckboxChange}
-              />
+          ></div> 
+          <div className="mt-6">
+            <label className="inline-flex items-center gap-2 font-semibold bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white p-2 rounded-md">
+              <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
               Mobile Mode
             </label>
-          </div> */}
+          </div>
         </div>
 
-        {(
+        {!mobileMode && (
           <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
-          <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
-            <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
-              Current Status: {currentStatus ? currentStatus : "White to move"}
-            </div>
-            <div className="mt-8">
-              <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
-                Always promotes to queen.
-              </p>
+            <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
+              <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
+                Current Status: {currentStatus ? currentStatus : "White to move"}
+              </div>
+              <div className="mt-8">
+                <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
+                  Always promotes to queen.
+                </p>
 
-              <table className="mt-10 w-full border-collapse border border-gray-700 rounded-lg overflow-hidden">
-                <thead>
-                  <tr className="bg-gray-800 text-center text-white">
-                    <th className="border border-gray-700 px-6 py-3">Move</th>
-                    <th className="border border-gray-700 px-6 py-3">From</th>
-                    <th className="border border-gray-700 px-6 py-3">To</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {moves.map((move, index) => (
-                    <tr
-                      key={index}
-                      className={
-                        index % 2 === 0
-                          ? "bg-gray-700 text-white text-center"
-                          : "bg-gray-600 text-gray-200 text-center"
-                      }
-                    >
-                      <td className="border border-gray-700 px-6 py-4">
-                        {index + 1}
-                      </td>
-                      <td className="border border-gray-700 px-6 py-4">
-                        {move.from}
-                      </td>
-                      <td className="border border-gray-700 px-6 py-4">
-                        {move.to}
-                      </td>
+                <table className="mt-10 w-full border-collapse border border-gray-700 rounded-lg overflow-hidden">
+                  <thead>
+                    <tr className="bg-gray-800 text-center text-white">
+                      <th className="border border-gray-700 px-6 py-3">Move</th>
+                      <th className="border border-gray-700 px-6 py-3">From</th>
+                      <th className="border border-gray-700 px-6 py-3">To</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {moves.map((move, index) => (
+                      <tr
+                        key={index}
+                        className={
+                          index % 2 === 0
+                            ? "bg-gray-700 text-white text-center"
+                            : "bg-gray-600 text-gray-200 text-center"
+                        }
+                      >
+                        <td className="border border-gray-700 px-6 py-4">
+                          {index + 1}
+                        </td>
+                        <td className="border border-gray-700 px-6 py-4">
+                          {move.from}
+                        </td>
+                        <td className="border border-gray-700 px-6 py-4">
+                          {move.to}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+            <div className="mt-8 text-white text-center">
+              <button
+                onClick={handleRestart}
+                className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+              >
+                Restart
+              </button>
+            </div>
           </div>
         )}
       </div>
+      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
     </div>
   );
 };
