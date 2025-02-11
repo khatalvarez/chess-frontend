@@ -2,7 +2,7 @@
 
 Chess Master is a comprehensive web application that offers various chess-playing modes, puzzles, and features for chess enthusiasts of all levels.
 
-![Chess Master Demo](![image](https://github.com/user-attachments/assets/7ef6eb72-f9e5-4353-a03b-ab867078eb32)
+![Chess Master Demo](https://chess-frontend-dun.vercel.app/chess.jpeg)
 
 ## Table of Contents
 
