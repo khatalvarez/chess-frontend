@@ -82,7 +82,7 @@ Chess Master is a comprehensive web application that offers various chess-playin
 - **Settings:** Toggle sound effects and customize your experience.
   
 
-🤝 Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -98,6 +98,6 @@ Contributions are welcome! Please follow these steps:
     git push origin feature/AmazingFeature
 5. Open a Pull Request.
 
-📄 License
+## 📄 License
 
 Distributed under the MIT License. See LICENSE for more information.
