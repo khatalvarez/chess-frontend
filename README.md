@@ -3,6 +3,7 @@
 Welcome to **Chess Master**, it is a comprehensive web application that offers various chess-playing modes, puzzles, and features for chess enthusiasts of all levels.
 
 ## 🚀 Live Demo
+
 🔗 **[Play Chess Master Now](https://chess-frontend-dun.vercel.app/)**
 
 
@@ -112,4 +113,6 @@ Contributions are welcome! Please follow these steps:
 
 ## 📄 License
 
-Distributed under the MIT License. See LICENSE for more information.
+## 📄 License
+Distributed under the **MIT License**. See [LICENSE](./LICENSE) for details.
+
