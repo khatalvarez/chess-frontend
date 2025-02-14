@@ -1,8 +1,20 @@
 # ♟️ Chess Master
 
-Chess Master is a comprehensive web application that offers various chess-playing modes, puzzles, and features for chess enthusiasts of all levels.
+Welcome to **Chess Master**, it is a comprehensive web application that offers various chess-playing modes, puzzles, and features for chess enthusiasts of all levels.
 
-![Chess Master Demo](https://chess-frontend-dun.vercel.app/chess.jpeg)
+## 🚀 Live Demo
+🔗 **[Play Chess Master Now](https://chess-frontend-dun.vercel.app/)**
+
+
+![Chess Master](https://chess-frontend-dun.vercel.app/chess.jpeg)
+
+
+## 📢 Important!
+This repository contains only the **frontend** code.  
+For the backend API, visit: **[Chess Master Backend](https://github.com/itxnargis/chess-backend)**.
+
+---
+
 
 ## Table of Contents
 
