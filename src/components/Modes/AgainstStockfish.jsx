@@ -243,13 +243,33 @@ const AgainstStockfish = () => {
   }
 
   const handleRestart = () => {
-    setIsGameOver(false)
-    setGameOverMessage("")
-    gameRef.current = new Chess()
-    boardRef.current.position("start")
-    setMoves([])
-    setCurrentStatus("White to move")
+  setIsGameOver(false);
+  setGameOverMessage("");
+  gameRef.current = new Chess(); // Reset the game state
+  setMoves([]);
+  setCurrentStatus("White to move");
+
+  // Reinitialize the chessboard
+  if (boardRef.current) {
+    boardRef.current.destroy(); // Destroy the existing chessboard instance
   }
+  
+  const newBoard = Chessboard(chessRef.current, {
+    draggable: true,
+    position: "start",
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    onMouseoverSquare: onMouseoverSquare,
+    onMouseoutSquare: onMouseoutSquare,
+    onSnapEnd: onSnapEnd,
+    pieceTheme: (piece) => pieceImages[piece],
+    snapbackSpeed: 500,
+    snapSpeed: 100,
+  });
+
+  boardRef.current = newBoard;
+};
+
 
   return (
     <div
