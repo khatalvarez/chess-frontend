@@ -200,13 +200,14 @@ const ChessboardComponent = () => {
   }, []);
 
   const handleRestart = () => {
-    setIsGameOver(false);
-    setGameOverMessage("");
-    gameRef.current = new Chess();
-    boardRef.current.position("start");
-    setMoves([]);
-    setCurrentStatus("White to move");
-  };
+  setIsGameOver(false);
+  setGameOverMessage("");
+  gameRef.current.reset(); // Reset the chess game state
+  boardRef.current.position("start"); // Reset the board position
+  setMoves([]);
+  setCurrentStatus("White to move");
+};
+
 
   return (
     <div
