@@ -46,23 +46,36 @@ const ChessboardComponent = () => {
   };
 
   useEffect(() => {
-    const game = new Chess(); // Create a new Chess instance
-
-    const onDragStart = (source, piece, position, orientation) => {
-      // Do not pick up pieces if the game is over
-      if (game.isGameOver()) {
-        console.log("Start a new game from the menu");
-        return false;
-      }
-
-      // Only pick up pieces for the side to move
-      if (
-        (game.turn() === "w" && piece.search(/^b/) !== -1) ||
-        (game.turn() === "b" && piece.search(/^w/) !== -1)
-      ) {
-        return false;
+  if (mobileMode) {
+    const handleTouchStart = (event) => {
+      const squareEl = event.currentTarget;
+      // Extract the square identifier from the element's classes (e.g., "square-e4")
+      const squareClass = [...squareEl.classList].find(cls => cls.startsWith("square-") && cls !== "square-55d63");
+      if (squareClass) {
+        const square = squareClass.replace("square-", "");
+        // Highlight the tapped square
+        greySquare(square);
+        // Highlight its legal moves
+        const moves = gameRef.current.moves({ square, verbose: true });
+        moves.forEach(move => greySquare(move.to));
       }
     };
+
+    // Add touchstart listeners to each square on the board
+    const squares = document.querySelectorAll(".square-55d63");
+    squares.forEach(square => {
+      square.addEventListener("touchstart", handleTouchStart);
+    });
+
+    // Cleanup the event listeners on unmount or mobileMode change
+    return () => {
+      squares.forEach(square => {
+        square.removeEventListener("touchstart", handleTouchStart);
+      });
+    };
+  }
+}, [mobileMode]);
+
 
     const makeRandomMove = () => {
       if (game.isGameOver()) return;
