@@ -64,22 +64,6 @@ useEffect(() => {
       }
     };
 
-    // Add touchstart listeners to each square on the board
-    const squares = document.querySelectorAll(".square-55d63");
-    squares.forEach(square => {
-      square.addEventListener("touchstart", handleTouchStart);
-    });
-
-    // Cleanup the event listeners on unmount or mobileMode change
-    return () => {
-      squares.forEach(square => {
-        square.removeEventListener("touchstart", handleTouchStart);
-      });
-    };
-  }
-}, [mobileMode]);
-
-
     const makeRandomMove = () => {
       if (game.isGameOver()) return;
 
@@ -230,6 +214,20 @@ useEffect(() => {
         moves.forEach(move => greySquare(move.to));
       }
     };
+// Add touchstart listeners to each square on the board
+    const squares = document.querySelectorAll(".square-55d63");
+    squares.forEach(square => {
+      square.addEventListener("touchstart", handleTouchStart);
+    });
+
+    // Cleanup the event listeners on unmount or mobileMode change
+    return () => {
+      squares.forEach(square => {
+        square.removeEventListener("touchstart", handleTouchStart);
+      });
+    };
+  }
+}, [mobileMode]);
 
   const handleRestart = () => {
   setIsGameOver(false);
