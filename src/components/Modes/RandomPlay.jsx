@@ -45,6 +45,25 @@ const ChessboardComponent = () => {
     });
   };
 
+useEffect(() => {
+    const game = new Chess(); // Create a new Chess instance
+
+    const onDragStart = (source, piece, position, orientation) => {
+      // Do not pick up pieces if the game is over
+      if (game.isGameOver()) {
+        console.log("Start a new game from the menu");
+        return false;
+      }
+
+      // Only pick up pieces for the side to move
+      if (
+        (game.turn() === "w" && piece.search(/^b/) !== -1) ||
+        (game.turn() === "b" && piece.search(/^w/) !== -1)
+      ) {
+        return false;
+      }
+    };
+
   useEffect(() => {
   if (mobileMode) {
     const handleTouchStart = (event) => {
