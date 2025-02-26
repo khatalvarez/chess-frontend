@@ -64,22 +64,6 @@ useEffect(() => {
       }
     };
 
-  useEffect(() => {
-  if (mobileMode) {
-    const handleTouchStart = (event) => {
-      const squareEl = event.currentTarget;
-      // Extract the square identifier from the element's classes (e.g., "square-e4")
-      const squareClass = [...squareEl.classList].find(cls => cls.startsWith("square-") && cls !== "square-55d63");
-      if (squareClass) {
-        const square = squareClass.replace("square-", "");
-        // Highlight the tapped square
-        greySquare(square);
-        // Highlight its legal moves
-        const moves = gameRef.current.moves({ square, verbose: true });
-        moves.forEach(move => greySquare(move.to));
-      }
-    };
-
     // Add touchstart listeners to each square on the board
     const squares = document.querySelectorAll(".square-55d63");
     squares.forEach(square => {
@@ -230,6 +214,22 @@ useEffect(() => {
       }
     };
   }, []);
+
+useEffect(() => {
+  if (mobileMode) {
+    const handleTouchStart = (event) => {
+      const squareEl = event.currentTarget;
+      // Extract the square identifier from the element's classes (e.g., "square-e4")
+      const squareClass = [...squareEl.classList].find(cls => cls.startsWith("square-") && cls !== "square-55d63");
+      if (squareClass) {
+        const square = squareClass.replace("square-", "");
+        // Highlight the tapped square
+        greySquare(square);
+        // Highlight its legal moves
+        const moves = gameRef.current.moves({ square, verbose: true });
+        moves.forEach(move => greySquare(move.to));
+      }
+    };
 
   const handleRestart = () => {
   setIsGameOver(false);
