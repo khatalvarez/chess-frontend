@@ -8,7 +8,7 @@ import moveSoundFile from "../../assets/sounds/move.mp3";
 import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
-import bg from "../../assets/images/bgprofile.jpg";
+import bg from "../../assets/images/bgprofile.webp";
 import { BASE_URL } from "../../url";
 import GameOverModal from "../GameOverModal"
 
@@ -271,7 +271,10 @@ const Puzzle4 = () => {
   return (
     <div
       className="w-full flex py-32 flex-col items-center min-min-h-screen "
-      style={{ backgroundImage: `url(${bg})`, backgroundSize: "contain" }}
+      style={{ backgroundImage: `url(${bg})`, backgroundSize: "contain",
+      sizes: "(max-width: 600px) 400px, 800px",
+      loading: "lazy",
+      alt: "Chess background", }}
     >
       {/* {!mobileMode && (
         <h1 className="text-3xl font-bold mt-16 lg:mt-4 z-10">

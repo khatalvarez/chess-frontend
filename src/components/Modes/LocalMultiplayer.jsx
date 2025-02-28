@@ -7,7 +7,7 @@ import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import pieceImages from "../pieceImages";
-import boardbg from "../../assets/images/bgboard.jpeg";
+import bg from "../../assets/images/bgprofile.webp"
 import GameOverModal from "../GameOverModal"
 
 const moveSound = new Howl({ src: [moveSoundFile] });
@@ -207,61 +207,48 @@ const LocalMultiplayer = () => {
 
 
   return (
-    <div
-      className="flex h-fit py-32 items-center justify-center w-screen"
-      style={{ backgroundImage: `url(${boardbg})`, backgroundSize: "cover" }}
-    >
+<div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
+    <img 
+      src={bg} 
+      sizes="(max-width: 600px) 400px, 800px" 
+      loading="lazy" 
+      alt="Chess background" 
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+    <div className="flex h-fit py-32 items-center justify-center w-screen relative">
       <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
         <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
-          <div
-            ref={chessRef}
-            style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
-          ></div>
+          <div ref={chessRef} style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}></div>
           <div className="mt-6">
-            <label className="inline-flex items-center gap-2 font-semibold text-black bg-gray-300 p-2 rounded-md">
+            <label className="inline-flex items-center gap-2 text-black font-semibold bg-gray-300 p-2 rounded-md">
               <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
               Mobile Mode
             </label>
           </div>
         </div>
         {!mobileMode && (
-          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-2 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
-            <div className="lg:mx-4 w-fit mx-6 mt-12 mb-10">
+          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+            <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
               <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
                 Current Status: {currentStatus ? currentStatus : "White to move"}
               </div>
-
-              <div className="mt-8">
-                <label className="mr-2 text-white text-lg lg:text-xl">
-                  Promotion Piece:
-                </label>
+              <div className="mt-4">
+                <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>
                 <select
                   value={promotionPiece}
                   onChange={handlePromotionChange}
                   className="bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white px-4 py-2 rounded-lg w-full text-base lg:text-lg"
                 >
-                  <option
-                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                    value="q"
-                  >
+                  <option value="q" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
                     Queen
                   </option>
-                  <option
-                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                    value="r"
-                  >
+                  <option value="r" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
                     Rook
                   </option>
-                  <option
-                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                    value="b"
-                  >
+                  <option value="b" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
                     Bishop
                   </option>
-                  <option
-                    className="bg-blue-900 bg-opacity-50 bg-transparent text-white"
-                    value="n"
-                  >
+                  <option value="n" className="bg-blue-900 bg-opacity-50 bg-transparent text-white">
                     Knight
                   </option>
                 </select>
@@ -336,6 +323,7 @@ const LocalMultiplayer = () => {
         )}
       </div>
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
+    </div>
     </div>
   );
 };

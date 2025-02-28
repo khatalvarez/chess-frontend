@@ -5,7 +5,7 @@ import { login, logout } from "../store/authSlice"
 import Cookies from "js-cookie"
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
-import bg from "../assets/images/bgprofile.jpg"
+import bg from "../assets/images/bgprofile.webp"
 import { BASE_URL } from "../url"
 
 function Profile() {
@@ -84,10 +84,14 @@ function Profile() {
   }
 
   return (
-    <div
-      className="w-screen min-h-screen flex items-center justify-center bg-gray-900 py-16"
-      style={{ backgroundImage: `url(${bg})`, backgroundSize: "cover" }}
-    >
+    <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
+        <img 
+          src={bg} 
+          sizes="(max-width: 600px) 400px, 800px" 
+          loading="lazy" 
+          alt="Chess background" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       <div className="w-11/12 lg:w-5/6 flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
         <motion.div
           initial={{ opacity: 0, x: -50 }}

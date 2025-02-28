@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import { FaGlobe, FaUsers, FaRobot, FaPuzzlePiece, FaDice } from "react-icons/fa"
-import bg from "../assets/images/bgprofile.jpg"
+import bg from "../assets/images/bgprofile.webp"
 
 const gameModes = [
   { path: "/global-multiplayer", label: "Global Multiplayer", icon: FaGlobe, color: "from-blue-500 to-purple-600" },
@@ -20,10 +20,15 @@ function GameModeSelector() {
   }, [])
 
   return (
-      <div
-        className="w-screen min-h-screen flex items-center justify-center bg-gray-900 py-16"
-        style={{ backgroundImage: `url(${bg})` }}
-      >
+   <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
+      <img 
+        src={bg} 
+        sizes="(max-width: 600px) 400px, 800px" 
+        loading="lazy" 
+        alt="Chess background" 
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.h1
           initial={{ y: -50, opacity: 0 }}

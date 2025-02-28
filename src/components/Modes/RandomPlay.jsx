@@ -7,7 +7,7 @@ import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
 import pieceImages from "../pieceImages";
-import bg from "../../assets/images/bgprofile.jpg";
+import bg from "../../assets/images/bgprofile.webp";
 import GameOverModal from "../GameOverModal";
 
 // Initialize sound effects
@@ -240,30 +240,31 @@ useEffect(() => {
 
 
   return (
-    <div
-      className="flex h-fit py-32 items-center justify-center w-screen"
-      style={{ backgroundImage: `url(${bg})`, backgroundSize: "contain" }}
-    >
-      <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
-        <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
-          <div
-            ref={chessRef}
-            style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}
-          ></div> 
-          <div className="mt-6">
-            <label className="inline-flex items-center gap-2 font-semibold bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white p-2 rounded-md">
-              <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
-              Mobile Mode
-            </label>
+  <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
+      <img 
+        src={bg} 
+        sizes="(max-width: 600px) 400px, 800px" 
+        loading="lazy" 
+        alt="Chess background" 
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      <div className="flex h-fit py-32 items-center justify-center w-screen relative">
+        <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
+          <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
+            <div ref={chessRef} style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}></div>
+            <div className="mt-6">
+              <label className="inline-flex items-center gap-2 text-black font-semibold bg-gray-300 p-2 rounded-md">
+                <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
+                Mobile Mode
+              </label>
+            </div>
           </div>
-        </div>
-
-        {!mobileMode && (
-          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
-            <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
-              <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
-                Current Status: {currentStatus ? currentStatus : "White to move"}
-              </div>
+          {!mobileMode && (
+            <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
+              <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
+                <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
+                  Current Status: {currentStatus ? currentStatus : "White to move"}
+                </div>
               <div className="mt-8">
                 <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
                   Always promotes to queen.
@@ -314,6 +315,7 @@ useEffect(() => {
         )}
       </div>
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
+    </div>
     </div>
   );
 };

@@ -12,7 +12,7 @@ import moveSoundFile from "../../assets/sounds/move.mp3";
 import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
-import boardbg from "../../assets/images/bgboard.jpeg";
+import boardbg from "../../assets/images/bgboard.webp";
 import { BASE_URL } from "../../url";
 
 // Initialize sound effects

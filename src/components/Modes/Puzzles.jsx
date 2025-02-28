@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaChessKnight, FaChessQueen, FaChessBoard } from "react-icons/fa";
-import bg from "../../assets/images/bgprofile.jpg";
+import bg from "../../assets/images/bgprofile.webp";
 
 const topPuzzles = [
   { path: "/puzzle1", label: "The Magician's Puzzle", icon: FaChessKnight, color: "from-blue-500 to-indigo-600" },

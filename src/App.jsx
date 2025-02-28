@@ -1,57 +1,60 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react';
 import { Provider } from 'react-redux';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
-import Navbar from './components/Navbar';
 import store from './store/store';
-import Home from './components/Home';
-import SignUp from './components/Auth/SignUp';
-import Login from './components/Auth/Login';
-import Profile from "./components/Profile"
-import GameModeSelector from './components/GameModeSelector';
-import RandomPlay from './components/Modes/RandomPlay';
-import LocalMultiplayer from './components/Modes/LocalMultiplayer';
-import GlobalMultiplayer from './components/Modes/GlobalMultiplayer';
-import AgainstStockfish from './components/Modes/AgainstStockfish';
-import Puzzles from './components/Modes/Puzzles';
+import Navbar from './components/Navbar';
 
-import Puzzle1 from './components/Puzzles/Puzzle1';
-import Puzzle2 from './components/Puzzles/Puzzle2';
-import Puzzle3 from './components/Puzzles/Puzzle3';
-import Puzzle4 from './components/Puzzles/Puzzle4';
-import Puzzle5 from './components/Puzzles/Puzzle5';
-import Puzzle6 from './components/Puzzles/Puzzle6';
-import GameOverModal from './components/GameOverModal';
+const Home = lazy(() => import('./components/Home'));
+const SignUp = lazy(() => import('./components/Auth/SignUp'));
+const Login = lazy(() => import('./components/Auth/Login'));
+const Profile = lazy(() => import('./components/Profile'));
+const GameModeSelector = lazy(() => import('./components/GameModeSelector'));
+const GameOverModal = lazy(() => import('./components/GameOverModal'));
+
+const RandomPlay = lazy(() => import('./components/Modes/RandomPlay'));
+const LocalMultiplayer = lazy(() => import('./components/Modes/LocalMultiplayer'));
+const GlobalMultiplayer = lazy(() => import('./components/Modes/GlobalMultiplayer'));
+const AgainstStockfish = lazy(() => import('./components/Modes/AgainstStockfish'));
+const Puzzles = lazy(() => import('./components/Modes/Puzzles'));
+
+const Puzzle1 = lazy(() => import('./components/Puzzles/Puzzle1'));
+const Puzzle2 = lazy(() => import('./components/Puzzles/Puzzle2'));
+const Puzzle3 = lazy(() => import('./components/Puzzles/Puzzle3'));
+const Puzzle4 = lazy(() => import('./components/Puzzles/Puzzle4'));
+const Puzzle5 = lazy(() => import('./components/Puzzles/Puzzle5'));
+const Puzzle6 = lazy(() => import('./components/Puzzles/Puzzle6'));
 
 const App = () => {
   return (
     <Provider store={store}>
       <Router>
         <Navbar />
-        <Routes>
-          <Route path='/' element={<Home />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/modeselector" element={<GameModeSelector />} />
-          <Route path="/gameovermodal" element={<GameOverModal />} />
-          <Route path="/profile" element={<Profile />} />
+        <Suspense fallback={<div className="text-white text-center py-8">Loading...</div>}>
+          <Routes>
+            <Route path='/' element={<Home />} />
+            <Route path='/signup' element={<SignUp />} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/modeselector' element={<GameModeSelector />} />
+            <Route path='/gameovermodal' element={<GameOverModal />} />
+            <Route path='/profile' element={<Profile />} />
 
-          <Route path="/random-play" element={<RandomPlay />} />
-            <Route path="/local-multiplayer" element={<LocalMultiplayer />} />
-            <Route path="/global-multiplayer" element={<GlobalMultiplayer />} />
-            <Route path="/puzzle" element={<Puzzles />} />
-            <Route path="/against-stockfish" element={<AgainstStockfish />} />
+            <Route path='/random-play' element={<RandomPlay />} />
+            <Route path='/local-multiplayer' element={<LocalMultiplayer />} />
+            <Route path='/global-multiplayer' element={<GlobalMultiplayer />} />
+            <Route path='/puzzle' element={<Puzzles />} />
+            <Route path='/against-stockfish' element={<AgainstStockfish />} />
 
-            <Route path="/puzzle1" element={<Puzzle1 />} />
-            <Route path="/puzzle2" element={<Puzzle2 />} />
-            <Route path="/puzzle3" element={<Puzzle3 />} />
-            <Route path="/puzzle4" element={<Puzzle4 />} />
-            <Route path="/puzzle5" element={<Puzzle5 />} />
-            <Route path="/puzzle6" element={<Puzzle6 />} />
-
-        </Routes>
+            <Route path='/puzzle1' element={<Puzzle1 />} />
+            <Route path='/puzzle2' element={<Puzzle2 />} />
+            <Route path='/puzzle3' element={<Puzzle3 />} />
+            <Route path='/puzzle4' element={<Puzzle4 />} />
+            <Route path='/puzzle5' element={<Puzzle5 />} />
+            <Route path='/puzzle6' element={<Puzzle6 />} />
+          </Routes>
+        </Suspense>
       </Router>
     </Provider>
-  )
-}
+  );
+};
 
-export default App
+export default App;

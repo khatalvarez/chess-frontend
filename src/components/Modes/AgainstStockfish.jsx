@@ -8,7 +8,7 @@ import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
 import checkSoundFile from "../../assets/sounds/check.mp3"
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3"
-import bg from "../../assets/images/bgprofile.jpg"
+import bg from "../../assets/images/bgprofile.webp"
 import { BASE_URL } from "../../url"
 import GameOverModal from "../GameOverModal"
 
@@ -252,14 +252,18 @@ const AgainstStockfish = () => {
 };
 
   return (
-    <div
-      className="flex h-fit py-32 items-center justify-center w-screen"
-      style={{ backgroundImage: `url(${bg})`, backgroundSize: "contain" }}
-    >
-      <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
+    <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex h-fit items-center justify-center">
+    <img 
+      src={bg} 
+      sizes="(max-width: 600px) 400px, 800px" 
+      loading="lazy" 
+      alt="Chess background" 
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+    <div className="flex h-fit py-32 items-center justify-center w-screen relative">
+      <div className="w-screen flex h-fit flex-col lg:flex-row lg:flex-row mx-auto my-auto">
         <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
-          <div ref={chessRef} style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}>
-          </div>
+          <div ref={chessRef} style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}></div>
           <div className="mt-6">
             <label className="inline-flex items-center gap-2 text-black font-semibold bg-gray-300 p-2 rounded-md">
               <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
@@ -293,6 +297,7 @@ const AgainstStockfish = () => {
                     Knight
                   </option>
                 </select>
+  
                 <p className="mx-2 mt-8 text-center border border-gray-800 text-lg lg:text-xl text-red-500 font-semibold bg-gray-100 p-4 rounded-lg">
                   If board position changes to original after promotion, just attempt an illegal move ,
                 </p>
@@ -349,8 +354,8 @@ const AgainstStockfish = () => {
       </div>
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
     </div>
+    </div>
   )
 }
 
 export default AgainstStockfish
-

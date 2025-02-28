@@ -8,7 +8,7 @@ import moveSoundFile from "../../assets/sounds/move.mp3";
 import captureSoundFile from "../../assets/sounds/capture.mp3";
 import checkSoundFile from "../../assets/sounds/check.mp3";
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3";
-import bg from "../../assets/images/bgprofile.jpg";
+import bg from "../../assets/images/bgprofile.webp";
 import { BASE_URL } from "../../url";
 import GameOverModal from "../GameOverModal"
 
@@ -65,7 +65,7 @@ const Puzzle1 = () => {
   const handleCheckboxChange = () => {
     setMobileMode((prev) => {
       const newMode = !prev;
-  
+
       if (newMode) {
         document.body.style.overflow = "hidden";
         document.documentElement.style.overflow = "hidden";
@@ -263,9 +263,12 @@ const Puzzle1 = () => {
         backgroundImage: `url(${bg})`,
         backgroundSize: "contain",
         backgroundRepeat: "repeat-y",
+        sizes: "(max-width: 600px) 400px, 800px",
+        loading: "lazy",
+        alt: "Chess background",
       }}
     >
-      {!mobileMode &&(
+      {!mobileMode && (
         <>
           <h1 className="text-3xl text-center font-bold mt-24 z-10 bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent">
             The Magician's Puzzle
@@ -295,7 +298,7 @@ const Puzzle1 = () => {
             ref={chessRef}
             style={{ width: window.innerWidth > 1028 ? "36vw" : "100vw" }}
           ></div>
-         <div className="mt-6">
+          <div className="mt-6">
             <label className="inline-flex items-center gap-2 text-black font-semibold bg-gray-300 p-2 rounded-md">
               <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
               Mobile Mode

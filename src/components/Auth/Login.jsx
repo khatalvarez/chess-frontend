@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
 import { Eye, EyeOff, CheckCircle } from "lucide-react"
-import bgImage from "../../assets/images/bgChess.jpg"
+import bgImage from "../../assets/images/bgChess.webp"
 import axios from "axios"
 import { login } from "../../store/authSlice"
 import PieceArray from "../PieceArray"
@@ -71,10 +71,14 @@ function Login() {
   }
 
   return (
-    <div
-      className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center"
-      style={{ backgroundImage: `url(${bgImage})` }}
-    >
+    <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
+    <img 
+      src={bgImage} 
+      sizes="(max-width: 600px) 400px, 800px" 
+      loading="lazy" 
+      alt="Chess background" 
+      className="absolute inset-0 w-full h-full object-cover"
+    />
       <ToastContainer position="top-center" autoClose={3000} />
       <motion.div
         initial={{ opacity: 0, y: -50 }}

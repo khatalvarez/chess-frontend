@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { Eye, EyeOff, CheckCircle } from "lucide-react"
-import bgChess from "../../assets/images/bgChess.jpg"
+import bgChess from "../../assets/images/bgChess.webp"
 import { BASE_URL } from "../../url"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -79,10 +79,14 @@ const SignUp = () => {
   }
 
   return (
-    <div
-      className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center"
-      style={{ backgroundImage: `url(${bgChess})` }}
-    >
+    <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
+    <img 
+      src={bgChess} 
+      sizes="(max-width: 600px) 400px, 800px" 
+      loading="lazy" 
+      alt="Chess background" 
+      className="absolute inset-0 w-full h-full object-cover"
+    />
       <ToastContainer position="top-center" autoClose={3000} />
       <motion.div
         initial={{ opacity: 0, y: -50 }}

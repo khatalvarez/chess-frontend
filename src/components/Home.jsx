@@ -2,13 +2,13 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
-import bgChess from "../assets/images/bgChess.jpg"
+import bgChess from "../assets/images/bgChess.webp"
 
 function Home() {
   const authStatus = useSelector((state) => state.auth.status)
   const userData = useSelector((state) => state.auth.userData)
   const [typedText, setTypedText] = useState("")
-  const fullText = "WWelcome to Chess Master"
+  const fullText = "Welcome to Chess Master"
 
   useEffect(() => {
     let index = 0
@@ -26,18 +26,14 @@ function Home() {
 
   return (
     <div className="relative w-screen h-screen flex items-center justify-center overflow-hidden">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5 }}
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage: `url(${bgChess})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "brightness(0.3)",
-        }}
+      <img
+        src={bgChess}
+        sizes="(max-width: 600px) 400px, (max-width: 1200px) 800px, 1200px"
+        loading="lazy"
+        alt="Chess background"
+        className="absolute inset-0 w-full h-full object-cover brightness-50 -z-10"
       />
+
       <div className="relative z-10 w-11/12 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -57,7 +53,6 @@ function Home() {
                     className="inline-block w-1 h-8 ml-1 bg-green-400"
                   />
                 )}
-
               </AnimatePresence>
             </h1>
 
@@ -109,4 +104,3 @@ function Home() {
 }
 
 export default Home
-

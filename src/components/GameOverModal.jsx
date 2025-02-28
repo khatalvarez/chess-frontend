@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import bg from "../assets/images/bgprofile.jpg";
+import bg from "../assets/images/bgprofile.webp";
 
 const GameOverModal = ({ isOpen, message, onRestart }) => {
   useEffect(() => {
