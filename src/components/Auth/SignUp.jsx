@@ -1,11 +1,14 @@
+"use client"
+
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { Eye, EyeOff, CheckCircle } from "lucide-react"
+import { Eye, EyeOff, CheckCircle, User, Mail, Lock, ChevronRight } from "lucide-react"
 import bgChess from "../../assets/images/bgChess.webp"
 import { BASE_URL } from "../../url"
-import { toast, ToastContainer } from "react-toastify"
+import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import PieceArray from "../PieceArray"
 
 const SignUp = () => {
   const navigate = useNavigate()
@@ -20,6 +23,7 @@ const SignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [errors, setErrors] = useState({})
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -27,6 +31,14 @@ const SignUp = () => {
       ...formData,
       [name]: value,
     })
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: null,
+      })
+    }
   }
 
   const togglePasswordVisibility = (field) => {
@@ -37,14 +49,43 @@ const SignUp = () => {
     }
   }
 
+  const validateForm = () => {
+    const newErrors = {}
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Username is required"
+    } else if (formData.name.length < 3) {
+      newErrors.name = "Username must be at least 3 characters"
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required"
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email is invalid"
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required"
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters"
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const onSubmitHandler = async (e) => {
     e.preventDefault()
-    const { name, email, password, confirmPassword } = formData
 
-    if (password !== confirmPassword) {
-      toast.error("Password and confirm password do not match.")
+    if (!validateForm()) {
       return
     }
+
+    const { name, email, password } = formData
 
     setIsLoading(true)
 
@@ -63,16 +104,18 @@ const SignUp = () => {
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.message || "Something went wrong")
+        throw new Error(data.error || "Something went wrong")
       }
+
       setIsSuccess(true)
-      toast.success("Sign up successful! Redirecting to login...")
+      toast.success("Account created successfully!")
+
       setTimeout(() => {
         navigate("/login")
-      }, 2000)
+      }, 1500)
     } catch (error) {
       console.error("Error during signup:", error)
-      toast.error(error.message)
+      toast.error(error.message || "Registration failed")
     } finally {
       setIsLoading(false)
     }
@@ -80,152 +123,188 @@ const SignUp = () => {
 
   return (
     <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
-    <img 
-      src={bgChess} 
-      sizes="(max-width: 600px) 400px, 800px" 
-      loading="lazy" 
-      alt="Chess background" 
-      className="absolute inset-0 w-full h-full object-cover"
-    />
-      <ToastContainer position="top-center" autoClose={3000} />
+      <img
+        src={bgChess || "/placeholder.svg"}
+        sizes="(max-width: 600px) 400px, 800px"
+        loading="lazy"
+        alt="Chess background"
+        className="absolute inset-0 w-full h-full object-cover brightness-[0.3]"
+      />
+
       <motion.div
-        initial={{ opacity: 0, y: -50 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-8 lg:p-12 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg"
+        className="relative z-10 w-11/12 max-w-md lg:max-w-lg mx-auto"
       >
-        <h2 className="text-4xl lg:text-5xl font-bold text-white text-center mb-8">Sign Up</h2>
-        <form className="space-y-4" onSubmit={onSubmitHandler}>
-          <div>
-            <label htmlFor="username" className="block text-lg font-medium text-white">
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="name"
-              className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your username"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
+        <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-700 p-8 lg:p-12 rounded-xl shadow-2xl">
+          <div className="text-center mb-8">
+            <PieceArray />
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Create Account</h2>
+            <p className="text-gray-300">Join the Chess Master community</p>
           </div>
-          <div>
-            <label htmlFor="email" className="block text-lg font-medium text-white">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-lg font-medium text-white">
-              Password
-            </label>
-            <div className="relative mt-1">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                className="block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-xs leading-5 bg-gray-600"
-                onClick={() => togglePasswordVisibility("password")}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-300" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-300" />
-                )}
-              </button>
+
+          <form className="space-y-5" onSubmit={onSubmitHandler}>
+            <div>
+              <label htmlFor="username" className="block text-lg font-medium text-white mb-2">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  id="username"
+                  name="name"
+                  className={`pl-10 block w-full px-4 py-3 bg-gray-800 border ${
+                    errors.name ? "border-red-500" : "border-gray-600"
+                  } rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="Enter your username"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
             </div>
-          </div>
-          <div>
-            <label htmlFor="confirmPassword" className="block text-lg font-medium text-white">
-              Confirm Password
-            </label>
-            <div className="relative mt-1">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                name="confirmPassword"
-                className="block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 bg-gray-600"
-                onClick={() => togglePasswordVisibility("confirmPassword")}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-300" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-300" />
-                )}
-              </button>
+
+            <div>
+              <label htmlFor="email" className="block text-lg font-medium text-white mb-2">
+                Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  className={`pl-10 block w-full px-4 py-3 bg-gray-800 border ${
+                    errors.email ? "border-red-500" : "border-gray-600"
+                  } rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
             </div>
-          </div>
-          <div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                isLoading ? "bg-gray-100 text-black font-bold" : isSuccess ? "bg-gray-200 text-green-700 font-bold" : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-              disabled={isLoading || isSuccess}
-            >
-              <AnimatePresence mode="wait">
-                {isLoading && (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="mr-2"
-                  >
-                    <div className="w-5 h-5 border-t-2 border-black border-solid rounded-full animate-spin"></div>
-                  </motion.div>
+
+            <div>
+              <label htmlFor="password" className="block text-lg font-medium text-white mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  className={`pl-10 block w-full px-4 py-3 bg-gray-800 border ${
+                    errors.password ? "border-red-500" : "border-gray-600"
+                  } rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="Create a password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                  onClick={() => togglePasswordVisibility("password")}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-lg font-medium text-white mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  className={`pl-10 block w-full px-4 py-3 bg-gray-800 border ${
+                    errors.confirmPassword ? "border-red-500" : "border-gray-600"
+                  } rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                  onClick={() => togglePasswordVisibility("confirmPassword")}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
+            </div>
+
+            <div className="pt-2">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-green-600 to-teal-700 hover:from-green-700 hover:to-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300"
+                disabled={isLoading || isSuccess}
+              >
+                <AnimatePresence mode="wait">
+                  {isLoading && (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="mr-2"
+                    >
+                      <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                    </motion.div>
+                  )}
+                  {isSuccess && (
+                    <motion.div
+                      key="success"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      className="mr-2"
+                    >
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <span>{isLoading ? "Creating account..." : isSuccess ? "Success!" : "Create Account"}</span>
+                {!isLoading && !isSuccess && (
+                  <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                 )}
-                {isSuccess && (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    className="mr-2"
-                  >
-                    <CheckCircle className="w-5 h-5 text-green-700 font-bold" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {isLoading ? "Processing..." : isSuccess ? "Success!" : "Sign Up"}
-            </motion.button>
+              </motion.button>
+            </div>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-gray-400">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-blue-400 hover:text-blue-300 transition duration-150 ease-in-out"
+              >
+                Sign in
+              </Link>
+            </p>
           </div>
-        </form>
-        <div className="mt-6 text-center">
-          <Link
-            to="/login"
-            className="font-medium text-blue-400 hover:text-blue-300 transition duration-150 ease-in-out"
-          >
-            Already have an account? Log in
-          </Link>
         </div>
       </motion.div>
     </div>

@@ -1,106 +1,236 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import logo from "../assets/images/chessLogo.webp";
-import { login } from '../store/authSlice';
-import axios from 'axios';
-import { BASE_URL } from '../url';
+import { useState, useEffect } from "react"
+import { Link, useLocation } from "react-router-dom"
+import { useSelector, useDispatch } from "react-redux"
+import { motion, AnimatePresence } from "framer-motion"
+import { Menu, X, ChevronDown, User, LogOut } from "lucide-react"
+import logo from "../assets/images/chessLogo.webp"
+import { login } from "../store/authSlice"
+import axios from "axios"
+import { BASE_URL } from "../url"
 
 function Navbar() {
-    const dispatch = useDispatch();
-    const authStatus = useSelector(state => state.auth.status);
-    const userData = useSelector(state => state.auth.userData);
-    const location = useLocation();
+  const dispatch = useDispatch()
+  const authStatus = useSelector((state) => state.auth.status)
+  const userData = useSelector((state) => state.auth.userData)
+  const location = useLocation()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
-    React.useEffect(() => {
-        axios.get(`${BASE_URL}/profile`, {
-            withCredentials: true
-        })
-            .then(res => {
-                const data = res.data;
-                dispatch(login(data));
-            })
-            .catch(error => {
-                console.error('Error fetching profile:', error);
-            });
-    }, [dispatch]);
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
 
-    // Override authStatus to false if the route is /login or /signup
-    const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
-    const effectiveAuthStatus = isAuthPage ? 'false' : authStatus;
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
-    return (
-        <nav className="fixed top-0 left-0 w-full z-50 bg-zinc-700 bg-opacity-90 p-3 shadow-md">
-            <div className="container mx-auto flex justify-between items-center">
-            <div className="flex items-center gap-3">
-  <Link to="/" className="flex items-center gap-2">
-    <img src={logo} className="w-6 h-6 object-contain" alt="Logo" />
+  useEffect(() => {
+    axios
+      .get(`${BASE_URL}/profile`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        const data = res.data
+        dispatch(login(data))
+      })
+      .catch((error) => {
+        console.error("Error fetching profile:", error)
+      })
+  }, [dispatch])
 
-    <span className="text-white font-semibold text-sm">Chess Master</span>
-  </Link>
-</div>
+  useEffect(() => {
+    // Close mobile menu when route changes
+    setIsMenuOpen(false)
+  }, [location.pathname])
 
+  // Override authStatus to false if the route is /login or /signup
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup"
+  const effectiveAuthStatus = isAuthPage ? "false" : authStatus
 
-                <ul className="flex sm:space-x-8 space-x-4">
-                    <li>
+  return (
+    <motion.nav
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        scrolled ? "bg-gray-900 shadow-lg" : "bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg"
+      }`}
+    >
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex justify-between items-center">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 group">
+            <motion.img
+              src={logo}
+              className="w-8 h-8 object-contain"
+              alt="Chess Master Logo"
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.5 }}
+            />
+            <span className="text-white font-bold text-xl group-hover:text-green-400 transition-colors duration-300">
+              Chess Master
+            </span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link
+              to="/"
+              className={`text-lg font-medium transition-colors duration-300 ${
+                location.pathname === "/" ? "text-green-400" : "text-white hover:text-green-400"
+              }`}
+            >
+              Home
+            </Link>
+
+            {effectiveAuthStatus === "true" && userData?.username ? (
+              <>
+                <Link
+                  to="/modeselector"
+                  className={`text-lg font-medium transition-colors duration-300 ${
+                    location.pathname === "/modeselector" ? "text-green-400" : "text-white hover:text-green-400"
+                  }`}
+                >
+                  Play
+                </Link>
+                <Link
+                  to="/puzzle"
+                  className={`text-lg font-medium transition-colors duration-300 ${
+                    location.pathname === "/puzzle" ? "text-green-400" : "text-white hover:text-green-400"
+                  }`}
+                >
+                  Puzzles
+                </Link>
+
+                {/* Profile Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                    className="flex items-center space-x-1 text-lg font-medium text-green-400 hover:text-green-300 transition-colors duration-300"
+                  >
+                    <span className="capitalize">{userData?.username?.split(" ")[0]}</span>
+                    <ChevronDown size={16} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isProfileMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50"
+                      >
                         <Link
-                            to="/"
-                            className="text-white text-md md:text-xl hover:text-green-400 transition duration-300 ease-in-out"
+                          to="/profile"
+                          className="flex items-center px-4 py-2 text-sm text-white hover:bg-gray-700"
+                          onClick={() => setIsProfileMenuOpen(false)}
                         >
-                            Home
+                          <User size={16} className="mr-2" />
+                          View Profile
                         </Link>
-                    </li>
-                    {effectiveAuthStatus === "true" && userData.username ? (
-                        <>
-                            <li>
-                                <Link
-                                    to="/modeselector"
-                                    className="text-white text-md md:text-xl hover:text-green-400 transition duration-300 ease-in-out"
-                                >
-                                    Mode
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/puzzle"
-                                    className="text-white text-md md:text-xl hover:text-green-400 transition duration-300 ease-in-out"
-                                >
-                                    Puzzles
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/profile"
-                                    className="text-green-400 text-md md:text-xl hover:text-green-300 transition duration-300 capitalize ease-in-out"
-                                >
-                                    {userData ? userData.username.split(" ")[0] : "Profile"}
-                                </Link>
-                            </li>
-                        </>
-                    ) : (
-                        <>
-                            <li>
-                                <Link
-                                    to="/signup"
-                                    className="text-white text-md md:text-xl hover:text-green-500 transition duration-300 ease-in-out"
-                                >
-                                    SignUp
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/login"
-                                    className="text-white text-md md:text-xl hover:text-green-500 transition duration-300 ease-in-out"
-                                >
-                                    Login
-                                </Link>
-                            </li>
-                        </>
+                        <Link
+                          to="/login"
+                          className="flex items-center px-4 py-2 text-sm text-white hover:bg-gray-700"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          <LogOut size={16} className="mr-2" />
+                          Logout
+                        </Link>
+                      </motion.div>
                     )}
-                </ul>
+                  </AnimatePresence>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/signup"
+                  className="text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
+                >
+                  Sign Up
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors duration-300"
+                >
+                  Login
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button className="md:hidden text-white focus:outline-none" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden bg-gray-800"
+          >
+            <div className="px-4 py-3 space-y-4">
+              <Link
+                to="/"
+                className="block text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
+              >
+                Home
+              </Link>
+
+              {effectiveAuthStatus === "true" && userData?.username ? (
+                <>
+                  <Link
+                    to="/modeselector"
+                    className="block text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
+                  >
+                    Play
+                  </Link>
+                  <Link
+                    to="/puzzle"
+                    className="block text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
+                  >
+                    Puzzles
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="block text-lg font-medium text-green-400 hover:text-green-300 transition-colors duration-300 capitalize"
+                  >
+                    {userData?.username?.split(" ")[0]}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/signup"
+                    className="block text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
+                  >
+                    Sign Up
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="block text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
+                  >
+                    Login
+                  </Link>
+                </>
+              )}
             </div>
-        </nav>
-    );
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
+  )
 }
 
-export default Navbar;
+export default Navbar
+

@@ -1,14 +1,16 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
-import { Eye, EyeOff, CheckCircle } from "lucide-react"
+import { Eye, EyeOff, CheckCircle, Mail, Lock, ChevronRight } from "lucide-react"
 import bgImage from "../../assets/images/bgChess.webp"
 import axios from "axios"
 import { login } from "../../store/authSlice"
 import PieceArray from "../PieceArray"
 import { BASE_URL } from "../../url"
-import { toast, ToastContainer } from "react-toastify"
+import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 
 function Login() {
@@ -28,14 +30,21 @@ function Login() {
       .then((res) => {
         const data = res.data
         dispatch(login(data))
+        navigate("/modeselector")
       })
       .catch((error) => {
         console.error("Error fetching profile:", error)
       })
-  }, [dispatch])
+  }, [dispatch, navigate])
 
   const handleLogin = async (e) => {
     e.preventDefault()
+
+    if (!email || !password) {
+      toast.error("Please fill in all fields")
+      return
+    }
+
     setIsLoading(true)
     try {
       const response = await fetch(`${BASE_URL}/user/login`, {
@@ -51,16 +60,17 @@ function Login() {
       if (response.ok) {
         setIsSuccess(true)
         dispatch(login(data))
-        toast.success("Login successful! Redirecting...")
+        toast.success("Login successful!")
+
         setTimeout(() => {
           navigate("/modeselector")
-        }, 2000)
+        }, 1500)
       } else {
         toast.error(data.error || "Login failed")
       }
     } catch (error) {
       console.error("Error during login:", error)
-      toast.error("Internal server error")
+      toast.error("Connection error. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -72,111 +82,128 @@ function Login() {
 
   return (
     <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
-    <img 
-      src={bgImage} 
-      sizes="(max-width: 600px) 400px, 800px" 
-      loading="lazy" 
-      alt="Chess background" 
-      className="absolute inset-0 w-full h-full object-cover"
-    />
-      <ToastContainer position="top-center" autoClose={3000} />
+      <img
+        src={bgImage || "/placeholder.svg"}
+        sizes="(max-width: 600px) 400px, 800px"
+        loading="lazy"
+        alt="Chess background"
+        className="absolute inset-0 w-full h-full object-cover brightness-[0.3]"
+      />
+
       <motion.div
-        initial={{ opacity: 0, y: -50 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 p-8 lg:p-12 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg"
+        className="relative z-10 w-11/12 max-w-md lg:max-w-lg mx-auto"
       >
-        <PieceArray />
-        <h2 className="text-4xl lg:text-5xl font-bold text-center text-white mb-8">Welcome Back</h2>
-        <form className="space-y-6" onSubmit={handleLogin}>
-          <div>
-            <label htmlFor="email" className="block text-lg font-medium text-white">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="you@example.com"
-              required
-            />
+        <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-700 p-8 lg:p-12 rounded-xl shadow-2xl">
+          <div className="text-center mb-8">
+            <PieceArray />
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">Welcome Back</h2>
+            <p className="text-gray-300">Sign in to continue your chess journey</p>
           </div>
-          <div>
-            <label htmlFor="password" className="block text-lg font-medium text-white">
-              Password
-            </label>
-            <div className="relative mt-1">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="••••••••"
-                required
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 bg-gray-600"
-                onClick={togglePasswordVisibility}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-300" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-300" />
-                )}
-              </button>
+
+          <form className="space-y-6" onSubmit={handleLogin}>
+            <div>
+              <label htmlFor="email" className="block text-lg font-medium text-white mb-2">
+                Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 block w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              type="submit"
-              className={`w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                isLoading ? "bg-gray-100 text-black font-bold" : isSuccess ? "bg-gray-200 text-green-700 font-bold" : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-              disabled={isLoading || isSuccess}
-            >
-              <AnimatePresence mode="wait">
-                {isLoading && (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="mr-2 text-green-700"
-                  >
-                    <div className="w-5 h-5 border-t-2 border-black border-solid rounded-full animate-spin"></div>
-                  </motion.div>
+
+            <div>
+              <label htmlFor="password" className="block text-lg font-medium text-white mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 block w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                  onClick={togglePasswordVisibility}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="group w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
+                disabled={isLoading || isSuccess}
+              >
+                <AnimatePresence mode="wait">
+                  {isLoading && (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="mr-2"
+                    >
+                      <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                    </motion.div>
+                  )}
+                  {isSuccess && (
+                    <motion.div
+                      key="success"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      className="mr-2"
+                    >
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <span>{isLoading ? "Signing in..." : isSuccess ? "Success!" : "Sign in"}</span>
+                {!isLoading && !isSuccess && (
+                  <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                 )}
-                {isSuccess && (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.5 }}
-                    className="mr-2 text-green-700"
-                  >
-                    <CheckCircle className="w-5 h-5 text-green-700 font-bold" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {isLoading ? "Processing..." : isSuccess ? "Success!" : "Sign in"}
-            </motion.button>
+              </motion.button>
+            </div>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-gray-400">
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="font-medium text-blue-400 hover:text-blue-300 transition duration-150 ease-in-out"
+              >
+                Sign up
+              </Link>
+            </p>
           </div>
-        </form>
-        <div className="mt-6 text-center">
-          <Link
-            to="/signup"
-            className="font-medium text-blue-400 hover:text-blue-300 transition duration-150 ease-in-out"
-          >
-            Don't have an account? Sign up
-          </Link>
         </div>
       </motion.div>
     </div>
