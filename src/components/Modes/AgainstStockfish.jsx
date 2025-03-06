@@ -167,17 +167,13 @@ const AgainstStockfish = () => {
 
     const updateStatus = debounce(() => {
       let status = ""
-      let moveColor = "White"
-
-      if (game.turn() === "b") {
-        moveColor = "Black"
-      }
-
+      const playerTurn = game.turn() === 'w' ? "You" : "Computer"
+    
       if (game.isGameOver()) {
         if (game.isCheckmate()) {
-          const winner = game.turn() === "w" ? "Black" : "White"
+          const winner = game.turn() === 'w' ? "Computer" : "You"
           status = `Checkmate! ${winner} wins!`
-          setGameOverMessage(`You ${winner === "White" ? "win" : "lose"}!`)
+          setGameOverMessage(winner === "You" ? "You win!" : "You lose!")
           checkmateSound.play()
         } else if (game.isDraw()) {
           status = "Game over, drawn position"
@@ -188,16 +184,17 @@ const AgainstStockfish = () => {
         }
         setIsGameOver(true)
       } else {
-        status = moveColor + " to move"
-
+        status = `${playerTurn}'s move`
+    
         if (game.isCheck()) {
-          status += ", " + moveColor + " is in check"
+          status += `, ${playerTurn === 'You' ? 'are' : 'is'} in check`
           checkSound.play()
         }
       }
-
+    
       setCurrentStatus(status)
     }, 100)
+    
 
     const removeGreySquares = () => {
       const squares = document.querySelectorAll(".square-55d63")
@@ -248,7 +245,7 @@ const AgainstStockfish = () => {
   gameRef.current.reset(); // Reset the chess game state
   boardRef.current.position("start"); // Reset the board position
   setMoves([]);
-  setCurrentStatus("White to move");
+  setCurrentStatus("Your move");
 };
 
   return (
@@ -275,7 +272,7 @@ const AgainstStockfish = () => {
           <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
             <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
               <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
-                Current Status: {currentStatus ? currentStatus : "White to move"}
+                Current Status: {currentStatus ? currentStatus : "Your move"}
               </div>
               <div className="mt-4">
                 <label className="mr-2 text-white text-lg lg:text-xl">Promotion Piece:</label>

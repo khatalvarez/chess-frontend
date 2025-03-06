@@ -10,15 +10,14 @@ import pieceImages from "../pieceImages";
 import bg from "../../assets/images/bgprofile.webp";
 import GameOverModal from "../GameOverModal";
 
-// Initialize sound effects
 const moveSound = new Howl({ src: [moveSoundFile] });
 const captureSound = new Howl({ src: [captureSoundFile] });
 const checkSound = new Howl({ src: [checkSoundFile] });
 const checkmateSound = new Howl({ src: [checkmateSoundFile] });
 
 const ChessboardComponent = () => {
-  const chessRef = useRef(null); // Reference to the DOM element for the chessboard
-  const boardRef = useRef(null); // Reference to the Chessboard instance
+  const chessRef = useRef(null);
+  const boardRef = useRef(null); 
   const gameRef = useRef(new Chess());
   const [currentStatus, setCurrentStatus] = useState(null); // State to hold the current game status
   const [moves, setMoves] = useState([]); // State to hold the list of moves
@@ -29,7 +28,7 @@ const ChessboardComponent = () => {
   const handleCheckboxChange = () => {
     setMobileMode((prev) => {
       const newMode = !prev;
-  
+
       if (newMode) {
         document.body.style.overflow = "hidden";
         document.documentElement.style.overflow = "hidden";
@@ -45,8 +44,8 @@ const ChessboardComponent = () => {
     });
   };
 
-useEffect(() => {
-    const game = new Chess(); // Create a new Chess instance
+  useEffect(() => {
+    const game = gameRef.current;
 
     const onDragStart = (source, piece, position, orientation) => {
       // Do not pick up pieces if the game is over
@@ -135,9 +134,10 @@ useEffect(() => {
 
     const updateStatus = () => {
       const moveColor = game.turn() === "w" ? "White" : "Black";
-
+    
       if (game.isCheckmate()) {
-        const winner = moveColor === "White" ? "Black" : "White";
+        // Determine winner based on who delivered checkmate
+        const winner = moveColor === "White" ? "Computer" : "You";
         setIsGameOver(true);
         setGameOverMessage(`${winner} wins by checkmate!`);
         checkmateSound.play();
@@ -154,9 +154,9 @@ useEffect(() => {
         setIsGameOver(true);
         setGameOverMessage("It's a draw!");
       } else {
-        setCurrentStatus(`${moveColor} to move`);
+        setCurrentStatus(`${moveColor === 'White' ? 'Your' : 'Computer\'s'} move`);
         if (game.inCheck()) {
-          setCurrentStatus(`${moveColor} is in check!`);
+          setCurrentStatus(`${moveColor === 'White' ? 'You are' : 'Computer is'} in check!`);
           checkSound.play();
         }
       }
@@ -199,53 +199,53 @@ useEffect(() => {
     };
   }, []);
 
-useEffect(() => {
-  if (mobileMode) {
-    const handleTouchStart = (event) => {
-      const squareEl = event.currentTarget;
-      // Extract the square identifier from the element's classes (e.g., "square-e4")
-      const squareClass = [...squareEl.classList].find(cls => cls.startsWith("square-") && cls !== "square-55d63");
-      if (squareClass) {
-        const square = squareClass.replace("square-", "");
-        // Highlight the tapped square
-        greySquare(square);
-        // Highlight its legal moves
-        const moves = gameRef.current.moves({ square, verbose: true });
-        moves.forEach(move => greySquare(move.to));
-      }
-    };
-// Add touchstart listeners to each square on the board
-    const squares = document.querySelectorAll(".square-55d63");
-    squares.forEach(square => {
-      square.addEventListener("touchstart", handleTouchStart);
-    });
-
-    // Cleanup the event listeners on unmount or mobileMode change
-    return () => {
+  useEffect(() => {
+    if (mobileMode) {
+      const handleTouchStart = (event) => {
+        const squareEl = event.currentTarget;
+        // Extract the square identifier from the element's classes (e.g., "square-e4")
+        const squareClass = [...squareEl.classList].find(cls => cls.startsWith("square-") && cls !== "square-55d63");
+        if (squareClass) {
+          const square = squareClass.replace("square-", "");
+          // Highlight the tapped square
+          greySquare(square);
+          // Highlight its legal moves
+          const moves = gameRef.current.moves({ square, verbose: true });
+          moves.forEach(move => greySquare(move.to));
+        }
+      };
+      // Add touchstart listeners to each square on the board
+      const squares = document.querySelectorAll(".square-55d63");
       squares.forEach(square => {
-        square.removeEventListener("touchstart", handleTouchStart);
+        square.addEventListener("touchstart", handleTouchStart);
       });
-    };
-  }
-}, [mobileMode]);
+
+      // Cleanup the event listeners on unmount or mobileMode change
+      return () => {
+        squares.forEach(square => {
+          square.removeEventListener("touchstart", handleTouchStart);
+        });
+      };
+    }
+  }, [mobileMode]);
 
   const handleRestart = () => {
-  setIsGameOver(false);
-  setGameOverMessage("");
-  gameRef.current.reset(); // Reset the chess game state
-  boardRef.current.position("start"); // Reset the board position
-  setMoves([]);
-  setCurrentStatus("White to move");
-};
+    setIsGameOver(false);
+    setGameOverMessage("");
+    gameRef.current.reset(); // Reset the chess game state
+    boardRef.current.position("start"); // Reset the board position
+    setMoves([]);
+    setCurrentStatus("White to move");
+  };
 
 
   return (
-  <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
-      <img 
-        src={bg} 
-        sizes="(max-width: 600px) 400px, 800px" 
-        loading="lazy" 
-        alt="Chess background" 
+    <div className="w-screen min-h-screen bg-cover bg-no-repeat bg-center flex items-center justify-center">
+      <img
+        src={bg}
+        sizes="(max-width: 600px) 400px, 800px"
+        loading="lazy"
+        alt="Chess background"
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div className="flex h-fit py-32 items-center justify-center w-screen relative">
@@ -263,59 +263,59 @@ useEffect(() => {
             <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl border border-gray-200 lg:p-4 rounded-xl shadow-lg w-11/12 max-w-md lg:max-w-lg mx-auto">
               <div className="lg:mx-4 w-fit mx-6 mt-8 mb-10">
                 <div className="rounded-xl shadow-lg text-center p-8 px-8 lg:w-full text-xl lg:text-2xl lg:text-3xl bg-gradient-to-r from-green-500 to-blue-600 bg-opacity-30 text-white border border-gray-200 flex-shrink-0">
-                  Current Status: {currentStatus ? currentStatus : "White to move"}
+                  Current Status: {currentStatus ? currentStatus : "Your move"}
                 </div>
-              <div className="mt-8">
-                <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
-                  Always promotes to queen.
-                </p>
+                <div className="mt-8">
+                  <p className="text-weight-500 mx-2 mt-3 text-center text-xl text-green-400">
+                    Always promotes to queen.
+                  </p>
 
-                <table className="mt-10 w-full border-collapse border border-gray-700 rounded-lg overflow-hidden">
-                  <thead>
-                    <tr className="bg-gray-800 text-center text-white">
-                      <th className="border border-gray-700 px-6 py-3">Move</th>
-                      <th className="border border-gray-700 px-6 py-3">From</th>
-                      <th className="border border-gray-700 px-6 py-3">To</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {moves.map((move, index) => (
-                      <tr
-                        key={index}
-                        className={
-                          index % 2 === 0
-                            ? "bg-gray-700 text-white text-center"
-                            : "bg-gray-600 text-gray-200 text-center"
-                        }
-                      >
-                        <td className="border border-gray-700 px-6 py-4">
-                          {index + 1}
-                        </td>
-                        <td className="border border-gray-700 px-6 py-4">
-                          {move.from}
-                        </td>
-                        <td className="border border-gray-700 px-6 py-4">
-                          {move.to}
-                        </td>
+                  <table className="mt-10 w-full border-collapse border border-gray-700 rounded-lg overflow-hidden">
+                    <thead>
+                      <tr className="bg-gray-800 text-center text-white">
+                        <th className="border border-gray-700 px-6 py-3">Move</th>
+                        <th className="border border-gray-700 px-6 py-3">From</th>
+                        <th className="border border-gray-700 px-6 py-3">To</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {moves.map((move, index) => (
+                        <tr
+                          key={index}
+                          className={
+                            index % 2 === 0
+                              ? "bg-gray-700 text-white text-center"
+                              : "bg-gray-600 text-gray-200 text-center"
+                          }
+                        >
+                          <td className="border border-gray-700 px-6 py-4">
+                            {index + 1}
+                          </td>
+                          <td className="border border-gray-700 px-6 py-4">
+                            {move.from}
+                          </td>
+                          <td className="border border-gray-700 px-6 py-4">
+                            {move.to}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="mt-8 text-white text-center">
+                <button
+                  onClick={handleRestart}
+                  className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
+                >
+                  Restart
+                </button>
               </div>
             </div>
-            <div className="mt-8 text-white text-center">
-              <button
-                onClick={handleRestart}
-                className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
-              >
-                Restart
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
+        <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
       </div>
-      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
-    </div>
     </div>
   );
 };

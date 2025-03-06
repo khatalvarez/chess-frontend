@@ -5,9 +5,10 @@ import { motion } from "framer-motion"
 import { Users, Clock, CastleIcon as ChessKnight } from "lucide-react"
 import bg from "../assets/images/bgprofile.webp"
 
-function WaitQueue({ length = 2 }) {
+function WaitQueue({ socket = null, length = 2 }) {
   const [dots, setDots] = useState("")
   const [elapsed, setElapsed] = useState(0)
+  const [playersWaiting, setPlayersWaiting] = useState(1)
 
   useEffect(() => {
     // Animated dots
@@ -23,17 +24,45 @@ function WaitQueue({ length = 2 }) {
       setElapsed((prev) => prev + 1)
     }, 1000)
 
+    // Listen for waiting players count if socket is available
+    if (socket) {
+      console.log("WaitQueue: Socket connected, listening for updates")
+
+      // Request current waiting count
+      socket.emit("getWaitingCount")
+
+      socket.on("waitingCount", (count) => {
+        console.log("Players waiting:", count)
+        setPlayersWaiting(count)
+      })
+
+      // Request updates every 5 seconds
+      const waitingInterval = setInterval(() => {
+        socket.emit("getWaitingCount")
+      }, 5000)
+
+      return () => {
+        clearInterval(dotsInterval)
+        clearInterval(elapsedInterval)
+        clearInterval(waitingInterval)
+        socket.off("waitingCount")
+      }
+    }
+
     return () => {
       clearInterval(dotsInterval)
       clearInterval(elapsedInterval)
     }
-  }, [])
+  }, [socket])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs < 10 ? "0" + secs : secs}`
   }
+
+  // Calculate remaining players needed
+  const playersNeeded = Math.max(0, length - playersWaiting)
 
   return (
     <div
@@ -65,14 +94,14 @@ function WaitQueue({ length = 2 }) {
 
           <h2 className="text-3xl font-bold text-white mb-2">Finding Opponent</h2>
           <p className="text-xl text-gray-300 mb-8">
-            Waiting for {length - 1} more player{length - 1 !== 1 ? "s" : ""} to join{dots}
+            Waiting for {playersNeeded} more player{playersNeeded !== 1 ? "s" : ""} to join{dots}
           </p>
 
           <div className="flex items-center justify-center space-x-8 mb-8">
             <div className="text-center">
               <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
               <p className="text-sm text-gray-400">Players Needed</p>
-              <p className="text-2xl font-bold text-white">{length - 1}</p>
+              <p className="text-2xl font-bold text-white">{playersNeeded}</p>
             </div>
 
             <div className="text-center">

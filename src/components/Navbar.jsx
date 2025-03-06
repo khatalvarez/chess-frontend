@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
@@ -16,6 +16,7 @@ function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const profileMenuRef = useRef(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,6 +45,17 @@ function Navbar() {
     // Close mobile menu when route changes
     setIsMenuOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    // Close profile menu when clicking outside
+    function handleClickOutside(event) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   // Override authStatus to false if the route is /login or /signup
   const isAuthPage = location.pathname === "/login" || location.pathname === "/signup"
@@ -105,7 +117,7 @@ function Navbar() {
                 </Link>
 
                 {/* Profile Dropdown */}
-                <div className="relative">
+                <div className="relative"  ref={profileMenuRef}>
                   <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     className="flex items-center space-x-1 text-lg font-medium text-green-400 hover:text-green-300 transition-colors duration-300"
