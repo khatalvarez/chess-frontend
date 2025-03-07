@@ -402,6 +402,7 @@ const GlobalMultiplayer = () => {
 
     let status = ""
     const turn = game.turn() === "w" ? "White" : "Black"
+    const isPlayerTurn = (playerColor === "white" && turn === "White") || (playerColor === "black" && turn === "Black")
 
     if (game.isCheckmate()) {
       const winner = turn === "White" ? "Black" : "White"
@@ -428,6 +429,15 @@ const GlobalMultiplayer = () => {
               loser: userWon ? opponent.userId : user.userId,
             })
           }
+
+          // Show game over message
+          setTimeout(() => {
+            alert(`Game over! ${winner} wins by checkmate.`)
+            // Navigate after a short delay
+            setTimeout(() => {
+              navigate("/modeselector")
+            }, 2000)
+          }, 500)
         })
       }
     } else if (game.isDraw()) {
@@ -443,10 +453,19 @@ const GlobalMultiplayer = () => {
               players: [user.userId, opponent.userId],
             })
           }
+
+          // Show game over message
+          setTimeout(() => {
+            alert("Game over! It's a draw.")
+            // Navigate after a short delay
+            setTimeout(() => {
+              navigate("/modeselector")
+            }, 2000)
+          }, 500)
         })
       }
     } else {
-      status = `${turn} to move`
+      status = `${turn} to move${isPlayerTurn ? " (Your turn)" : ""}`
       if (game.inCheck()) {
         status += ", check!"
       }
