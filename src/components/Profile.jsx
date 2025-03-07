@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { useSelector, useDispatch } from "react-redux"
@@ -23,7 +25,7 @@ function Profile() {
     rating: 0,
   })
 
-  useEffect(() => {
+  const refreshProfileData = () => {
     setIsLoading(true)
     axios
       .get(`${BASE_URL}/profile`, {
@@ -53,6 +55,10 @@ function Profile() {
         setIsLoading(false)
         toast.error("Failed to load profile data")
       })
+  }
+
+  useEffect(() => {
+    refreshProfileData()
   }, [dispatch])
 
   const renderMatchHistory = (matchHistory) => {
@@ -66,6 +72,9 @@ function Profile() {
       )
     }
 
+    // Sort match history by date (newest first)
+    const sortedHistory = [...matchHistory].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -75,7 +84,15 @@ function Profile() {
       >
         <div className="p-4 bg-gray-700 bg-opacity-70 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-white">Match History</h2>
-          <Calendar className="text-gray-300" size={20} />
+          <div className="flex items-center space-x-2">
+            <Calendar className="text-gray-300" size={20} />
+            <button
+              onClick={refreshProfileData}
+              className="text-sm text-blue-300 hover:text-blue-100 transition-colors"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -91,7 +108,7 @@ function Profile() {
               </tr>
             </thead>
             <tbody>
-              {matchHistory.map((match, index) => (
+              {sortedHistory.map((match, index) => (
                 <motion.tr
                   key={match._id || index}
                   initial={{ opacity: 0, y: 10 }}

@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Users, Clock, CastleIcon as ChessKnight } from "lucide-react"
+import { Users, Clock, CastleIcon as ChessKnight, Wifi, WifiOff } from "lucide-react"
 import bg from "../assets/images/bgprofile.webp"
 
 function WaitQueue({ socket = null, length = 2 }) {
   const [dots, setDots] = useState("")
   const [elapsed, setElapsed] = useState(0)
   const [playersWaiting, setPlayersWaiting] = useState(1)
+  const [connectionStatus, setConnectionStatus] = useState(socket ? "connected" : "disconnected")
+  const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
     // Animated dots
@@ -27,6 +29,7 @@ function WaitQueue({ socket = null, length = 2 }) {
     // Listen for waiting players count if socket is available
     if (socket) {
       console.log("WaitQueue: Socket connected, listening for updates")
+      setConnectionStatus("connected")
 
       // Request current waiting count
       socket.emit("getWaitingCount")
@@ -36,9 +39,39 @@ function WaitQueue({ socket = null, length = 2 }) {
         setPlayersWaiting(count)
       })
 
+      socket.on("connect", () => {
+        console.log("Socket connected")
+        setConnectionStatus("connected")
+        socket.emit("getWaitingCount")
+      })
+
+      socket.on("disconnect", () => {
+        console.log("Socket disconnected")
+        setConnectionStatus("disconnected")
+      })
+
+      socket.on("connect_error", (error) => {
+        console.error("Connection error:", error)
+        setConnectionStatus("error")
+
+        // Implement retry logic with backoff
+        if (retryCount < 5) {
+          const timeout = Math.min(1000 * 2 ** retryCount, 30000)
+          console.log(`Retrying connection in ${timeout / 1000} seconds...`)
+
+          setTimeout(() => {
+            console.log("Attempting to reconnect...")
+            socket.connect()
+            setRetryCount((prev) => prev + 1)
+          }, timeout)
+        }
+      })
+
       // Request updates every 5 seconds
       const waitingInterval = setInterval(() => {
-        socket.emit("getWaitingCount")
+        if (socket.connected) {
+          socket.emit("getWaitingCount")
+        }
       }, 5000)
 
       return () => {
@@ -46,6 +79,9 @@ function WaitQueue({ socket = null, length = 2 }) {
         clearInterval(elapsedInterval)
         clearInterval(waitingInterval)
         socket.off("waitingCount")
+        socket.off("connect")
+        socket.off("disconnect")
+        socket.off("connect_error")
       }
     }
 
@@ -53,7 +89,7 @@ function WaitQueue({ socket = null, length = 2 }) {
       clearInterval(dotsInterval)
       clearInterval(elapsedInterval)
     }
-  }, [socket])
+  }, [socket, retryCount])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -109,6 +145,18 @@ function WaitQueue({ socket = null, length = 2 }) {
               <p className="text-sm text-gray-400">Wait Time</p>
               <p className="text-2xl font-bold text-white">{formatTime(elapsed)}</p>
             </div>
+
+            <div className="text-center">
+              {connectionStatus === "connected" ? (
+                <Wifi className="w-8 h-8 text-green-400 mx-auto mb-2" />
+              ) : (
+                <WifiOff className="w-8 h-8 text-red-400 mx-auto mb-2" />
+              )}
+              <p className="text-sm text-gray-400">Connection</p>
+              <p className="text-2xl font-bold text-white capitalize">
+                {connectionStatus === "connected" ? "Online" : "Offline"}
+              </p>
+            </div>
           </div>
 
           <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -122,6 +170,12 @@ function WaitQueue({ socket = null, length = 2 }) {
           <p className="mt-6 text-gray-400 text-sm">
             You'll be automatically matched with an opponent as soon as one becomes available.
           </p>
+
+          {connectionStatus !== "connected" && (
+            <p className="mt-4 text-red-400 text-sm">
+              Connection issue detected. Please check your internet connection or try refreshing the page.
+            </p>
+          )}
         </div>
       </div>
     </div>

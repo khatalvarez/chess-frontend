@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
-import { io } from "socket.io-client"
 import { useSelector } from "react-redux"
 import WaitQueue from "../WaitQueue"
 import { useNavigate } from "react-router-dom"
@@ -16,6 +15,7 @@ import checkmateSoundFile from "../../assets/sounds/checkmate.mp3"
 import boardbg from "../../assets/images/bgboard.webp"
 import { BASE_URL } from "../../url"
 import { Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react"
+import socketManager from "../../utils/SocketManager"
 
 // Initialize sound effects
 const moveSound = new Howl({ src: [moveSoundFile] })
@@ -26,14 +26,30 @@ const checkmateSound = new Howl({ src: [checkmateSoundFile] })
 const GlobalMultiplayer = () => {
   const addMatchToHistory = async (userId, opponentName, status) => {
     try {
-      console.log("Sending data:", { userId, opponentName, status })
-      const response = await axios.post(`${BASE_URL}/user/${userId}/match-history`, {
-        opponent: opponentName,
-        status,
-      })
+      console.log("Sending match data:", { userId, opponentName, status })
+      const response = await axios.post(
+        `${BASE_URL}/user/${userId}/match-history`,
+        {
+          opponent: opponentName,
+          status,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      )
       console.log("Match history added:", response.data)
+      return response.data
     } catch (error) {
       console.error("Error adding match to history:", error.response?.data || error.message)
+      // Implement retry logic
+      setTimeout(() => {
+        console.log("Retrying match history update...")
+        addMatchToHistory(userId, opponentName, status)
+      }, 3000)
+      return null
     }
   }
 
@@ -53,6 +69,7 @@ const GlobalMultiplayer = () => {
   const [promotionPiece, setPromotionPiece] = useState("q")
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState("connecting")
 
   // Refs
   const chessboardRef = useRef(null)
@@ -64,23 +81,30 @@ const GlobalMultiplayer = () => {
   useEffect(() => {
     if (!user) return
 
-    // Create socket connection
-    const socket = io(BASE_URL, {
-      query: { user: JSON.stringify(user) },
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    })
-
+    // Connect using the socket manager
+    const socket = socketManager.connect(user)
     socketRef.current = socket
 
-    // Debug connection status
+    if (!socket) {
+      console.error("Failed to create socket connection")
+      setConnectionStatus("error")
+      return
+    }
+
+    // Set up event handlers
     socket.on("connect", () => {
       console.log("Connected to server with ID:", socket.id)
+      setConnectionStatus("connected")
     })
 
     socket.on("connect_error", (error) => {
       console.error("Connection error:", error)
+      setConnectionStatus("error")
+    })
+
+    socket.on("disconnect", () => {
+      console.log("Disconnected from server")
+      setConnectionStatus("disconnected")
     })
 
     socket.on("waiting", (isWaiting) => {
@@ -99,16 +123,19 @@ const GlobalMultiplayer = () => {
       setOpponent(obtainedOpponent)
     })
 
-    socket.on("opponentDisconnected", () => {
-      alert("Opponent has disconnected")
+    socket.on("opponentDisconnected", (username) => {
+      alert(`Opponent ${username || ""} has disconnected`)
       navigate("/modeselector")
+    })
+
+    socket.on("error", (error) => {
+      console.error("Socket error:", error)
+      alert(`Error: ${error.message || "Unknown error"}`)
     })
 
     // Cleanup on unmount
     return () => {
-      if (socket) {
-        socket.disconnect()
-      }
+      socketManager.disconnect()
       if (board) {
         board.destroy()
       }
@@ -127,7 +154,7 @@ const GlobalMultiplayer = () => {
     if (!socketRef.current || !playerColor || !gameRef.current || !chessboardRef.current) return
 
     // Listen for opponent moves
-    socketRef.current.on("move", ({ from, to, obtainedPromotion }) => {
+    socketManager.on("move", ({ from, to, obtainedPromotion }) => {
       try {
         console.log("Received move:", from, to, obtainedPromotion)
         const move = gameRef.current.move({
@@ -174,7 +201,6 @@ const GlobalMultiplayer = () => {
     // Initialize chessboard
     try {
       // Make sure we're using a library that's available in the browser
-      // This is a placeholder for the actual initialization
       if (typeof window !== "undefined" && window.Chessboard) {
         const newBoard = window.Chessboard(chessboardRef.current, {
           position: "start",
@@ -190,6 +216,26 @@ const GlobalMultiplayer = () => {
         console.log("Chessboard initialized with orientation:", playerColor)
       } else {
         console.error("Chessboard library not available")
+        // Add a fallback or retry mechanism
+        const checkBoardInterval = setInterval(() => {
+          if (window.Chessboard) {
+            const newBoard = window.Chessboard(chessboardRef.current, {
+              position: "start",
+              orientation: playerColor,
+              draggable: true,
+              pieceTheme: (piece) => pieceImages[piece],
+              onDragStart: onDragStart,
+              onDrop: onDrop,
+              onSnapEnd: onSnapEnd,
+            })
+            setBoard(newBoard)
+            console.log("Chessboard initialized with orientation (retry):", playerColor)
+            clearInterval(checkBoardInterval)
+          }
+        }, 1000)
+
+        // Clear interval after 10 seconds to prevent infinite checking
+        setTimeout(() => clearInterval(checkBoardInterval), 10000)
       }
     } catch (error) {
       console.error("Error initializing chessboard:", error)
@@ -197,9 +243,7 @@ const GlobalMultiplayer = () => {
 
     // Cleanup
     return () => {
-      if (socketRef.current) {
-        socketRef.current.off("move")
-      }
+      socketManager.off("move")
     }
   }, [playerColor, board, soundEnabled])
 
@@ -247,13 +291,15 @@ const GlobalMultiplayer = () => {
       updateStatus()
 
       // Send move to server
-      if (socketRef.current) {
-        socketRef.current.emit("move", {
+      socketManager.emit(
+        "move",
+        {
           from: source,
           to: target,
           obtainedPromotion: promotionPiece,
-        })
-      }
+        },
+        { retries: 3 },
+      )
 
       // Add move to history
       setMoves((prevMoves) => [
@@ -310,13 +356,35 @@ const GlobalMultiplayer = () => {
       if (user && opponent) {
         const userWon =
           (playerColor === "white" && winner === "White") || (playerColor === "black" && winner === "Black")
-        addMatchToHistory(user.userId, opponent.username, userWon ? "win" : "lose")
+
+        console.log("Recording match result:", {
+          userWon,
+          playerColor,
+          winner,
+          user: user.userId,
+          opponent: opponent.username,
+        })
+
+        addMatchToHistory(user.userId, opponent.username, userWon ? "win" : "lose").then(() => {
+          // Force refresh profile data after match
+          socketManager.emit("matchCompleted", {
+            winner: userWon ? user.userId : opponent.userId,
+            loser: userWon ? opponent.userId : user.userId,
+          })
+        })
       }
     } else if (game.isDraw()) {
       status = "Game over, draw."
 
       if (user && opponent) {
-        addMatchToHistory(user.userId, opponent.username, "draw")
+        console.log("Recording draw result")
+        addMatchToHistory(user.userId, opponent.username, "draw").then(() => {
+          // Force refresh profile data after match
+          socketManager.emit("matchCompleted", {
+            draw: true,
+            players: [user.userId, opponent.userId],
+          })
+        })
       }
     } else {
       status = `${turn} to move`
@@ -331,10 +399,10 @@ const GlobalMultiplayer = () => {
   // Calculate player rating
   const calculateRating = (wins, loses, draws) => {
     const totalGames = wins + loses + draws
-    if (totalGames === 0) return 0
+    if (totalGames === 0) return 800
     const winRatio = wins / totalGames
-    const baseRating = 900
-    return Math.round(baseRating + winRatio * 2100)
+    const baseRating = 800
+    return Math.round(baseRating + winRatio * 2200)
   }
 
   // Toggle fullscreen
