@@ -1,3 +1,5 @@
+import { io } from "socket.io-client"
+
 class SocketManager {
   constructor(baseURL, maxReconnectAttempts = 5, reconnectDelay = 2000) {
     this.baseURL = baseURL
@@ -6,6 +8,9 @@ class SocketManager {
     this.reconnectAttempts = 0
     this.socket = null
     this.listeners = new Map()
+    this.gameState = null
+    this.isReconnecting = false
+    this.lastGameId = null
   }
 
   addListener(event, callback) {
@@ -13,6 +18,11 @@ class SocketManager {
       this.listeners.set(event, [])
     }
     this.listeners.get(event).push(callback)
+
+    // If socket exists and we're adding a listener, attach it immediately
+    if (this.socket) {
+      this.socket.on(event, callback)
+    }
   }
 
   removeListener(event, callback) {
@@ -21,13 +31,18 @@ class SocketManager {
         event,
         this.listeners.get(event).filter((cb) => cb !== callback),
       )
+
+      // If socket exists, remove the listener
+      if (this.socket) {
+        this.socket.off(event, callback)
+      }
     }
   }
 
   emit(event, data, options = {}) {
     if (!this.socket) {
       console.error("Cannot emit event: Socket not connected")
-      return false
+      return Promise.reject(new Error("Socket not connected"))
     }
 
     const { retries = 3, retryDelay = 1000, acknowledgement = false } = options
@@ -52,10 +67,22 @@ class SocketManager {
         if (acknowledgement) {
           this.socket.emit(event, data, (response) => {
             console.log(`Received acknowledgement for ${event}:`, response)
+
+            // If this is a move event, store the game state
+            if (event === "move" && data.fen) {
+              this.gameState = data.fen
+            }
+
             resolve(response)
           })
         } else {
           this.socket.emit(event, data)
+
+          // If this is a move event, store the game state
+          if (event === "move" && data.fen) {
+            this.gameState = data.fen
+          }
+
           resolve(true)
         }
       }
@@ -81,7 +108,10 @@ class SocketManager {
 
     // Create socket connection with improved options
     this.socket = io(socketUrl, {
-      query: { user: JSON.stringify(user) },
+      query: {
+        user: JSON.stringify(user),
+        lastGameId: this.lastGameId,
+      },
       reconnection: true,
       reconnectionAttempts: this.maxReconnectAttempts,
       reconnectionDelay: this.reconnectDelay,
@@ -93,6 +123,7 @@ class SocketManager {
     this.socket.on("connect", () => {
       console.log("Socket connected with ID:", this.socket.id)
       this.reconnectAttempts = 0
+      this.isReconnecting = false
 
       // Notify any listeners that we've connected
       if (this.listeners.has("connect")) {
@@ -103,6 +134,7 @@ class SocketManager {
     this.socket.on("connect_error", (error) => {
       console.error("Socket connection error:", error)
       this.reconnectAttempts++
+      this.isReconnecting = true
 
       if (this.reconnectAttempts > this.maxReconnectAttempts) {
         console.error("Max reconnect attempts reached, giving up")
@@ -116,6 +148,7 @@ class SocketManager {
 
     this.socket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason)
+      this.isReconnecting = true
 
       // Auto-reconnect for certain disconnect reasons
       if (reason === "io server disconnect") {
@@ -138,6 +171,24 @@ class SocketManager {
       }
     })
 
+    // Handle game ID assignment
+    this.socket.on("gameAssigned", (gameId) => {
+      console.log("Game ID assigned:", gameId)
+      this.lastGameId = gameId
+
+      // Notify any listeners of game assignment
+      if (this.listeners.has("gameAssigned")) {
+        this.listeners.get("gameAssigned").forEach((callback) => callback(gameId))
+      }
+    })
+
+    // Attach all registered listeners to the socket
+    this.listeners.forEach((callbacks, event) => {
+      callbacks.forEach((callback) => {
+        this.socket.on(event, callback)
+      })
+    })
+
     return this.socket
   }
 
@@ -147,9 +198,34 @@ class SocketManager {
       this.socket = null
     }
   }
-}
 
-const BASE_URL = "https://chess-backend-43nq.onrender.com" // Replace with your actual base URL
+  // Get the current game state
+  getGameState() {
+    return this.gameState
+  }
+
+  // Request the current game state from the server
+  requestGameState() {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit("requestGameState")
+    }
+  }
+
+  // Check if socket is connected
+  isConnected() {
+    return this.socket && this.socket.connected
+  }
+
+  // Check if socket is reconnecting
+  isSocketReconnecting() {
+    return this.isReconnecting
+  }
+
+  // Set the last game ID for reconnection purposes
+  setLastGameId(gameId) {
+    this.lastGameId = gameId
+  }
+}
 
 export default SocketManager
 

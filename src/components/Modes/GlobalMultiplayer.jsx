@@ -2,20 +2,21 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
-import { io } from "socket.io-client"
 import { useSelector } from "react-redux"
-import WaitQueue from "../WaitQueue"
 import { useNavigate } from "react-router-dom"
-import pieceImages from "../pieceImages"
-import axios from "axios"
 import { Howl } from "howler"
+import { Maximize2, Minimize2, Volume2, VolumeX, LogOut } from "lucide-react"
+import axios from "axios"
+import WaitQueue from "../WaitQueue"
+import pieceImages from "../pieceImages"
+import GameOverModal from "../GameOverModal"
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
 import checkSoundFile from "../../assets/sounds/check.mp3"
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3"
 import boardbg from "../../assets/images/bgboard.webp"
 import { BASE_URL } from "../../url"
-import { Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react"
+import { io } from "socket.io-client"
 
 // Initialize sound effects
 const moveSound = new Howl({ src: [moveSoundFile] })
@@ -24,6 +25,33 @@ const checkSound = new Howl({ src: [checkSoundFile] })
 const checkmateSound = new Howl({ src: [checkmateSoundFile] })
 
 const GlobalMultiplayer = () => {
+  const user = useSelector((state) => state.auth.userData)
+  const navigate = useNavigate()
+
+  // Game state
+  const [game, setGame] = useState(new Chess())
+  const [board, setBoard] = useState(null)
+  const [playerColor, setPlayerColor] = useState(null)
+  const [opponent, setOpponent] = useState(null)
+  const [waitingForOpponent, setWaitingForOpponent] = useState(true)
+  const [currentStatus, setCurrentStatus] = useState("Waiting for opponent...")
+  const [moves, setMoves] = useState([])
+  const [isTableCollapsed, setIsTableCollapsed] = useState(false)
+  const [mobileMode, setMobileMode] = useState(false)
+  const [promotionPiece, setPromotionPiece] = useState("q")
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [isGameOver, setIsGameOver] = useState(false)
+  const [gameOverMessage, setGameOverMessage] = useState("")
+  const [boardInitialized, setBoardInitialized] = useState(false)
+
+  // Refs
+  const chessboardRef = useRef(null)
+  const socketRef = useRef(null)
+  const gameRef = useRef(null)
+  const boardContainerRef = useRef(null)
+
+  // Add match to history function
   const addMatchToHistory = async (userId, opponentName, status) => {
     try {
       console.log("Sending match data:", { userId, opponentName, status })
@@ -53,29 +81,6 @@ const GlobalMultiplayer = () => {
     }
   }
 
-  const user = useSelector((state) => state.auth.userData)
-  const navigate = useNavigate()
-
-  // Game state
-  const [game, setGame] = useState(null)
-  const [board, setBoard] = useState(null)
-  const [playerColor, setPlayerColor] = useState(null)
-  const [opponent, setOpponent] = useState(null)
-  const [waitingForOpponent, setWaitingForOpponent] = useState(true)
-  const [currentStatus, setCurrentStatus] = useState("Waiting for opponent...")
-  const [moves, setMoves] = useState([])
-  const [isTableCollapsed, setIsTableCollapsed] = useState(false)
-  const [mobileMode, setMobileMode] = useState(false)
-  const [promotionPiece, setPromotionPiece] = useState("q")
-  const [soundEnabled, setSoundEnabled] = useState(true)
-  const [fullscreen, setFullscreen] = useState(false)
-
-  // Refs
-  const chessboardRef = useRef(null)
-  const socketRef = useRef(null)
-  const gameRef = useRef(null)
-  const boardContainerRef = useRef(null)
-
   // Connect to socket server when component mounts
   useEffect(() => {
     if (!user) return
@@ -89,7 +94,7 @@ const GlobalMultiplayer = () => {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      transports: ["websocket", "polling"], // Try both transport methods
+      transports: ["websocket", "polling"],
     })
 
     socketRef.current = socket
@@ -119,10 +124,25 @@ const GlobalMultiplayer = () => {
       setOpponent(obtainedOpponent)
     })
 
-    socket.on("opponentDisconnected", () => {
-      alert("Opponent has disconnected")
-      navigate("/modeselector")
+    socket.on("opponentDisconnected", (opponentName) => {
+      console.log("Opponent disconnected:", opponentName || "Opponent")
+
+      if (user) {
+        // Record win due to opponent disconnection
+        addMatchToHistory(user.userId, opponent?.username || "Opponent", "win").then(() => {
+          console.log("Match recorded as win due to opponent disconnection")
+        })
+      }
+
+      // Show game over modal
+      setGameOverMessage(`You win! ${opponentName || "Opponent"} has disconnected.`)
+      setIsGameOver(true)
     })
+
+    // Initialize chess game
+    const newGame = new Chess()
+    setGame(newGame)
+    gameRef.current = newGame
 
     // Cleanup on unmount
     return () => {
@@ -135,31 +155,39 @@ const GlobalMultiplayer = () => {
     }
   }, [user, navigate])
 
-  // Initialize chess game
-  useEffect(() => {
-    const newGame = new Chess()
-    setGame(newGame)
-    gameRef.current = newGame
-  }, [])
-
   // Handle socket move events and initialize board after player color is set
   useEffect(() => {
     if (!socketRef.current || !playerColor || !gameRef.current || !chessboardRef.current) return
 
     // Listen for opponent moves
-    socketRef.current.on("move", ({ from, to, obtainedPromotion }) => {
+    socketRef.current.on("move", ({ from, to, obtainedPromotion, fen }) => {
       try {
-        console.log("Received move:", from, to, obtainedPromotion)
+        console.log("Received move from opponent:", from, to, obtainedPromotion)
+
+        // If FEN is provided, use it to sync game state
+        if (fen) {
+          console.log("Syncing game state with FEN:", fen)
+          gameRef.current.load(fen)
+          if (board) {
+            board.position(fen, false) // Use false to avoid animation for syncing
+          }
+          updateStatus()
+          return
+        }
+
+        // Otherwise make the move normally
         const move = gameRef.current.move({
           from,
           to,
-          promotion: obtainedPromotion,
+          promotion: obtainedPromotion || "q",
         })
 
         if (move) {
+          console.log("Successfully applied opponent's move:", move)
+
           // Update board position
           if (board) {
-            board.position(gameRef.current.fen())
+            board.position(gameRef.current.fen(), true) // Use true for animation
           }
 
           // Update game state
@@ -170,6 +198,7 @@ const GlobalMultiplayer = () => {
               from: move.from,
               to: move.to,
               promotion: obtainedPromotion,
+              player: "opponent",
             },
           ])
 
@@ -184,14 +213,54 @@ const GlobalMultiplayer = () => {
             if (gameRef.current.inCheck()) {
               checkSound.play()
             }
+
+            if (gameRef.current.isCheckmate()) {
+              checkmateSound.play()
+            }
           }
+        } else {
+          console.error("Invalid move received from opponent:", from, to, obtainedPromotion)
+          // Request current game state
+          socketRef.current.emit("requestGameState")
         }
       } catch (error) {
-        console.error("Invalid move received:", error)
+        console.error("Error processing opponent's move:", error)
+        // Request current game state on error
+        socketRef.current.emit("requestGameState")
       }
     })
 
-    // Initialize chessboard
+    socketRef.current.on("gameState", (fen) => {
+      try {
+        console.log("Received game state:", fen)
+        if (gameRef.current && fen) {
+          gameRef.current.load(fen)
+          if (board) {
+            board.position(fen, false) // Use false to avoid animation for syncing
+          }
+          updateStatus()
+        }
+      } catch (error) {
+        console.error("Error loading game state:", error)
+      }
+    })
+
+    // Initialize chessboard if not already initialized
+    if (!boardInitialized) {
+      initializeChessboard()
+    }
+
+    // Cleanup
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("move")
+        socketRef.current.off("gameState")
+      }
+    }
+  }, [playerColor, soundEnabled, board, boardInitialized])
+
+  // Function to initialize the chessboard
+  const initializeChessboard = () => {
     try {
       // Make sure we're using a library that's available in the browser
       if (typeof window !== "undefined" && window.Chessboard) {
@@ -212,30 +281,28 @@ const GlobalMultiplayer = () => {
 
         const newBoard = window.Chessboard(chessboardRef.current, config)
         setBoard(newBoard)
+        setBoardInitialized(true)
         console.log("Chessboard initialized with orientation:", playerColor)
+
+        // Handle window resize for mobile
+        const handleResize = () => {
+          if (newBoard) {
+            newBoard.resize()
+          }
+        }
+
+        window.addEventListener("resize", handleResize)
+
+        return () => {
+          window.removeEventListener("resize", handleResize)
+        }
       } else {
         console.error("Chessboard library not available")
         // Add a fallback or retry mechanism
         const checkBoardInterval = setInterval(() => {
           if (window.Chessboard) {
-            const config = {
-              position: "start",
-              orientation: playerColor,
-              draggable: true,
-              pieceTheme: (piece) => pieceImages[piece],
-              onDragStart: onDragStart,
-              onDrop: onDrop,
-              onSnapEnd: onSnapEnd,
-              onMouseoverSquare: onMouseoverSquare,
-              onMouseoutSquare: onMouseoutSquare,
-              snapbackSpeed: 500,
-              snapSpeed: 100,
-            }
-
-            const newBoard = window.Chessboard(chessboardRef.current, config)
-            setBoard(newBoard)
-            console.log("Chessboard initialized with orientation (retry):", playerColor)
             clearInterval(checkBoardInterval)
+            initializeChessboard()
           }
         }, 1000)
 
@@ -245,14 +312,7 @@ const GlobalMultiplayer = () => {
     } catch (error) {
       console.error("Error initializing chessboard:", error)
     }
-
-    // Cleanup
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off("move")
-      }
-    }
-  }, [playerColor, soundEnabled])
+  }
 
   // Highlight legal moves
   const onMouseoverSquare = (square, piece) => {
@@ -334,6 +394,13 @@ const GlobalMultiplayer = () => {
     removeGreySquares()
 
     try {
+      // Check if it's the player's turn
+      const playerTurn = playerColor === "white" ? "w" : "b"
+      if (game.turn() !== playerTurn) {
+        console.warn("Not your turn")
+        return "snapback"
+      }
+
       // Attempt to make the move
       const move = game.move({
         from: source,
@@ -342,18 +409,27 @@ const GlobalMultiplayer = () => {
       })
 
       // If the move is invalid, return 'snapback'
-      if (!move) return "snapback"
+      if (!move) {
+        console.warn("Invalid move attempted:", source, target)
+        return "snapback"
+      }
+
+      console.log("Valid move made:", move)
 
       // Update game state
       updateStatus()
 
-      // Send move to server
+      // Send move to server with current FEN for state synchronization
       if (socketRef.current) {
-        socketRef.current.emit("move", {
+        const moveData = {
           from: source,
           to: target,
           obtainedPromotion: promotionPiece,
-        })
+          fen: game.fen(), // Include FEN for state synchronization
+        }
+
+        console.log("Sending move to server:", moveData)
+        socketRef.current.emit("move", moveData)
       }
 
       // Add move to history
@@ -363,6 +439,7 @@ const GlobalMultiplayer = () => {
           from: move.from,
           to: move.to,
           promotion: promotionPiece,
+          player: "player",
         },
       ])
 
@@ -382,6 +459,8 @@ const GlobalMultiplayer = () => {
           checkmateSound.play()
         }
       }
+
+      return undefined // Move is valid
     } catch (error) {
       console.error("Error making move:", error)
       return "snapback"
@@ -430,14 +509,9 @@ const GlobalMultiplayer = () => {
             })
           }
 
-          // Show game over message
-          setTimeout(() => {
-            alert(`Game over! ${winner} wins by checkmate.`)
-            // Navigate after a short delay
-            setTimeout(() => {
-              navigate("/modeselector")
-            }, 2000)
-          }, 500)
+          // Show game over modal
+          setGameOverMessage(userWon ? "You win!" : "You lose!")
+          setIsGameOver(true)
         })
       }
     } else if (game.isDraw()) {
@@ -454,14 +528,9 @@ const GlobalMultiplayer = () => {
             })
           }
 
-          // Show game over message
-          setTimeout(() => {
-            alert("Game over! It's a draw.")
-            // Navigate after a short delay
-            setTimeout(() => {
-              navigate("/modeselector")
-            }, 2000)
-          }, 500)
+          // Show game over modal
+          setGameOverMessage("It's a draw!")
+          setIsGameOver(true)
         })
       }
     } else {
@@ -535,6 +604,36 @@ const GlobalMultiplayer = () => {
     setPromotionPiece(e.target.value)
   }
 
+  // Handle leave game
+  const handleLeaveGame = () => {
+    if (user && opponent) {
+      // Record loss due to leaving
+      addMatchToHistory(user.userId, opponent.username, "lose").then(() => {
+        console.log("Match recorded as loss due to leaving")
+
+        // Notify opponent
+        if (socketRef.current) {
+          socketRef.current.emit("playerLeft", {
+            userId: user.userId,
+            username: user.username,
+            opponentId: opponent.userId,
+          })
+        }
+
+        // Navigate back to mode selector
+        navigate("/modeselector")
+      })
+    } else {
+      navigate("/modeselector")
+    }
+  }
+
+  // Handle game restart
+  const handleRestart = () => {
+    setIsGameOver(false)
+    navigate("/modeselector")
+  }
+
   // If waiting for opponent, show wait queue
   if (waitingForOpponent) {
     return <WaitQueue socket={socketRef.current} />
@@ -570,6 +669,13 @@ const GlobalMultiplayer = () => {
                 className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
               >
                 {fullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+              </button>
+              <button
+                onClick={handleLeaveGame}
+                className="p-2 bg-red-600 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
+                title="Leave Game (counts as a loss)"
+              >
+                <LogOut size={20} />
               </button>
             </div>
             <div ref={chessboardRef} className="mx-auto"></div>
@@ -629,6 +735,7 @@ const GlobalMultiplayer = () => {
                     <th className="px-4 py-2">Move #</th>
                     <th className="px-4 py-2">From</th>
                     <th className="px-4 py-2">To</th>
+                    <th className="px-4 py-2">Player</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -637,14 +744,24 @@ const GlobalMultiplayer = () => {
                       <td className="border px-4 py-2">{index + 1}</td>
                       <td className="border px-4 py-2">{move.from}</td>
                       <td className="border px-4 py-2">{move.to}</td>
+                      <td className="border px-4 py-2">{move.player === "player" ? "You" : "Opponent"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
+
+            <button
+              onClick={handleLeaveGame}
+              className="mt-4 w-full bg-red-600 text-white py-2 px-4 rounded shadow-md hover:bg-red-700"
+            >
+              Leave Game (Counts as Loss)
+            </button>
           </div>
         )}
       </div>
+
+      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
     </div>
   )
 }

@@ -42,6 +42,7 @@ function WaitQueue({ socket = null, length = 2 }) {
       socket.on("connect", () => {
         console.log("Socket connected")
         setConnectionStatus("connected")
+        setRetryCount(0)
         socket.emit("getWaitingCount")
       })
 
