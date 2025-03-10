@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import { useSelector } from "react-redux"
@@ -44,6 +42,7 @@ const GlobalMultiplayer = () => {
   const [isGameOver, setIsGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState("")
   const [boardInitialized, setBoardInitialized] = useState(false)
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
 
   // Refs
   const chessboardRef = useRef(null)
@@ -604,6 +603,11 @@ const GlobalMultiplayer = () => {
     setPromotionPiece(e.target.value)
   }
 
+  // Show leave confirmation modal
+  const confirmLeaveGame = () => {
+    setShowLeaveConfirmation(true)
+  }
+
   // Handle leave game
   const handleLeaveGame = () => {
     if (user && opponent) {
@@ -626,6 +630,11 @@ const GlobalMultiplayer = () => {
     } else {
       navigate("/modeselector")
     }
+  }
+
+  // Cancel leave game
+  const cancelLeaveGame = () => {
+    setShowLeaveConfirmation(false)
   }
 
   // Handle game restart
@@ -671,7 +680,7 @@ const GlobalMultiplayer = () => {
                 {fullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
               </button>
               <button
-                onClick={handleLeaveGame}
+                onClick={confirmLeaveGame}
                 className="p-2 bg-red-600 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
                 title="Leave Game (counts as a loss)"
               >
@@ -752,7 +761,7 @@ const GlobalMultiplayer = () => {
             )}
 
             <button
-              onClick={handleLeaveGame}
+              onClick={confirmLeaveGame}
               className="mt-4 w-full bg-red-600 text-white py-2 px-4 rounded shadow-md hover:bg-red-700"
             >
               Leave Game (Counts as Loss)
@@ -761,7 +770,26 @@ const GlobalMultiplayer = () => {
         )}
       </div>
 
+      {/* Game Over Modal */}
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
+
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-xl font-bold text-white mb-4">Are you sure?</h2>
+            <p className="text-gray-300 mb-6">Leaving the game will count as a loss. Are you sure you want to quit?</p>
+            <div className="flex justify-end space-x-4">
+              <button onClick={cancelLeaveGame} className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                No, Continue Playing
+              </button>
+              <button onClick={handleLeaveGame} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Yes, Quit Game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
