@@ -1,2 +1,2 @@
-export const BASE_URL = "https://chess-frontend-dun.vercel.app";
+export const BASE_URL = "https://chess-backend-43nq.onrender.com";
 export const SOCKET_URL = BASE_URL;
