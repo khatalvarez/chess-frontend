@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X, ChevronDown, User, LogOut } from "lucide-react"
 import logo from "../assets/images/chessLogo.webp"
-import { login } from "../store/authSlice"
+import { login, logout } from "../store/authSlice"
 import axios from "axios"
 import { BASE_URL } from "../url"
+import Cookies from "js-cookie"
 
 function Navbar() {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const authStatus = useSelector((state) => state.auth.status)
   const userData = useSelector((state) => state.auth.userData)
   const location = useLocation()
@@ -28,6 +30,13 @@ function Navbar() {
   }, [])
 
   useEffect(() => {
+    // Fetch user profile data when component mounts or auth status changes
+    if (authStatus) {
+      fetchUserProfile()
+    }
+  }, [authStatus, dispatch])
+
+  const fetchUserProfile = () => {
     axios
       .get(`${BASE_URL}/profile`, {
         withCredentials: true,
@@ -39,7 +48,7 @@ function Navbar() {
       .catch((error) => {
         console.error("Error fetching profile:", error)
       })
-  }, [dispatch])
+  }
 
   useEffect(() => {
     // Close mobile menu when route changes
@@ -57,9 +66,17 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
+  // Handle logout
+  const handleLogout = () => {
+    Cookies.remove("token", { path: "/" })
+    dispatch(logout())
+    setIsProfileMenuOpen(false)
+    navigate("/login")
+  }
+
   // Override authStatus to false if the route is /login or /signup
   const isAuthPage = location.pathname === "/login" || location.pathname === "/signup"
-  const effectiveAuthStatus = isAuthPage ? "false" : authStatus
+  const effectiveAuthStatus = isAuthPage ? false : authStatus
 
   return (
     <motion.nav
@@ -97,7 +114,7 @@ function Navbar() {
               Home
             </Link>
 
-            {effectiveAuthStatus === "true" && userData?.username ? (
+            {effectiveAuthStatus === true && userData?.username ? (
               <>
                 <Link
                   to="/modeselector"
@@ -117,7 +134,7 @@ function Navbar() {
                 </Link>
 
                 {/* Profile Dropdown */}
-                <div className="relative"  ref={profileMenuRef}>
+                <div className="relative" ref={profileMenuRef}>
                   <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     className="flex items-center space-x-1 text-lg font-medium text-green-400 hover:text-green-300 transition-colors duration-300"
@@ -143,14 +160,13 @@ function Navbar() {
                           <User size={16} className="mr-2" />
                           View Profile
                         </Link>
-                        <Link
-                          to="/login"
-                          className="flex items-center px-4 py-2 text-sm text-white hover:bg-gray-700"
-                          onClick={() => setIsProfileMenuOpen(false)}
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center px-4 py-2 text-sm text-white hover:bg-gray-700 w-full text-left"
                         >
                           <LogOut size={16} className="mr-2" />
                           Logout
-                        </Link>
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -199,7 +215,7 @@ function Navbar() {
                 Home
               </Link>
 
-              {effectiveAuthStatus === "true" && userData?.username ? (
+              {effectiveAuthStatus === true && userData?.username ? (
                 <>
                   <Link
                     to="/modeselector"
@@ -219,6 +235,12 @@ function Navbar() {
                   >
                     {userData?.username?.split(" ")[0]}
                   </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left text-lg font-medium text-red-400 hover:text-red-300 transition-colors duration-300"
+                  >
+                    Logout
+                  </button>
                 </>
               ) : (
                 <>
