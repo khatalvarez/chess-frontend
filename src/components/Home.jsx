@@ -2,16 +2,20 @@ import { useState, useEffect, lazy, Suspense } from "react"
 import { Link } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
-import bgChessPlaceholder from "../assets/images/bgChess.webp" 
+import bgChessPlaceholder from "../assets/images/bgChess.webp"
+
 const PieceArray = lazy(() => import("./PieceArray"))
 
 function Home() {
   const authStatus = useSelector((state) => state.auth.status)
   const userData = useSelector((state) => state.auth.userData)
-  const [typedText, setTypedText] = useState("")
   const [imageLoaded, setImageLoaded] = useState(false)
   const [bgImage, setBgImage] = useState(null)
-  const fullText = "WWelcome to Chess Master"
+  const [showPieceArray, setShowPieceArray] = useState(false)
+
+  const fullText = "Welcome to Chess Master"
+  const [typedText, setTypedText] = useState(fullText)
+  const [showCursor, setShowCursor] = useState(false)
 
   useEffect(() => {
     import("../assets/images/bgChess.webp").then((module) => {
@@ -22,42 +26,32 @@ function Home() {
     })
   }, [])
 
-  // Text animation effect
   useEffect(() => {
-    let index = 0
-    const typingInterval = setInterval(() => {
-      if (index < fullText.length) {
-        setTypedText((prev) => prev + fullText.charAt(index))
-        index++
-      } else {
-        clearInterval(typingInterval)
-      }
-    }, 100)
+    setTimeout(() => setShowPieceArray(true), 1000)
+  }, [])
 
-    return () => clearInterval(typingInterval)
+  useEffect(() => {
+    setTimeout(() => setShowCursor(true), 500)
   }, [])
 
   return (
     <div className="relative w-screen h-screen flex items-center justify-center overflow-hidden">
-      {/* Background placeholder to prevent layout shift */}
-      <div 
+      <div
         className="absolute inset-0 w-full h-full bg-gray-900"
         style={{ aspectRatio: "16/9" }}
         aria-hidden="true"
       >
-        {/* Low-quality placeholder image */}
         {!imageLoaded && (
           <img
             src={bgChessPlaceholder}
             width="1920"
             height="1080"
-            alt=""
+            alt="bg-placeholder"
             className="w-full h-full object-cover brightness-50 blur-sm"
           />
         )}
       </div>
-      
-      {/* Background image with explicit dimensions */}
+
       {bgImage && (
         <img
           src={bgImage}
@@ -65,32 +59,30 @@ function Home() {
           height="1080"
           alt="Chess background"
           fetchpriority="high"
-          className={`absolute inset-0 w-full h-full object-cover brightness-50 -z-10 transition-opacity duration-300 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="absolute inset-0 w-full h-full object-cover brightness-50 -z-10"
         />
       )}
 
-      {/* Main content container with fixed dimensions */}
       <div className="relative z-10 w-11/12 max-w-4xl" style={{ minHeight: '400px' }}>
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden"
+          className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl"
         >
-          <div className="p-8 sm:p-12 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-xl">
-            {/* Lazy load PieceArray with a simple fallback */}
-            <Suspense fallback={<div className="h-12 flex justify-center" />}>
-              <PieceArray />
-            </Suspense>
-            
-            {/* Fixed height container for the heading to prevent layout shift */}
+          <div className="p-8 sm:p-12 bg-gray-900 bg-opacity-80">
+
+            {showPieceArray && (
+              <Suspense fallback={<div className="h-12 flex justify-center" />}>
+                <PieceArray />
+              </Suspense>
+            )}
+
             <div className="h-20 mb-6 flex justify-center items-center">
               <h1 className="text-4xl sm:text-5xl text-center font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
                 {typedText}
                 <AnimatePresence>
-                  {typedText.length < fullText.length && (
+                  {showCursor && (
                     <motion.span
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -102,7 +94,6 @@ function Home() {
               </h1>
             </div>
 
-            {/* Fixed height container for paragraph */}
             <div className="h-32 sm:h-24 mb-10 flex items-center">
               <p className="text-center text-xl sm:text-2xl lg:text-3xl text-gray-300 leading-relaxed">
                 Experience the ultimate chess journey. Challenge friends, solve puzzles, and test your skills against the
@@ -110,9 +101,7 @@ function Home() {
               </p>
             </div>
 
-            <div
-              className="flex sm:flex-row justify-center items-center gap-6"
-            >
+            <div className="flex sm:flex-row justify-center items-center gap-6">
               {authStatus === "true" && userData.username ? (
                 <Link
                   to="/modeselector"
