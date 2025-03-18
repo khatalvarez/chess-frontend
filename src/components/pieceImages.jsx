@@ -1,4 +1,3 @@
-
 import bB from './pieces/bB.webp';
 import bK from './pieces/bK.webp';
 import bN from './pieces/bN.webp';

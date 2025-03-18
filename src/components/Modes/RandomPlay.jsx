@@ -19,11 +19,13 @@ const ChessboardComponent = () => {
   const chessRef = useRef(null);
   const boardRef = useRef(null); 
   const gameRef = useRef(new Chess());
-  const [currentStatus, setCurrentStatus] = useState(null); // State to hold the current game status
-  const [moves, setMoves] = useState([]); // State to hold the list of moves
+  const [currentStatus, setCurrentStatus] = useState(null);
+  const [moves, setMoves] = useState([]);
   const [mobileMode, setMobileMode] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameOverMessage, setGameOverMessage] = useState("");
+  const [selectedSquare, setSelectedSquare] = useState(null);
+  const [possibleMoves, setPossibleMoves] = useState([]);
 
   const handleCheckboxChange = () => {
     setMobileMode((prev) => {
@@ -42,6 +44,20 @@ const ChessboardComponent = () => {
       }
       return newMode;
     });
+  };
+
+  // Utility functions for highlighting moves
+  const removeGreySquares = () => {
+    const squares = document.querySelectorAll(".square-55d63");
+    squares.forEach((square) => (square.style.background = ""));
+  };
+
+  const greySquare = (square) => {
+    const squareEl = document.querySelector(`.square-${square}`);
+    if (squareEl) {
+      const isBlack = squareEl.classList.contains("black-3c85d");
+      squareEl.style.background = isBlack ? "#696969" : "#a9a9a9";
+    }
   };
 
   useEffect(() => {
@@ -162,21 +178,8 @@ const ChessboardComponent = () => {
       }
     };
 
-    const removeGreySquares = () => {
-      const squares = document.querySelectorAll(".square-55d63");
-      squares.forEach((square) => (square.style.background = ""));
-    };
-
-    const greySquare = (square) => {
-      const squareEl = document.querySelector(`.square-${square}`);
-      if (squareEl) {
-        const isBlack = squareEl.classList.contains("black-3c85d");
-        squareEl.style.background = isBlack ? "#696969" : "#a9a9a9";
-      }
-    };
-
     const config = {
-      draggable: true,
+      draggable: !mobileMode, // Disable dragging in mobile mode
       position: "start",
       onDragStart: onDragStart,
       onDrop: onDrop,
@@ -190,6 +193,7 @@ const ChessboardComponent = () => {
 
     // Initialize Chessboard.js
     boardRef.current = Chessboard(chessRef.current, config);
+    updateStatus();
 
     // Cleanup function to destroy the chessboard instance
     return () => {
@@ -197,37 +201,181 @@ const ChessboardComponent = () => {
         boardRef.current.destroy();
       }
     };
-  }, []);
+  }, [mobileMode]);
 
   useEffect(() => {
-    if (mobileMode) {
-      const handleTouchStart = (event) => {
-        const squareEl = event.currentTarget;
-        // Extract the square identifier from the element's classes (e.g., "square-e4")
-        const squareClass = [...squareEl.classList].find(cls => cls.startsWith("square-") && cls !== "square-55d63");
-        if (squareClass) {
-          const square = squareClass.replace("square-", "");
-          // Highlight the tapped square
-          greySquare(square);
-          // Highlight its legal moves
-          const moves = gameRef.current.moves({ square, verbose: true });
-          moves.forEach(move => greySquare(move.to));
-        }
-      };
-      // Add touchstart listeners to each square on the board
-      const squares = document.querySelectorAll(".square-55d63");
-      squares.forEach(square => {
-        square.addEventListener("touchstart", handleTouchStart);
-      });
-
-      // Cleanup the event listeners on unmount or mobileMode change
-      return () => {
-        squares.forEach(square => {
-          square.removeEventListener("touchstart", handleTouchStart);
-        });
-      };
+    if (!mobileMode) {
+      setSelectedSquare(null);
+      setPossibleMoves([]);
+      return;
     }
-  }, [mobileMode]);
+
+    const handleMobileSquareClick = (event) => {
+      event.preventDefault();
+      
+      // Find the clicked square from the event target's class list
+      const squareEl = event.currentTarget;
+      const squareClass = [...squareEl.classList].find(cls => cls.startsWith("square-") && cls !== "square-55d63");
+      
+      if (!squareClass) return;
+      
+      const clickedSquare = squareClass.replace("square-", "");
+      const game = gameRef.current;
+      
+      // If game is over, do nothing
+      if (game.isGameOver()) return;
+      
+      // Clear previous highlights
+      removeGreySquares();
+      
+      // If we already have a selected square, try to make a move
+      if (selectedSquare) {
+        // Check if the clicked square is a valid destination
+        if (possibleMoves.some(move => move.to === clickedSquare)) {
+          try {
+            // Make the move
+            const move = game.move({
+              from: selectedSquare,
+              to: clickedSquare,
+              promotion: 'q' // Always promote to queen
+            });
+            
+            // Update the board display
+            boardRef.current.position(game.fen());
+            
+            // Play sound based on move type
+            move.captured ? captureSound.play() : moveSound.play();
+            
+            // Update moves list
+            setMoves(prevMoves => [...prevMoves, { from: move.from, to: move.to }]);
+            
+            // Check status after the move
+            updateStatus();
+            
+            // Clear selection
+            setSelectedSquare(null);
+            setPossibleMoves([]);
+            
+            // Make computer move after a delay
+            if (!game.isGameOver() && game.turn() === 'b') {
+              setTimeout(() => {
+                makeRandomMoveForMobile();
+              }, 500);
+            }
+          } catch (error) {
+            console.error("Invalid move:", error);
+          }
+        } else {
+          // If clicked on a different piece of the same color, select that piece instead
+          const piece = game.get(clickedSquare);
+          if (piece && piece.color === game.turn()) {
+            selectNewSquare(clickedSquare);
+          } else {
+            // If clicked on an invalid square, clear selection
+            setSelectedSquare(null);
+            setPossibleMoves([]);
+          }
+        }
+      } else {
+        // If no square is selected yet, select this one if it has a piece of the correct color
+        const piece = game.get(clickedSquare);
+        if (piece && piece.color === game.turn()) {
+          selectNewSquare(clickedSquare);
+        }
+      }
+    };
+    
+    const selectNewSquare = (square) => {
+      const game = gameRef.current;
+      const moves = game.moves({
+        square: square,
+        verbose: true,
+      });
+      
+      if (moves.length === 0) return;
+      
+      setSelectedSquare(square);
+      setPossibleMoves(moves);
+      
+      // Highlight the selected square
+      greySquare(square);
+      
+      // Highlight possible destinations
+      moves.forEach(move => {
+        greySquare(move.to);
+      });
+    };
+    
+    const makeRandomMoveForMobile = () => {
+      const game = gameRef.current;
+      if (game.isGameOver()) return;
+      
+      let possibleMoves = game.moves();
+      if (possibleMoves.length === 0) return;
+      
+      const randomIdx = Math.floor(Math.random() * possibleMoves.length);
+      try {
+        const move = game.move(possibleMoves[randomIdx]);
+        boardRef.current.position(game.fen());
+        
+        // Play sound
+        move.captured ? captureSound.play() : moveSound.play();
+        
+        // Update moves
+        setMoves(prevMoves => [...prevMoves, { from: move.from, to: move.to }]);
+        
+        updateStatus();
+      } catch (error) {
+        console.error("Error making AI move:", error);
+      }
+    };
+
+    // Add touch event listeners to the squares
+    const squares = document.querySelectorAll(".square-55d63");
+    squares.forEach(square => {
+      square.addEventListener("touchend", handleMobileSquareClick);
+      // Prevent default touch behavior to avoid scrolling/zooming
+      square.addEventListener("touchstart", (e) => e.preventDefault());
+    });
+    
+    // Clean up listeners when component unmounts or mobileMode changes
+    return () => {
+      squares.forEach(square => {
+        square.removeEventListener("touchend", handleMobileSquareClick);
+        square.removeEventListener("touchstart", (e) => e.preventDefault());
+      });
+    };
+  }, [mobileMode, selectedSquare, possibleMoves]);
+
+  const updateStatus = () => {
+    const game = gameRef.current;
+    const moveColor = game.turn() === "w" ? "White" : "Black";
+  
+    if (game.isCheckmate()) {
+      const winner = moveColor === "White" ? "Computer" : "You";
+      setIsGameOver(true);
+      setGameOverMessage(`${winner} wins by checkmate!`);
+      checkmateSound.play();
+    } else if (game.isStalemate()) {
+      setIsGameOver(true);
+      setGameOverMessage("It's a draw! Stalemate.");
+    } else if (game.isThreefoldRepetition()) {
+      setIsGameOver(true);
+      setGameOverMessage("It's a draw! Threefold repetition.");
+    } else if (game.isInsufficientMaterial()) {
+      setIsGameOver(true);
+      setGameOverMessage("It's a draw! Insufficient material.");
+    } else if (game.isDraw()) {
+      setIsGameOver(true);
+      setGameOverMessage("It's a draw!");
+    } else {
+      setCurrentStatus(`${moveColor === 'White' ? 'Your' : 'Computer\'s'} move`);
+      if (game.inCheck()) {
+        setCurrentStatus(`${moveColor === 'White' ? 'You are' : 'Computer is'} in check!`);
+        checkSound.play();
+      }
+    }
+  };
 
   const handleRestart = () => {
     setIsGameOver(false);
@@ -235,7 +383,10 @@ const ChessboardComponent = () => {
     gameRef.current.reset(); // Reset the chess game state
     boardRef.current.position("start"); // Reset the board position
     setMoves([]);
-    setCurrentStatus("White to move");
+    setCurrentStatus("Your move");
+    setSelectedSquare(null);
+    setPossibleMoves([]);
+    removeGreySquares();
   };
 
 
@@ -252,11 +403,24 @@ const ChessboardComponent = () => {
         <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
           <div className="lg:mx-16 w-full mx-auto mb-10 lg:w-1/2">
             <div ref={chessRef} style={{ width: window.innerWidth > 1028 ? "40vw" : "100vw" }}></div>
-            <div className="mt-6">
+            <div className="mt-6 flex items-center justify-between">
               <label className="inline-flex items-center gap-2 text-black font-semibold bg-gray-300 p-2 rounded-md">
                 <input type="checkbox" checked={mobileMode} onChange={handleCheckboxChange} />
                 Mobile Mode
               </label>
+              {mobileMode && (
+                <div className="bg-gray-800 text-white p-2 rounded-md">
+                  {selectedSquare ? 'Tap a highlighted square to move' : 'Tap a piece to select'}
+                </div>
+              )}
+              {mobileMode && (
+                <button
+                  onClick={handleRestart}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md mr-4"
+                >
+                  Restart
+                </button>
+              )}
             </div>
           </div>
           {!mobileMode && (

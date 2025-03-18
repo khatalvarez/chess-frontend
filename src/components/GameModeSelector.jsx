@@ -13,6 +13,13 @@ const gameModes = [
     description: "Challenge players from around the world in real-time matches.",
   },
   {
+    path: "/random-play",
+    label: "Random Play",
+    icon: Dice,
+    color: "from-indigo-500 to-blue-600",
+    description: "Quick casual games with random moves for fun practice.",
+  },
+  {
     path: "/local-multiplayer",
     label: "Local Multiplayer",
     icon: Users,
@@ -32,13 +39,6 @@ const gameModes = [
     icon: PuzzlePiece,
     color: "from-yellow-500 to-orange-600",
     description: "Improve your tactical vision with challenging puzzles.",
-  },
-  {
-    path: "/random-play",
-    label: "Random Play",
-    icon: Dice,
-    color: "from-indigo-500 to-blue-600",
-    description: "Quick casual games with random moves for fun practice.",
   },
 ]
 
