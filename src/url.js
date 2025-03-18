@@ -1,2 +1,2 @@
-export const BASE_URL = "https://chess-backend-43nq.onrender.com";
+export const BASE_URL = "http://localhost:8080";
 export const SOCKET_URL = BASE_URL;

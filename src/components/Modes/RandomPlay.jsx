@@ -435,7 +435,7 @@ const ChessboardComponent = () => {
             setMoves(prevMoves => [...prevMoves, { from: move.from, to: move.to }]);
             
             // Check status after the move
-            updateStatus();
+            // updateStatus();
             
             // Clear selection
             setSelectedSquare(null);
