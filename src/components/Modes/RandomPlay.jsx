@@ -435,7 +435,7 @@ const ChessboardComponent = () => {
             setMoves(prevMoves => [...prevMoves, { from: move.from, to: move.to }]);
             
             // Check status after the move
-            // updateStatus();
+            // updateStatus();  
             
             // Clear selection
             setSelectedSquare(null);
@@ -572,7 +572,7 @@ const ChessboardComponent = () => {
         // Update moves
         setMoves(prevMoves => [...prevMoves, { from: move.from, to: move.to }]);
         
-        updateStatus();
+        // updateStatus();
       } catch (error) {
         console.error("Error making AI move:", error);
       }
@@ -686,7 +686,7 @@ const ChessboardComponent = () => {
             className="lg:mx-8 w-full mx-auto mb-6 lg:mb-0 lg:w-1/2"
           >
             {/* Chess board container with stylish border */}
-            <div className="relative backdrop-blur-sm bg-white/10 border-4 border-white/30 rounded-xl p-4 shadow-xl">
+            <div className="relative backdrop-blur-sm bg-white/10 p-4 shadow-xl">
               <div ref={chessRef} style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}></div>
             </div>
             

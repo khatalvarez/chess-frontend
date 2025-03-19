@@ -6,6 +6,9 @@ import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import Navbar from "./components/Navbar"
 import LoadingScreen from "./components/Loading"
+import Analysis from "./components/Analysis"
+import Training from "./components/Training"
+import FeaturesSection from "./components/Features"
 
 const Home = lazy(() => import("./components/Home"))
 const SignUp = lazy(() => import("./components/Auth/SignUp"))
@@ -36,6 +39,7 @@ const App = () => {
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/features" element={<FeaturesSection />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
             <Route path="/modeselector" element={<GameModeSelector />} />
@@ -54,6 +58,9 @@ const App = () => {
             <Route path="/puzzle4" element={<Puzzle4 />} />
             <Route path="/puzzle5" element={<Puzzle5 />} />
             <Route path="/puzzle6" element={<Puzzle6 />} />
+
+            <Route path="/analysis" element={<Analysis />} />
+            <Route path="/training" element={<Training />} />
           </Routes>
         </Suspense>
       </Router>
