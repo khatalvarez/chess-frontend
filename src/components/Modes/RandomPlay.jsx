@@ -677,7 +677,7 @@ const ChessboardComponent = () => {
         alt="Chess background"
         className="absolute inset-0 w-full h-full object-cover filter brightness-75"
       />
-      <div className="flex h-fit py-8 lg:py-16 items-center justify-center w-screen relative">
+      <div className="flex h-fit py-32 items-center justify-center w-screen relative">
         <div className="w-screen flex flex-col lg:flex-row lg:flex-row mx-auto my-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

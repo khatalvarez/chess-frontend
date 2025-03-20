@@ -165,11 +165,11 @@ export default function GameModeSelector() {
           {gameModes.map((mode, index) => (
             <motion.div
               key={index}
-              initial={{ y: 50, opacity: 0 }}
-              animate={animate ? { y: 0, opacity: 1 } : {}}
-              transition={{ duration: 0.6, delay: index * 0.1 + 0.4 }}
-              whileHover={{ y: -10, scale: 1.03, transition: { duration: 0.3 } }}
-              className={`${selectedMode === index ? 'ring-4 ring-white' : ''}`}
+              // initial={{ y: 50, opacity: 0 }}
+              // animate={animate ? { y: 0, opacity: 1 } : {}}
+              // transition={{ duration: 0.2, delay: index * 0.1 + 0.4 }}
+              // whileHover={{ y: -10, scale: 1.03, transition: { duration: 0.3 } }}
+              // className={`${selectedMode === index ? '' : ''}`}
               onClick={() => handleModeSelect(mode.path, index)}
             >
               <div className={`bg-gradient-to-br ${mode.color} p-1 rounded-2xl shadow-lg h-full cursor-pointer`}>
