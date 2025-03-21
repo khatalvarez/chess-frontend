@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import Chessboard from "chessboardjs"

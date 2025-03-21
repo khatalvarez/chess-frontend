@@ -6,7 +6,6 @@ import {
   Menu, X, ChevronDown, User, LogOut, 
   Trophy, BookOpen, Settings, Home
 } from "lucide-react"
-import logo from "../assets/images/chessLogo.webp"
 import { logout } from "../store/authSlice"
 import { FaChess } from "react-icons/fa"
 import Cookies from "js-cookie"
@@ -124,22 +123,27 @@ function Navbar() {
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          {/* Logo with enhanced animation */}
+          {/* Updated Logo with new animation */}
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="relative">
-              <motion.div
-                className="absolute -inset-1 rounded-full bg-gradient-to-r from-green-400 to-blue-500 opacity-75 group-hover:opacity-100 blur-sm transition-opacity duration-300"
-              />
-              <motion.div className="relative">
-                <motion.img
-                  src={logo}
-                  className="w-10 h-10 object-contain relative z-10"
-                  alt="Chess Master Logo"
-                  variants={logoVariants}
-                  whileHover="hover"
+            {/* New Animated Chess Logo */}
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              whileHover={{ scale: 1.1, rotate: 10 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="w-12 h-12 relative"
+            >
+              <div className="w-full h-full relative">
+                <motion.div
+                  animate={{
+                    boxShadow: ["0 0 15px rgba(59, 130, 246, 0.6)", "0 0 30px rgba(139, 92, 246, 0.8)", "0 0 15px rgba(59, 130, 246, 0.6)"]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
                 />
-              </motion.div>
-            </div>
+                <FaChess className="absolute inset-0 text-white w-full h-full p-2" />
+              </div>
+            </motion.div>
             <div className="flex flex-col">
               <motion.span 
                 className="text-white font-bold text-xl group-hover:text-green-400 transition-colors duration-300"
