@@ -1,9 +1,10 @@
-"use client";
-
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-const features = [
+function FeaturesSection() {
+  const navigate = useNavigate();
+  
+  const features = [
     {
       path: "/global-multiplayer",
       title: "Global Multiplayer",
@@ -40,14 +41,14 @@ const features = [
       color: "from-green-500 to-teal-600",
     },
   ];
-
-export default function FeaturesSection() {
-  const navigate = useNavigate();
-
+  
   const handleFeatureClick = (path) => {
-    if (path) navigate(path);
+    console.log("Navigating to:", path);
+    if (path) {
+      navigate(path);
+    }
   };
-
+  
   return (
     <div id="features" className="bg-gray-900 py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,7 +66,7 @@ export default function FeaturesSection() {
             Dive into a world of chess with stunning visuals, powerful analysis tools, and multiple game modes.
           </p>
         </motion.div>
-
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <motion.div
@@ -74,14 +75,36 @@ export default function FeaturesSection() {
               whileInView={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true, margin: "-100px" }}
-              onClick={() => handleFeatureClick(feature.path)}
               className="cursor-pointer"
+              onClick={() => handleFeatureClick(feature.path)}
             >
-              <div className={`bg-gradient-to-br ${feature.color} p-1 rounded-2xl shadow-lg h-full`}>
-                <div className="bg-gray-800 rounded-xl p-8 h-full transition duration-300 hover:bg-gray-700">
-                  <div className="text-4xl mb-4">{feature.icon}</div>
-                  <h3 className="text-2xl font-bold text-white mb-3">{feature.title}</h3>
-                  <p className="text-gray-300">{feature.description}</p>
+              <div 
+                className={`bg-gradient-to-br ${feature.color} p-1 rounded-2xl shadow-lg h-full`}
+              >
+                <div className="bg-gray-800 rounded-xl p-8 h-full transition duration-300 hover:bg-gray-700 flex flex-col items-center">
+                  <motion.div 
+                    className="text-5xl mb-6"
+                    whileHover={{ 
+                      scale: 1.2,
+                      rotate: [0, -10, 10, -5, 0],
+                      transition: { duration: 0.5 }
+                    }}
+                  >
+                    {feature.icon}
+                  </motion.div>
+                  <h3 className="text-2xl font-bold text-white mb-3 text-center">{feature.title}</h3>
+                  <p className="text-gray-300 text-center">{feature.description}</p>
+                  
+                  <motion.button 
+                    initial={{ opacity: 0.7, y: 5 }}
+                    whileHover={{ opacity: 1, y: 0, scale: 1.05 }}
+                    className="mt-6 inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-white bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    Play Now
+                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7-7 7"></path>
+                    </svg>
+                  </motion.button>
                 </div>
               </div>
             </motion.div>
@@ -89,6 +112,7 @@ export default function FeaturesSection() {
         </div>
       </div>
     </div>
-    
   );
 }
+
+export default FeaturesSection;

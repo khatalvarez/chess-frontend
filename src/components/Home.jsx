@@ -13,11 +13,36 @@ function Home() {
   const userData = useSelector((state) => state.auth.userData)
   const [showPieceArray, setShowPieceArray] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [navbarHeight, setNavbarHeight] = useState(0)
   const navigate = useNavigate()
 
   const fullText = "Welcome to Chess Master"
   const [typedText, setTypedText] = useState("")
   const [particles, setParticles] = useState([])
+
+  // Detect navbar height
+  useEffect(() => {
+    const updateNavbarHeight = () => {
+      const navbar = document.querySelector('nav');
+      if (navbar) {
+        setNavbarHeight(navbar.offsetHeight);
+      }
+    };
+    
+    // Initial calculation
+    updateNavbarHeight();
+    
+    // Update on resize
+    window.addEventListener('resize', updateNavbarHeight);
+    
+    // Recalculate after a short delay to ensure navbar is fully rendered
+    const timer = setTimeout(updateNavbarHeight, 500);
+    
+    return () => {
+      window.removeEventListener('resize', updateNavbarHeight);
+      clearTimeout(timer);
+    };
+  }, []);
 
   // Generate particles
   useEffect(() => {
@@ -93,7 +118,7 @@ function Home() {
   ]
 
   return (
-    <div className="relative w-screen min-h-screen overflow-x-hidden bg-gradient-to-b from-gray-950 via-gray-900 to-black sm:pt-32">
+    <div className="relative w-screen min-h-screen overflow-x-hidden bg-gradient-to-b from-gray-950 via-gray-900 to-black">
       <div className="fixed inset-0 z-0 opacity-10" 
         style={{
           backgroundImage: `linear-gradient(45deg, #111 25%, transparent 25%), 
@@ -169,8 +194,11 @@ function Home() {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="relative w-screen h-screen flex items-center justify-center overflow-hidden">
+      {/* Hero Section - Adjusted to account for navbar height */}
+      <div 
+        className="relative w-screen min-h-screen flex items-center justify-center overflow-hidden" 
+        style={{ paddingTop: navbarHeight }}
+      >
         {/* Animated glow effects */}
         <motion.div 
           className="absolute z-0 w-96 h-96 rounded-full opacity-30"
@@ -211,7 +239,7 @@ function Home() {
           }}
         />
 
-        <div className="relative z-10 w-11/12 max-w-5xl">
+        <div className="relative z-10 w-11/12 max-w-5xl mt-8 sm:mt-0">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -261,7 +289,7 @@ function Home() {
               transition={{ duration: 0.8, delay: 0.5 }}
               className="h-24 mb-8 flex justify-center items-center"
             >
-              <h1 className="text-5xl sm:text-6xl md:text-7xl text-center font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-center font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
                 {typedText}
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}
@@ -289,7 +317,7 @@ function Home() {
               transition={{ duration: 0.8, delay: 0.9 }}
               className="flex flex-col sm:flex-row justify-center items-center gap-6"
             >
-              {authStatus === "true" && userData.username ? (
+              {authStatus === true && userData.username ? (
                 <motion.button
                   onClick={() => navigate("/modeselector")}
                   className="w-full sm:w-auto px-10 py-5 rounded-full text-xl font-semibold transition duration-300 transform hover:scale-105 hover:shadow-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
