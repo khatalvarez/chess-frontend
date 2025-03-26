@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
@@ -59,8 +57,23 @@ function Login() {
       const data = await response.json()
       if (response.ok) {
         setIsSuccess(true)
+
+        // Make sure we're dispatching the complete user data to Redux
         dispatch(login(data))
+
         toast.success("Login successful!")
+
+        // After successful login, fetch the complete profile data to ensure we have all user details
+        try {
+          const profileRes = await axios.get(`${BASE_URL}/profile`, {
+            withCredentials: true,
+          })
+          if (profileRes.data) {
+            dispatch(login(profileRes.data))
+          }
+        } catch (profileError) {
+          console.error("Error fetching profile after login:", profileError)
+        }
 
         setTimeout(() => {
           navigate("/modeselector")

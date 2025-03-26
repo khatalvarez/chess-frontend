@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
-  Menu, X, ChevronDown, User, LogOut, 
-  Trophy, BookOpen, Settings, Home
-} from "lucide-react"
-import { logout } from "../store/authSlice"
+import { Menu, X, ChevronDown, User, LogOut, BookOpen, Home } from "lucide-react"
+import { logout, login } from "../store/authSlice"
 import { FaChess } from "react-icons/fa"
 import Cookies from "js-cookie"
+import axios from "axios"
+import { BASE_URL } from "../url"
 
 function Navbar() {
   const dispatch = useDispatch()
@@ -69,42 +68,67 @@ function Navbar() {
     hover: {
       scale: 1.05,
       textShadow: "0 0 8px rgba(74, 222, 128, 0.6)",
-      transition: { duration: 0.2 }
-    }
+      transition: { duration: 0.2 },
+    },
   }
 
   const logoVariants = {
     hover: {
       rotate: 360,
       scale: 1.1,
-      transition: { duration: 0.8, ease: "easeInOut" }
-    }
+      transition: { duration: 0.8, ease: "easeInOut" },
+    },
   }
 
   const mobileMenuVariants = {
     hidden: { opacity: 0, height: 0 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       height: "auto",
-      transition: { 
+      transition: {
         height: { duration: 0.3 },
         opacity: { duration: 0.25, delay: 0.1 },
         staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
+        delayChildren: 0.2,
+      },
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       height: 0,
-      transition: { duration: 0.3 } 
-    }
+      transition: { duration: 0.3 },
+    },
   }
 
   const mobileItemVariants = {
     hidden: { x: -20, opacity: 0 },
     visible: { x: 0, opacity: 1 },
-    exit: { x: -20, opacity: 0 }
+    exit: { x: -20, opacity: 0 },
   }
+
+  // In the Navbar component, we need to ensure it properly responds to auth state changes
+  // The issue is likely that the component isn't re-rendering when the auth state changes
+
+  // Add this useEffect to check for auth status changes when the component mounts
+  useEffect(() => {
+    // Check if there's a token in cookies but auth status is false
+    const token = Cookies.get("token")
+    if (token && !authStatus) {
+      // If there's a token but authStatus is false, fetch user data
+      const fetchUserData = async () => {
+        try {
+          const res = await axios.get(`${BASE_URL}/profile`, {
+            withCredentials: true,
+          })
+          if (res.data) {
+            dispatch(login(res.data))
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error)
+        }
+      }
+      fetchUserData()
+    }
+  }, [authStatus, dispatch])
 
   return (
     <motion.nav
@@ -114,10 +138,10 @@ function Navbar() {
       onMouseEnter={() => handleNavbarHover(true)}
       onMouseLeave={() => handleNavbarHover(false)}
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        scrolled 
-          ? "bg-gray-900 shadow-lg" 
-          : navbarFocused 
-            ? "bg-gray-900 bg-opacity-95 backdrop-filter backdrop-blur-md" 
+        scrolled
+          ? "bg-gray-900 shadow-lg"
+          : navbarFocused
+            ? "bg-gray-900 bg-opacity-95 backdrop-filter backdrop-blur-md"
             : "bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg"
       }`}
     >
@@ -136,16 +160,20 @@ function Navbar() {
               <div className="w-full h-full relative">
                 <motion.div
                   animate={{
-                    boxShadow: ["0 0 15px rgba(59, 130, 246, 0.6)", "0 0 30px rgba(139, 92, 246, 0.8)", "0 0 15px rgba(59, 130, 246, 0.6)"]
+                    boxShadow: [
+                      "0 0 15px rgba(59, 130, 246, 0.6)",
+                      "0 0 30px rgba(139, 92, 246, 0.8)",
+                      "0 0 15px rgba(59, 130, 246, 0.6)",
+                    ],
                   }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                   className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
                 />
                 <FaChess className="absolute inset-0 text-white w-full h-full p-2" />
               </div>
             </motion.div>
             <div className="flex flex-col">
-              <motion.span 
+              <motion.span
                 className="text-white font-bold text-xl group-hover:text-green-400 transition-colors duration-300"
                 whileHover={{ scale: 1.05 }}
               >
@@ -157,15 +185,12 @@ function Navbar() {
 
           {/* Desktop Navigation - Simplified */}
           <div className="hidden md:flex items-center space-x-8">
-            <motion.div
-              variants={navItemVariants}
-              whileHover="hover"
-            >
+            <motion.div variants={navItemVariants} whileHover="hover">
               <Link
                 to="/"
                 className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${
-                  location.pathname === "/" 
-                    ? "text-green-400 border-b border-green-400 pb-1" 
+                  location.pathname === "/"
+                    ? "text-green-400 border-b border-green-400 pb-1"
                     : "text-white hover:text-green-400"
                 }`}
               >
@@ -176,15 +201,12 @@ function Navbar() {
 
             {effectiveAuthStatus === true && userData?.username ? (
               <>
-                <motion.div
-                  variants={navItemVariants}
-                  whileHover="hover"
-                >
+                <motion.div variants={navItemVariants} whileHover="hover">
                   <Link
                     to="/modeselector"
                     className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${
-                      location.pathname === "/modeselector" 
-                        ? "text-green-400 border-b border-green-400 pb-1" 
+                      location.pathname === "/modeselector"
+                        ? "text-green-400 border-b border-green-400 pb-1"
                         : "text-white hover:text-green-400"
                     }`}
                   >
@@ -192,16 +214,13 @@ function Navbar() {
                     <span>Play</span>
                   </Link>
                 </motion.div>
-                
-                <motion.div
-                  variants={navItemVariants}
-                  whileHover="hover"
-                >
+
+                <motion.div variants={navItemVariants} whileHover="hover">
                   <Link
                     to="/puzzle"
                     className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${
-                      location.pathname === "/puzzle" 
-                        ? "text-green-400 border-b border-green-400 pb-1" 
+                      location.pathname === "/puzzle"
+                        ? "text-green-400 border-b border-green-400 pb-1"
                         : "text-white hover:text-green-400"
                     }`}
                   >
@@ -216,18 +235,16 @@ function Navbar() {
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     whileHover={{ scale: 1.05 }}
                     className={`flex items-center space-x-2 px-4 py-1.5 rounded-full transition-all duration-300 ${
-                      isProfileMenuOpen 
-                        ? "bg-gray-700 text-green-400" 
-                        : "text-green-400 hover:bg-gray-800"
+                      isProfileMenuOpen ? "bg-gray-700 text-green-400" : "text-green-400 hover:bg-gray-800"
                     }`}
                   >
                     <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
                       {userData?.username?.charAt(0).toUpperCase() || "U"}
                     </div>
                     <span className="capitalize">{userData?.username?.split(" ")[0]}</span>
-                    <ChevronDown 
+                    <ChevronDown
                       size={16}
-                      className={`transition-transform duration-300 ${isProfileMenuOpen ? "rotate-180" : ""}`} 
+                      className={`transition-transform duration-300 ${isProfileMenuOpen ? "rotate-180" : ""}`}
                     />
                   </motion.button>
 
@@ -248,12 +265,15 @@ function Navbar() {
                           <User size={16} className="mr-3 text-green-400" />
                           <span>Profile</span>
                         </Link>
-                        
+
                         <button
                           onClick={handleLogout}
                           className="flex items-center px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors duration-300 w-full text-left group"
                         >
-                          <LogOut size={16} className="mr-3 text-red-400 group-hover:translate-x-1 transition-transform duration-300" />
+                          <LogOut
+                            size={16}
+                            className="mr-3 text-red-400 group-hover:translate-x-1 transition-transform duration-300"
+                          />
                           <span>Logout</span>
                         </button>
                       </motion.div>
@@ -263,10 +283,7 @@ function Navbar() {
               </>
             ) : (
               <>
-                <motion.div
-                  variants={navItemVariants}
-                  whileHover="hover"
-                >
+                <motion.div variants={navItemVariants} whileHover="hover">
                   <Link
                     to="/signup"
                     className="text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
@@ -274,12 +291,8 @@ function Navbar() {
                     Sign Up
                   </Link>
                 </motion.div>
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="group relative"
-                >
+
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} className="group relative">
                   <span className="absolute -inset-0.5 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-green-600 to-teal-700 rounded-lg blur opacity-95 group-hover:opacity-100 transition duration-300"></span>
                   <Link
                     to="/login"
@@ -293,7 +306,7 @@ function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
-          <motion.button 
+          <motion.button
             className="md:hidden relative w-10 h-10 flex items-center justify-center bg-gray-800 text-white rounded-full focus:outline-none"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -337,10 +350,7 @@ function Navbar() {
             className="md:hidden bg-gray-800 border-t border-gray-700 overflow-hidden"
           >
             <div className="px-4 py-4 space-y-3">
-              <motion.div
-                variants={mobileItemVariants}
-                className="overflow-hidden"
-              >
+              <motion.div variants={mobileItemVariants} className="overflow-hidden">
                 <Link
                   to="/"
                   className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-green-400 transition-colors duration-300"
@@ -361,7 +371,7 @@ function Navbar() {
                       <span>Play</span>
                     </Link>
                   </motion.div>
-                  
+
                   <motion.div variants={mobileItemVariants}>
                     <Link
                       to="/puzzle"
@@ -371,7 +381,7 @@ function Navbar() {
                       <span>Puzzles</span>
                     </Link>
                   </motion.div>
-                  
+
                   <motion.div variants={mobileItemVariants}>
                     <Link
                       to="/profile"
@@ -381,11 +391,8 @@ function Navbar() {
                       <span>Profile</span>
                     </Link>
                   </motion.div>
-                  
-                  <motion.div 
-                    variants={mobileItemVariants}
-                    className="pt-2 mt-2 border-t border-gray-700"
-                  >
+
+                  <motion.div variants={mobileItemVariants} className="pt-2 mt-2 border-t border-gray-700">
                     <button
                       onClick={handleLogout}
                       className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-red-400 transition-colors duration-300 w-full"
@@ -406,7 +413,7 @@ function Navbar() {
                       <span>Sign Up</span>
                     </Link>
                   </motion.div>
-                  
+
                   <motion.div variants={mobileItemVariants}>
                     <Link
                       to="/login"
@@ -427,3 +434,4 @@ function Navbar() {
 }
 
 export default Navbar
+
