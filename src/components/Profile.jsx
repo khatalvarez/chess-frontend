@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { useSelector, useDispatch } from "react-redux";
-import { login, logout } from "../store/authSlice";
-import Cookies from "js-cookie";
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback } from "react"
+import axios from "axios"
+import { useSelector, useDispatch } from "react-redux"
+import { login, logout } from "../store/authSlice"
+import Cookies from "js-cookie"
+import { useNavigate } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Trophy,
   Target,
@@ -16,95 +16,141 @@ import {
   ChevronDown,
   ChevronUp,
   Shield,
-} from "lucide-react";
-import bg from "../assets/images/bgprofile.webp";
-import { BASE_URL } from "../url";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import LoadingScreen from "./Loading";
+} from "lucide-react"
+import bg from "../assets/images/bgprofile.webp"
+import { BASE_URL } from "../url"
+import { toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import LoadingScreen from "./Loading"
 
 function Profile() {
-  const userData = useSelector((state) => state.auth.userData);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
-  const [expandedMatch, setExpandedMatch] = useState(null);
+  const userData = useSelector((state) => state.auth.userData)
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("all")
+  const [expandedMatch, setExpandedMatch] = useState(null)
   const [stats, setStats] = useState({
     totalGames: 0,
     winRate: 0,
     rating: 0,
-  });
+  })
 
-  const refreshProfileData = async () => {
-    setIsLoading(true);
-    try {
-      const res = await axios.get(`${BASE_URL}/profile`, {
-        withCredentials: true,
-      });
-      
-      const data = res.data;
-      dispatch(login(data));
+  // Replace the existing refreshProfileData function with this one
+  const refreshProfileData = useCallback(
+    async (options = {}) => {
+      if (!options.force && isLoading) return // Prevent multiple simultaneous refreshes
 
-      // Calculate stats
-      if (data && data.matchHistory) {
-        const totalGames = data.wins + data.loses + data.draws;
-        const winRate = totalGames > 0 ? Math.round((data.wins / totalGames) * 100) : 0;
-        
-        setStats({
-          totalGames,
-          winRate,
-          rating: calculateRating(data.wins, data.loses, data.draws),
-        });
+      setIsLoading(true)
+      try {
+        const res = await axios.get(`${BASE_URL}/profile`, {
+          withCredentials: true,
+        })
+
+        const data = res.data
+        dispatch(login(data))
+
+        // Calculate stats
+        if (data && data.matchHistory) {
+          const totalGames = data.wins + data.loses + data.draws
+          const winRate = totalGames > 0 ? Math.round((data.wins / totalGames) * 100) : 0
+
+          setStats({
+            totalGames,
+            winRate,
+            rating: calculateRating(data.wins, data.loses, data.draws),
+          })
+        }
+
+        setIsLoading(false)
+
+        // Only show toast for manual refreshes
+        if (options.showToast) {
+          toast.success("Profile data refreshed")
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error)
+        setIsLoading(false)
+        if (options.showToast) {
+          toast.error("Failed to load profile data")
+        }
       }
-      
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      setIsLoading(false);
-      toast.error("Failed to load profile data");
-    }
-  };
+    },
+    [dispatch, isLoading],
+  )
 
   useEffect(() => {
-    refreshProfileData();
-  }, []);
+    // Initial load
+    refreshProfileData()
+
+    // Set up polling to refresh data every 30 seconds
+    const intervalId = setInterval(() => {
+      refreshProfileData()
+    }, 30000) // 30 seconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId)
+  }, [])
+
+  useEffect(() => {
+    if (userData) {
+      refreshProfileData()
+    }
+  }, [userData]) // Refresh when username changes (login/logout)
+
+  // Add this useEffect to refresh data when the component becomes visible
+  useEffect(() => {
+    // Function to check if the page is visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshProfileData({ force: true })
+      }
+    }
+
+    // Add event listener for visibility change
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    // Clean up
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [refreshProfileData])
 
   const calculateRating = (wins, loses, draws) => {
-    const totalGames = wins + loses + draws;
-    if (totalGames === 0) return 800;
-    const baseRating = 800;
-    return Math.round(baseRating + (wins / totalGames) * 2200);
-  };
+    const totalGames = wins + loses + draws
+    if (totalGames === 0) return 800
+    const baseRating = 800
+    return Math.round(baseRating + (wins / totalGames) * 2200)
+  }
 
   const handleLogout = () => {
-    Cookies.remove("token", { path: "/" });
-    dispatch(logout());
-    toast.success("Logged out successfully");
-    navigate("/login");
-  };
+    Cookies.remove("token", { path: "/" })
+    dispatch(logout())
+    toast.success("Logged out successfully")
+    navigate("/login")
+  }
 
   const toggleMatchDetails = (matchId) => {
-    setExpandedMatch(expandedMatch === matchId ? null : matchId);
-  };
+    setExpandedMatch(expandedMatch === matchId ? null : matchId)
+  }
 
   const filterMatchHistory = () => {
-    if (!userData?.matchHistory) return [];
+    if (!userData?.matchHistory) return []
 
     switch (activeTab) {
       case "wins":
-        return userData.matchHistory.filter((match) => match.status === "win");
+        return userData.matchHistory.filter((match) => match.status === "win")
       case "losses":
-        return userData.matchHistory.filter((match) => match.status === "lose");
+        return userData.matchHistory.filter((match) => match.status === "lose")
       case "draws":
-        return userData.matchHistory.filter((match) => match.status === "draw");
+        return userData.matchHistory.filter((match) => match.status === "draw")
       default:
-        return userData.matchHistory;
+        return userData.matchHistory
     }
-  };
+  }
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner />
   }
 
   return (
@@ -112,12 +158,8 @@ function Profile() {
       <BackgroundImage src={bg} />
 
       <div className="w-11/12 lg:w-5/6 flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6 py-32 z-10">
-        <ProfileCard 
-          userData={userData} 
-          stats={stats} 
-          handleLogout={handleLogout} 
-        />
-        <MatchHistoryCard 
+        <ProfileCard userData={userData} stats={stats} handleLogout={handleLogout} />
+        <MatchHistoryCard
           userData={userData}
           refreshProfileData={refreshProfileData}
           activeTab={activeTab}
@@ -128,7 +170,7 @@ function Profile() {
         />
       </div>
     </div>
-  );
+  )
 }
 
 // Component for loading spinner
@@ -139,7 +181,7 @@ const LoadingSpinner = () => (
       <LoadingScreen />
     </div>
   </div>
-);
+)
 
 // Component for background image
 const BackgroundImage = ({ src }) => (
@@ -150,7 +192,7 @@ const BackgroundImage = ({ src }) => (
     alt="Chess background"
     className="absolute inset-0 w-full h-full object-cover brightness-[0.4]"
   />
-);
+)
 
 // Component for profile card
 const ProfileCard = ({ userData, stats, handleLogout }) => (
@@ -178,44 +220,44 @@ const ProfileCard = ({ userData, stats, handleLogout }) => (
         Player Statistics
       </h2>
 
-      <StatCard 
-        label="Rating" 
-        value={stats.rating} 
-        colorClass="bg-blue-500" 
+      <StatCard
+        label="Rating"
+        value={stats.rating}
+        colorClass="bg-blue-500"
         textClass="text-blue-300"
         percentage={Math.min((stats.rating / 3000) * 100, 100)}
         showLegend
       />
-      
-      <StatCard 
-        label="Win Rate" 
-        value={`${stats.winRate}%`} 
-        colorClass="bg-green-500" 
+
+      <StatCard
+        label="Win Rate"
+        value={`${stats.winRate}%`}
+        colorClass="bg-green-500"
         textClass="text-green-300"
         percentage={stats.winRate}
       />
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <StatBox 
-          icon={<Trophy size={16} />} 
-          label="Wins" 
-          value={userData?.wins || 0} 
-          bgColor="bg-green-100" 
-          textColor="text-green-600" 
+        <StatBox
+          icon={<Trophy size={16} />}
+          label="Wins"
+          value={userData?.wins || 0}
+          bgColor="bg-green-100"
+          textColor="text-green-600"
         />
-        <StatBox 
-          icon={<Activity size={16} />} 
-          label="Losses" 
-          value={userData?.loses || 0} 
-          bgColor="bg-red-100" 
-          textColor="text-red-600" 
+        <StatBox
+          icon={<Activity size={16} />}
+          label="Losses"
+          value={userData?.loses || 0}
+          bgColor="bg-red-100"
+          textColor="text-red-600"
         />
-        <StatBox 
-          icon={<Target size={16} />} 
-          label="Draws" 
-          value={userData?.draws || 0} 
-          bgColor="bg-yellow-100" 
-          textColor="text-yellow-600" 
+        <StatBox
+          icon={<Target size={16} />}
+          label="Draws"
+          value={userData?.draws || 0}
+          bgColor="bg-yellow-100"
+          textColor="text-yellow-600"
         />
       </div>
 
@@ -238,7 +280,7 @@ const ProfileCard = ({ userData, stats, handleLogout }) => (
       </button>
     </div>
   </motion.div>
-);
+)
 
 // Component for stat card with progress bar
 const StatCard = ({ label, value, colorClass, textClass, percentage, showLegend }) => (
@@ -250,10 +292,7 @@ const StatCard = ({ label, value, colorClass, textClass, percentage, showLegend 
       </span>
     </div>
     <div className="w-full bg-gray-700 rounded-full h-2 mb-1">
-      <div
-        className={`${colorClass} h-2 rounded-full`}
-        style={{ width: `${percentage}%` }}
-      ></div>
+      <div className={`${colorClass} h-2 rounded-full`} style={{ width: `${percentage}%` }}></div>
     </div>
     {showLegend && (
       <div className="flex justify-between text-xs text-gray-400">
@@ -263,7 +302,7 @@ const StatCard = ({ label, value, colorClass, textClass, percentage, showLegend 
       </div>
     )}
   </div>
-);
+)
 
 // Component for stat box
 const StatBox = ({ icon, label, value, bgColor, textColor }) => (
@@ -274,17 +313,17 @@ const StatBox = ({ icon, label, value, bgColor, textColor }) => (
     <p className="text-gray-400 text-sm mb-1">{label}</p>
     <p className="text-2xl font-bold text-white">{value}</p>
   </div>
-);
+)
 
 // Component for match history card
-const MatchHistoryCard = ({ 
-  userData, 
-  refreshProfileData, 
-  activeTab, 
-  setActiveTab, 
-  expandedMatch, 
+const MatchHistoryCard = ({
+  userData,
+  refreshProfileData,
+  activeTab,
+  setActiveTab,
+  expandedMatch,
   toggleMatchDetails,
-  filteredMatches
+  filteredMatches,
 }) => (
   <motion.div
     initial={{ opacity: 0, x: 50 }}
@@ -297,8 +336,9 @@ const MatchHistoryCard = ({
         <Calendar className="mr-2 text-blue-400" size={20} />
         Match History
       </h2>
+      {/* Modify the refresh button click handler to show toast */}
       <button
-        onClick={refreshProfileData}
+        onClick={() => refreshProfileData({ showToast: true, force: true })}
         className="flex items-center space-x-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
       >
         <RefreshCw size={16} />
@@ -308,45 +348,45 @@ const MatchHistoryCard = ({
 
     <MatchHistoryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
     <div className="p-4">
-      <MatchHistoryContent 
-        matches={filteredMatches} 
-        activeTab={activeTab} 
+      <MatchHistoryContent
+        matches={filteredMatches}
+        activeTab={activeTab}
         expandedMatch={expandedMatch}
         toggleMatchDetails={toggleMatchDetails}
       />
     </div>
   </motion.div>
-);
+)
 
 // Component for match history tabs
 const MatchHistoryTabs = ({ activeTab, setActiveTab }) => (
   <div className="flex border-b border-gray-700">
-    <TabButton 
-      label="All" 
-      isActive={activeTab === "all"} 
-      onClick={() => setActiveTab("all")} 
-      colorClass="text-blue-400 border-blue-400" 
+    <TabButton
+      label="All"
+      isActive={activeTab === "all"}
+      onClick={() => setActiveTab("all")}
+      colorClass="text-blue-400 border-blue-400"
     />
-    <TabButton 
-      label="Wins" 
-      isActive={activeTab === "wins"} 
-      onClick={() => setActiveTab("wins")} 
-      colorClass="text-green-400 border-green-400" 
+    <TabButton
+      label="Wins"
+      isActive={activeTab === "wins"}
+      onClick={() => setActiveTab("wins")}
+      colorClass="text-green-400 border-green-400"
     />
-    <TabButton 
-      label="Losses" 
-      isActive={activeTab === "losses"} 
-      onClick={() => setActiveTab("losses")} 
-      colorClass="text-red-400 border-red-400" 
+    <TabButton
+      label="Losses"
+      isActive={activeTab === "losses"}
+      onClick={() => setActiveTab("losses")}
+      colorClass="text-red-400 border-red-400"
     />
-    <TabButton 
-      label="Draws" 
-      isActive={activeTab === "draws"} 
-      onClick={() => setActiveTab("draws")} 
-      colorClass="text-yellow-400 border-yellow-400" 
+    <TabButton
+      label="Draws"
+      isActive={activeTab === "draws"}
+      onClick={() => setActiveTab("draws")}
+      colorClass="text-yellow-400 border-yellow-400"
     />
   </div>
-);
+)
 
 // Component for tab button
 const TabButton = ({ label, isActive, onClick, colorClass }) => (
@@ -358,31 +398,31 @@ const TabButton = ({ label, isActive, onClick, colorClass }) => (
   >
     {label}
   </button>
-);
+)
 
 // Component for match history content
 const MatchHistoryContent = ({ matches, activeTab, expandedMatch, toggleMatchDetails }) => {
   if (!matches || matches.length === 0) {
-    return <EmptyMatchHistory activeTab={activeTab} />;
+    return <EmptyMatchHistory activeTab={activeTab} />
   }
 
   // Sort match history by date (newest first)
-  const sortedMatches = [...matches].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const sortedMatches = [...matches].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   return (
     <div className="space-y-3">
       {sortedMatches.map((match, index) => (
-        <MatchItem 
-          key={match._id || index} 
-          match={match} 
+        <MatchItem
+          key={match._id || index}
+          match={match}
           index={index}
           isExpanded={expandedMatch === match._id}
           toggleDetails={() => toggleMatchDetails(match._id)}
         />
       ))}
     </div>
-  );
-};
+  )
+}
 
 // Component for empty match history state
 const EmptyMatchHistory = ({ activeTab }) => (
@@ -395,7 +435,7 @@ const EmptyMatchHistory = ({ activeTab }) => (
         : `You don't have any ${activeTab} yet`}
     </p>
   </div>
-);
+)
 
 // Component for match item
 const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
@@ -407,7 +447,7 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
       label: "VICTORY",
       result: `You won against ${match.opponent}`,
       ratingChange: "+25 Rating",
-      ratingColor: "text-green-400"
+      ratingColor: "text-green-400",
     },
     lose: {
       icon: <Activity size={18} />,
@@ -416,7 +456,7 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
       label: "DEFEAT",
       result: `${match.opponent} defeated you`,
       ratingChange: "-15 Rating",
-      ratingColor: "text-red-400"
+      ratingColor: "text-red-400",
     },
     draw: {
       icon: <Target size={18} />,
@@ -425,11 +465,11 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
       label: "DRAW",
       result: `Draw with ${match.opponent}`,
       ratingChange: "+0 Rating",
-      ratingColor: "text-yellow-400"
-    }
-  };
+      ratingColor: "text-yellow-400",
+    },
+  }
 
-  const config = statusConfig[match.status];
+  const config = statusConfig[match.status]
 
   return (
     <motion.div
@@ -445,7 +485,9 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${config.bgColor} bg-opacity-30 ${config.textColor}`}>
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center ${config.bgColor} bg-opacity-30 ${config.textColor}`}
+            >
               {config.icon}
             </div>
             <div>
@@ -460,7 +502,9 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bgColor} bg-opacity-30 ${config.textColor}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-medium ${config.bgColor} bg-opacity-30 ${config.textColor}`}
+            >
               {config.label}
             </span>
             {isExpanded ? (
@@ -502,7 +546,8 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
         </AnimatePresence>
       </div>
     </motion.div>
-  );
-};
+  )
+}
 
-export default Profile;
+export default Profile
+

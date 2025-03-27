@@ -17,7 +17,7 @@ export const authSlice = createSlice({
       state.status = true
       state.userData = action.payload
       // Log the state update for debugging
-      console.log("Auth state updated:", { status: true, userData: action.payload })
+      // console.log("Auth state updated:", { status: true, userData: action.payload })
     },
     logout: (state) => {
       state.status = false

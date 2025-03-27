@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X, ChevronDown, User, LogOut, BookOpen, Home } from "lucide-react"
+import logo from "../assets/images/chessLogo.webp"
 import { logout, login } from "../store/authSlice"
 import { FaChess } from "react-icons/fa"
 import Cookies from "js-cookie"
@@ -61,7 +62,8 @@ function Navbar() {
 
   // Override authStatus to false if the route is /login or /signup
   const isAuthPage = location.pathname === "/login" || location.pathname === "/signup"
-  const effectiveAuthStatus = isAuthPage ? false : authStatus
+  // Make sure we check both authStatus AND userData existence
+  const effectiveAuthStatus = isAuthPage ? false : authStatus && !!userData?.username
 
   // Animation variants
   const navItemVariants = {
@@ -105,15 +107,20 @@ function Navbar() {
     exit: { x: -20, opacity: 0 },
   }
 
-  // In the Navbar component, we need to ensure it properly responds to auth state changes
-  // The issue is likely that the component isn't re-rendering when the auth state changes
-
-  // Add this useEffect to check for auth status changes when the component mounts
+  // Add this useEffect to check auth status on mount and when auth state changes
   useEffect(() => {
-    // Check if there's a token in cookies but auth status is false
+    // Check if we're on the login page and have auth status
+    if (location.pathname === "/login" && authStatus && userData?.username) {
+      // Redirect to home page after successful login
+      navigate("/")
+    }
+  }, [authStatus, userData, location.pathname, navigate])
+
+  // Also add this useEffect to check for token on page load/refresh
+  useEffect(() => {
     const token = Cookies.get("token")
     if (token && !authStatus) {
-      // If there's a token but authStatus is false, fetch user data
+      // If we have a token but no auth status, fetch user data
       const fetchUserData = async () => {
         try {
           const res = await axios.get(`${BASE_URL}/profile`, {
@@ -124,11 +131,21 @@ function Navbar() {
           }
         } catch (error) {
           console.error("Error fetching user data:", error)
+          Cookies.remove("token", { path: "/" })
         }
       }
       fetchUserData()
     }
-  }, [authStatus, dispatch])
+  }, [])
+
+  // Add this useEffect to log auth state changes
+  useEffect(() => {
+    console.log("Auth state changed:", {
+      authStatus,
+      hasUserData: !!userData?.username,
+      username: userData?.username,
+    })
+  }, [authStatus, userData])
 
   return (
     <motion.nav
@@ -147,31 +164,20 @@ function Navbar() {
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          {/* Updated Logo with new animation */}
+          {/* Logo with enhanced animation */}
           <Link to="/" className="flex items-center space-x-3 group">
-            {/* New Animated Chess Logo */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              whileHover={{ scale: 1.1, rotate: 10 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="w-12 h-12 relative"
-            >
-              <div className="w-full h-full relative">
-                <motion.div
-                  animate={{
-                    boxShadow: [
-                      "0 0 15px rgba(59, 130, 246, 0.6)",
-                      "0 0 30px rgba(139, 92, 246, 0.8)",
-                      "0 0 15px rgba(59, 130, 246, 0.6)",
-                    ],
-                  }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                  className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
+            <div className="relative">
+              <motion.div className="absolute -inset-1 rounded-full bg-gradient-to-r from-green-400 to-blue-500 opacity-75 group-hover:opacity-100 blur-sm transition-opacity duration-300" />
+              <motion.div className="relative">
+                <motion.img
+                  src={logo}
+                  className="w-10 h-10 object-contain relative z-10"
+                  alt="Chess Master Logo"
+                  variants={logoVariants}
+                  whileHover="hover"
                 />
-                <FaChess className="absolute inset-0 text-white w-full h-full p-2" />
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
             <div className="flex flex-col">
               <motion.span
                 className="text-white font-bold text-xl group-hover:text-green-400 transition-colors duration-300"
@@ -239,9 +245,11 @@ function Navbar() {
                     }`}
                   >
                     <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
-                      {userData?.username?.charAt(0).toUpperCase() || "U"}
+                      {userData?.username ? userData.username.charAt(0).toUpperCase() : "U"}
                     </div>
-                    <span className="capitalize">{userData?.username?.split(" ")[0]}</span>
+                    <span className="capitalize">
+                      {userData?.username ? userData.username.split(" ")[0] : "Loading..."}
+                    </span>
                     <ChevronDown
                       size={16}
                       className={`transition-transform duration-300 ${isProfileMenuOpen ? "rotate-180" : ""}`}
