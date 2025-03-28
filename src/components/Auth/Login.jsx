@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
@@ -12,7 +14,7 @@ import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 
 function Login() {
-  const dispatch = useDispatch()
+  // const dispatch = useDispatch()
   const navigate = useNavigate()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -58,33 +60,44 @@ function Login() {
       if (response.ok) {
         setIsSuccess(true)
 
-        // Make sure we're dispatching the complete user data to Redux
-        dispatch(login(data))
+        // Store token in Redux state
+        dispatch(
+          login({
+            ...data,
+            username: data.username || email.split("@")[0], // Fallback username if not provided
+          }),
+        )
 
         toast.success("Login successful!")
 
-        // After successful login, fetch the complete profile data to ensure we have all user details
-        try {
-          const profileRes = await axios.get(`${BASE_URL}/profile`, {
-            withCredentials: true,
-          })
-          if (profileRes.data) {
-            dispatch(login(profileRes.data))
-          }
-        } catch (profileError) {
-          console.error("Error fetching profile after login:", profileError)
-        }
+        // Wait a moment for cookies to be set
+        setTimeout(async () => {
+          try {
+            // Fetch profile with credentials to include cookies
+            const profileRes = await axios.get(`${BASE_URL}/profile`, {
+              withCredentials: true,
+            })
 
-        setTimeout(() => {
-          navigate("/modeselector")
-        }, 1500)
+            if (profileRes.data) {
+              // Update Redux with the complete profile data
+              dispatch(login(profileRes.data))
+            }
+
+            navigate("/modeselector")
+          } catch (profileError) {
+            console.error("Error fetching profile after login:", profileError)
+            // Even if profile fetch fails, still navigate to mode selector
+            // since we have basic user data from login
+            navigate("/modeselector")
+          }
+        }, 500)
       } else {
         toast.error(data.error || "Login failed")
+        setIsLoading(false)
       }
     } catch (error) {
       console.error("Error during login:", error)
       toast.error("Connection error. Please try again.")
-    } finally {
       setIsLoading(false)
     }
   }
