@@ -10,6 +10,8 @@ import { FaChess } from "react-icons/fa"
 import Cookies from "js-cookie"
 import axios from "axios"
 import { BASE_URL } from "../url"
+import { toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 function Navbar() {
   const dispatch = useDispatch()
@@ -23,17 +25,12 @@ function Navbar() {
   const profileMenuRef = useRef(null)
   const [navbarFocused, setNavbarFocused] = useState(false)
 
-  // Add this near the top of the component after the state declarations
-  useEffect(() => {
-    console.log("Auth status:", authStatus)
-    console.log("User data:", userData)
-  }, [authStatus, userData])
-
   // Add a hover effect for the entire navbar
   const handleNavbarHover = (focused) => {
     setNavbarFocused(focused)
   }
 
+  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
@@ -43,13 +40,13 @@ function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Close mobile menu when route changes
   useEffect(() => {
-    // Close mobile menu when route changes
     setIsMenuOpen(false)
   }, [location.pathname])
 
+  // Close profile menu when clicking outside
   useEffect(() => {
-    // Close profile menu when clicking outside
     function handleClickOutside(event) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setIsProfileMenuOpen(false)
@@ -59,13 +56,29 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  // Handle logout
   const handleLogout = () => {
     Cookies.remove("token", { path: "/" })
     dispatch(logout())
-    setIsProfileMenuOpen(false)
+    toast.success("Logged out successfully")
     navigate("/login")
   }
+
+  // Check authentication once on component mount
+  useEffect(() => {
+    // Only make the API call if we're not already authenticated or missing user data
+    if (!authStatus || !userData?.username) {
+      axios
+        .get(`${BASE_URL}/profile`, {
+          withCredentials: true,
+        })
+        .then((res) => {
+          dispatch(login(res.data))
+        })
+        .catch((error) => {
+          console.error("Error fetching profile:", error)
+        })
+    }
+  }, [authStatus, userData, dispatch])
 
   // Override authStatus to false if the route is /login or /signup
   const isAuthPage = location.pathname === "/login" || location.pathname === "/signup"
@@ -77,35 +90,6 @@ function Navbar() {
       scale: 1.05,
       textShadow: "0 0 8px rgba(74, 222, 128, 0.6)",
       transition: { duration: 0.2 },
-    },
-  }
-
-  // Fix the navbar to check for authentication on mount
-  useEffect(() => {
-    // Check if there's a token in cookies and if we're not already authenticated
-    if (!authStatus || !userData?.username) {
-      // Try to fetch the profile data
-      axios
-        .get(`${BASE_URL}/profile`, {
-          withCredentials: true,
-        })
-        .then((res) => {
-          const data = res.data
-          console.log("Profile data fetched successfully:", data)
-          dispatch(login(data))
-        })
-        .catch((error) => {
-          console.error("Error fetching profile in navbar:", error)
-          // Don't clear the token here, as it might be valid but the request failed for other reasons
-        })
-    }
-  }, [authStatus, userData, dispatch])
-
-  const logoVariants = {
-    hover: {
-      rotate: 360,
-      scale: 1.1,
-      transition: { duration: 0.8, ease: "easeInOut" },
     },
   }
 
@@ -151,9 +135,9 @@ function Navbar() {
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          {/* Updated Logo with new animation */}
+          {/* Logo with animation */}
           <Link to="/" className="flex items-center space-x-3 group">
-            {/* New Animated Chess Logo */}
+            {/* Animated Chess Logo */}
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -187,7 +171,7 @@ function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation - Simplified */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <motion.div variants={navItemVariants} whileHover="hover">
               <Link
@@ -233,7 +217,7 @@ function Navbar() {
                   </Link>
                 </motion.div>
 
-                {/* Simplified Profile Dropdown */}
+                {/* Profile Dropdown */}
                 <div className="relative" ref={profileMenuRef}>
                   <motion.button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -343,7 +327,7 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu - Simplified */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -438,4 +422,3 @@ function Navbar() {
 }
 
 export default Navbar
-
