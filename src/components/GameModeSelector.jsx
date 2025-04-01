@@ -246,39 +246,12 @@ export default function GameModeSelector() {
           transition={{ duration: 0.8 }}
           className="text-center mb-12 sm:mb-16"
         >
-          <div className="relative inline-block">
-            <motion.h1
-              className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 mb-2 sm:mb-6 tracking-tight"
-              style={{
-                textShadow: "0 0 30px rgba(139, 92, 246, 0.3)",
-              }}
-            >
-              {typedText}
-              <motion.span
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
-                className="inline-block w-1 h-8 md:h-12 ml-1 bg-blue-400"
-              />
-            </motion.h1>
-
-            {/* Subtle underline accent */}
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: typedText.length > 0 ? "100%" : 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="h-1 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-600 rounded-full mx-auto my-2"
-              style={{ maxWidth: "240px" }}
-            />
-          </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="text-lg sm:text-xl text-gray-300 text-center max-w-2xl mx-auto mt-6"
-          >
-            Select your preferred way to play and embark on your chess journey
-          </motion.p>
+          <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-6">
+          Choose Your Chess Experience
+          </h2>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          Select your preferred way to play and embark on your chess journey.
+          </p>
         </motion.div>
 
         {/* Enhanced Game Mode Grid */}

@@ -281,7 +281,7 @@ export default function Home() {
                   initial={{ y: -50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.8 }}
-                  className="mb-10"
+                  className="mb-6"
                 >
                   <PieceArray />
                 </motion.div>
@@ -292,9 +292,9 @@ export default function Home() {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="h-24 mb-8 flex justify-center items-center"
+              className="h-20 mb-2 flex justify-center items-center"
             >
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-center font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
+              <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8">
                 {typedText}
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}

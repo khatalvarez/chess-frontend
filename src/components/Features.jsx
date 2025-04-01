@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
@@ -47,7 +45,7 @@ export default function FeaturesSection() {
     },
   ]
 
-  const handleFeatureClick = () => {
+  const handleFeatureClick = (path) => {
     console.log("Navigating to:", path)
     if (path) {
       navigate(path)
@@ -207,4 +205,3 @@ export default function FeaturesSection() {
     </div>
   )
 }
-
