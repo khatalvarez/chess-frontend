@@ -1,4 +1,3 @@
-"use client"
 import { motion } from "framer-motion"
 import bB from "./pieces/bB.webp"
 import bK from "./pieces/bK.webp"
@@ -47,9 +46,29 @@ function PieceArray() {
             rotate: [0, 10, -10, 0],
             transition: { duration: 0.5 },
           }}
-          className="relative"
+          className="relative group"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          {/* Glow effect on hover */}
+          <motion.div
+            className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0, 0.5, 0],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatType: "reverse",
+            }}
+            style={{
+              background:
+                index < 6
+                  ? "radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, rgba(0, 0, 0, 0) 70%)"
+                  : "radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, rgba(0, 0, 0, 0) 70%)",
+              filter: "blur(8px)",
+            }}
+          />
+
           <img
             src={piece.src || "/placeholder.svg"}
             width={piece.width}

@@ -1,9 +1,10 @@
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Trophy, X, RotateCcw, Home } from "lucide-react"
+import { Trophy, X, RotateCcw, Home, Sparkles, ChevronRight } from "lucide-react"
 import { Link } from "react-router-dom"
 import bg from "../assets/images/bgprofile.webp"
+
 
 const GameOverModal = ({ isOpen, message, onRestart }) => {
   useEffect(() => {
@@ -76,6 +77,38 @@ const GameOverModal = ({ isOpen, message, onRestart }) => {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20" />
             </div>
 
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
+              {[...Array(4)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full"
+                  style={{
+                    background:
+                      i % 2 === 0
+                        ? `radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`
+                        : `radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`,
+                    width: `${100 + Math.random() * 100}px`,
+                    height: `${100 + Math.random() * 100}px`,
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    filter: "blur(20px)",
+                  }}
+                  animate={{
+                    x: [0, Math.random() * 50 - 25, 0],
+                    y: [0, Math.random() * 50 - 25, 0],
+                    scale: [1, 1.2, 1],
+                    opacity: [0.2, 0.4, 0.2],
+                  }}
+                  transition={{
+                    duration: 8 + Math.random() * 5,
+                    repeat: Number.POSITIVE_INFINITY,
+                    repeatType: "reverse",
+                  }}
+                />
+              ))}
+            </div>
+
             {/* Close button */}
             <button
               onClick={onRestart}
@@ -87,7 +120,25 @@ const GameOverModal = ({ isOpen, message, onRestart }) => {
             <div className="relative flex flex-col items-center text-center">
               {/* Trophy icon with glow effect */}
               <div className="relative mb-6">
-                <div className="absolute inset-0 rounded-full bg-yellow-500 blur-xl opacity-30 animate-pulse" />
+                <motion.div
+                  className="absolute inset-0 rounded-full blur-xl opacity-30"
+                  animate={{
+                    opacity: [0.3, 0.6, 0.3],
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Number.POSITIVE_INFINITY,
+                    repeatType: "reverse",
+                  }}
+                  style={{
+                    background: message.toLowerCase().includes("win")
+                      ? "rgba(234, 179, 8, 0.5)"
+                      : message.toLowerCase().includes("draw")
+                        ? "rgba(59, 130, 246, 0.5)"
+                        : "rgba(239, 68, 68, 0.5)",
+                  }}
+                />
                 <div
                   className={`w-20 h-20 rounded-full flex items-center justify-center ${
                     message.toLowerCase().includes("win")
@@ -97,7 +148,23 @@ const GameOverModal = ({ isOpen, message, onRestart }) => {
                         : "bg-gradient-to-br from-red-400 to-red-600"
                   }`}
                 >
-                  <Trophy className="w-10 h-10 text-white" />
+                  {message.toLowerCase().includes("win") ? (
+                    <Trophy className="w-10 h-10 text-white" />
+                  ) : message.toLowerCase().includes("draw") ? (
+                    <motion.div
+                      animate={{ rotate: [0, 360] }}
+                      transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                    >
+                      <Sparkles className="w-10 h-10 text-white" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+                    >
+                      <X className="w-10 h-10 text-white" />
+                    </motion.div>
+                  )}
                 </div>
               </div>
 
@@ -126,20 +193,53 @@ const GameOverModal = ({ isOpen, message, onRestart }) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onRestart}
-                  className="flex-1 py-3 px-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white font-semibold flex items-center justify-center"
+                  className="flex-1 py-3 px-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white font-semibold flex items-center justify-center group relative overflow-hidden"
                 >
+                  {/* Button shine effect */}
+                  <motion.div
+                    className="absolute inset-0 w-full h-full"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: ["100%", "100%", "-100%"] }}
+                    transition={{
+                      repeat: Number.POSITIVE_INFINITY,
+                      repeatDelay: 3,
+                      duration: 1.5,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent transform rotate-30 blur-md" />
+                  </motion.div>
+
                   <RotateCcw className="mr-2" size={18} />
-                  Play Again
+                  <span>Play Again</span>
+                  <ChevronRight className="ml-2 h-5 w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                 </motion.button>
 
                 <Link to="/modeselector" className="flex-1">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-full py-3 px-6 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold flex items-center justify-center transition-colors duration-200"
+                    className="w-full py-3 px-6 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold flex items-center justify-center transition-colors duration-200 group relative overflow-hidden"
                   >
+                    {/* Button shine effect */}
+                    <motion.div
+                      className="absolute inset-0 w-full h-full"
+                      initial={{ x: "-100%" }}
+                      animate={{ x: ["100%", "100%", "-100%"] }}
+                      transition={{
+                        repeat: Number.POSITIVE_INFINITY,
+                        repeatDelay: 3,
+                        duration: 1.5,
+                        ease: "easeInOut",
+                        delay: 0.5,
+                      }}
+                    >
+                      <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform rotate-30 blur-md" />
+                    </motion.div>
+
                     <Home className="mr-2" size={18} />
-                    Game Modes
+                    <span>Game Modes</span>
+                    <ChevronRight className="ml-2 h-5 w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                   </motion.button>
                 </Link>
               </div>
