@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
@@ -56,11 +54,31 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const handleLogout = () => {
-    Cookies.remove("token", { path: "/" })
-    dispatch(logout())
-    toast.success("Logged out successfully")
-    navigate("/login")
+  const handleLogout = async () => {
+    try {
+      // Call the backend logout endpoint
+      await axios.post(
+        `${BASE_URL}/user/logout`,
+        {},
+        {
+          withCredentials: true,
+        },
+      )
+
+      // Then remove the cookie and update Redux state
+      Cookies.remove("token", { path: "/" })
+      dispatch(logout())
+      toast.success("Logged out successfully")
+      navigate("/login")
+    } catch (error) {
+      console.error("Error during logout:", error)
+      toast.error("Logout failed. Please try again.")
+
+      // As a fallback, still try to remove the cookie and update Redux state
+      Cookies.remove("token", { path: "/" })
+      dispatch(logout())
+      navigate("/login")
+    }
   }
 
   // Check authentication once on component mount
@@ -422,3 +440,4 @@ function Navbar() {
 }
 
 export default Navbar
+
