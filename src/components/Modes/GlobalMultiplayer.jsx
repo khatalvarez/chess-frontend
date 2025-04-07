@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import { useSelector } from "react-redux"
@@ -90,12 +92,19 @@ const GlobalMultiplayer = () => {
   const [visualHints, setVisualHints] = useState(true)
   const [lastMove, setLastMove] = useState(null)
   const [showMovesList, setShowMovesList] = useState(false)
+  const [gameId, setGameId] = useState(null)
+  const [connectionError, setConnectionError] = useState(false)
+  const [reconnecting, setReconnecting] = useState(false)
+  const [inactivityTimer, setInactivityTimer] = useState(null)
 
   // Refs
   const chessboardRef = useRef(null)
   const socketRef = useRef(null)
   const gameRef = useRef(null)
   const boardContainerRef = useRef(null)
+  const reconnectAttemptsRef = useRef(0)
+  const lastActivityRef = useRef(Date.now())
+  const inactivityTimeoutRef = useRef(null)
 
   // Add match to history function
   const addMatchToHistory = async (userId, opponentName, status) => {
@@ -168,6 +177,50 @@ const GlobalMultiplayer = () => {
     })
   }
 
+  // Reset inactivity timer
+  const resetInactivityTimer = () => {
+    lastActivityRef.current = Date.now()
+
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current)
+    }
+
+    // Set new inactivity timeout - 15 seconds as requested
+    inactivityTimeoutRef.current = setTimeout(() => {
+      if (socketRef.current && opponent && !isGameOver) {
+        console.log("User inactive for 15 seconds, handling as leave")
+        handleLeaveGame()
+      }
+    }, 15000)
+  }
+
+  // Track user activity
+  useEffect(() => {
+    const handleActivity = () => {
+      resetInactivityTimer()
+    }
+
+    // Add event listeners for user activity
+    window.addEventListener("mousemove", handleActivity)
+    window.addEventListener("keydown", handleActivity)
+    window.addEventListener("click", handleActivity)
+    window.addEventListener("touchstart", handleActivity)
+
+    // Initialize inactivity timer
+    resetInactivityTimer()
+
+    return () => {
+      window.removeEventListener("mousemove", handleActivity)
+      window.removeEventListener("keydown", handleActivity)
+      window.removeEventListener("click", handleActivity)
+      window.removeEventListener("touchstart", handleActivity)
+
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current)
+      }
+    }
+  }, [opponent, isGameOver])
+
   // Connect to socket server when component mounts
   useEffect(() => {
     if (!user) return
@@ -176,8 +229,19 @@ const GlobalMultiplayer = () => {
     const socketUrl = BASE_URL.startsWith("http") ? BASE_URL : `http://${BASE_URL}`
     console.log("Connecting to socket server at:", socketUrl)
 
+    // Store gameId from localStorage if it exists
+    const storedGameId = localStorage.getItem("chessGameId")
+    if (storedGameId) {
+      setGameId(storedGameId)
+      setReconnecting(true)
+      console.log("Found stored game ID:", storedGameId)
+    }
+
     const socket = io(socketUrl, {
-      query: { user: JSON.stringify(user) },
+      query: {
+        user: JSON.stringify(user),
+        lastGameId: storedGameId || null,
+      },
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -189,15 +253,38 @@ const GlobalMultiplayer = () => {
     // Debug connection status
     socket.on("connect", () => {
       console.log("Connected to server with ID:", socket.id)
+      setConnectionError(false)
+      reconnectAttemptsRef.current = 0
     })
 
     socket.on("connect_error", (error) => {
       console.error("Connection error:", error)
+      setConnectionError(true)
+
+      // Implement exponential backoff for reconnection
+      if (reconnectAttemptsRef.current < 5) {
+        const timeout = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000)
+        console.log(`Retrying connection in ${timeout / 1000} seconds...`)
+
+        setTimeout(() => {
+          console.log("Attempting to reconnect...")
+          socket.connect()
+          reconnectAttemptsRef.current += 1
+        }, timeout)
+      } else {
+        console.error("Failed to connect after multiple attempts")
+        // Show error to user or navigate back to menu
+        navigate("/modeselector")
+      }
     })
 
     socket.on("waiting", (isWaiting) => {
       console.log("Waiting status:", isWaiting)
       setWaitingForOpponent(isWaiting)
+
+      if (!isWaiting && reconnecting) {
+        setReconnecting(false)
+      }
     })
 
     socket.on("color", (color) => {
@@ -209,6 +296,12 @@ const GlobalMultiplayer = () => {
     socket.on("opponent", (obtainedOpponent) => {
       console.log("Opponent received:", obtainedOpponent)
       setOpponent(obtainedOpponent)
+    })
+
+    socket.on("gameAssigned", (id) => {
+      console.log("Game ID assigned:", id)
+      setGameId(id)
+      localStorage.setItem("chessGameId", id)
     })
 
     socket.on("opponentDisconnected", (opponentName) => {
@@ -226,6 +319,14 @@ const GlobalMultiplayer = () => {
       // Show game over modal
       setGameOverMessage(`You win! ${opponentName || "Opponent"} has disconnected.`)
       setIsGameOver(true)
+
+      // Clear game ID from storage
+      localStorage.removeItem("chessGameId")
+    })
+
+    socket.on("opponentReconnected", (opponentName) => {
+      console.log("Opponent reconnected:", opponentName)
+      setCurrentStatus(`${opponentName} has reconnected. Game continues.`)
     })
 
     // Initialize chess game
@@ -241,8 +342,13 @@ const GlobalMultiplayer = () => {
       if (board) {
         board.destroy()
       }
+
+      // Clear inactivity timer
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current)
+      }
     }
-  }, [user, navigate])
+  }, [user, navigate, reconnecting])
 
   // Handle socket move events and initialize board after player color is set
   useEffect(() => {
@@ -252,6 +358,7 @@ const GlobalMultiplayer = () => {
     socketRef.current.on("move", ({ from, to, obtainedPromotion, fen }) => {
       try {
         console.log("Received move from opponent:", from, to, obtainedPromotion)
+        resetInactivityTimer()
 
         // If FEN is provided, use it to sync game state
         if (fen) {
@@ -396,6 +503,7 @@ const GlobalMultiplayer = () => {
           onSnapEnd: onSnapEnd,
           onMouseoverSquare: onMouseoverSquare,
           onMouseoutSquare: onMouseoutSquare,
+          onSquareClick: onSquareClick, // Add click handler for mobile mode
           snapbackSpeed: 500,
           snapSpeed: 100,
         }
@@ -435,9 +543,141 @@ const GlobalMultiplayer = () => {
     }
   }
 
+  // Handle square clicks for mobile mode
+  const onSquareClick = (square) => {
+    if (!mobileMode) return
+    resetInactivityTimer()
+
+    const game = gameRef.current
+    if (!game) return
+
+    // Check if it's the player's turn
+    if ((playerColor === "white" && game.turn() === "b") || (playerColor === "black" && game.turn() === "w")) {
+      return
+    }
+
+    // If no square is selected yet, select this one if it has a piece of the player's color
+    if (!selectedSquare) {
+      const piece = game.get(square)
+      if (
+        piece &&
+        ((playerColor === "white" && piece.color === "w") || (playerColor === "black" && piece.color === "b"))
+      ) {
+        setSelectedSquare(square)
+
+        // Show possible moves
+        if (visualHints) {
+          removeHighlights()
+          highlightSquare(square)
+
+          const moves = game.moves({
+            square: square,
+            verbose: true,
+          })
+
+          for (let i = 0; i < moves.length; i++) {
+            highlightSquare(moves[i].to, "possible")
+          }
+
+          setPossibleMoves(moves.map((move) => move.to))
+        }
+      }
+      return
+    }
+
+    // If a square is already selected
+    if (selectedSquare) {
+      // If clicking the same square, deselect it
+      if (square === selectedSquare) {
+        setSelectedSquare(null)
+        setPossibleMoves([])
+        removeHighlights()
+        if (lastMove) {
+          highlightSquare(lastMove.from, "last-move")
+          highlightSquare(lastMove.to, "last-move")
+        }
+        return
+      }
+
+      // Try to make a move from the selected square to this square
+      try {
+        const move = game.move({
+          from: selectedSquare,
+          to: square,
+          promotion: promotionPiece,
+        })
+
+        if (move) {
+          // Move was successful
+          if (board) {
+            board.position(game.fen())
+          }
+
+          // Highlight the move
+          highlightLastMove(selectedSquare, square)
+
+          // Update game state
+          updateStatus()
+
+          // Send move to server
+          if (socketRef.current) {
+            const moveData = {
+              from: selectedSquare,
+              to: square,
+              obtainedPromotion: promotionPiece,
+              fen: game.fen(),
+            }
+
+            console.log("Sending move to server:", moveData)
+            socketRef.current.emit("move", moveData)
+          }
+
+          // Add move to history
+          setMoves((prevMoves) => [
+            ...prevMoves,
+            {
+              from: move.from,
+              to: move.to,
+              promotion: promotionPiece,
+              player: "player",
+            },
+          ])
+
+          // Play sound
+          if (soundEnabled) {
+            if (move.captured) {
+              captureSound.play()
+            } else {
+              moveSound.play()
+            }
+
+            if (game.inCheck()) {
+              checkSound.play()
+            }
+
+            if (game.isCheckmate()) {
+              checkmateSound.play()
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Invalid move:", error)
+      }
+
+      // Reset selection regardless of move validity
+      setSelectedSquare(null)
+      setPossibleMoves([])
+      removeHighlights()
+      if (lastMove) {
+        highlightSquare(lastMove.from, "last-move")
+        highlightSquare(lastMove.to, "last-move")
+      }
+    }
+  }
+
   // Highlight legal moves
   const onMouseoverSquare = (square, piece) => {
-    if (!visualHints) return
+    if (!visualHints || mobileMode) return
 
     // Get list of possible moves for this square
     const game = gameRef.current
@@ -466,7 +706,7 @@ const GlobalMultiplayer = () => {
   }
 
   const onMouseoutSquare = () => {
-    if (!visualHints) return
+    if (!visualHints || mobileMode) return
 
     // Don't remove highlights if we're showing the last move
     if (lastMove) {
@@ -480,6 +720,7 @@ const GlobalMultiplayer = () => {
 
   // Drag start handler - only allow dragging pieces if it's the player's turn
   const onDragStart = (source, piece) => {
+    resetInactivityTimer()
     const game = gameRef.current
     if (!game) return false
 
@@ -519,6 +760,7 @@ const GlobalMultiplayer = () => {
 
   // Drop handler - attempt to make a move when a piece is dropped
   const onDrop = (source, target) => {
+    resetInactivityTimer()
     const game = gameRef.current
     if (!game) return "snapback"
 
@@ -648,6 +890,9 @@ const GlobalMultiplayer = () => {
           setGameOverMessage(userWon ? "You win!" : "You lose!")
           setIsGameOver(true)
 
+          // Clear game ID from storage
+          localStorage.removeItem("chessGameId")
+
           // Trigger celebration if player wins
           if (userWon) {
             triggerWinCelebration()
@@ -671,6 +916,9 @@ const GlobalMultiplayer = () => {
           // Show game over modal
           setGameOverMessage("It's a draw!")
           setIsGameOver(true)
+
+          // Clear game ID from storage
+          localStorage.removeItem("chessGameId")
         })
       }
     } else {
@@ -792,10 +1040,15 @@ const GlobalMultiplayer = () => {
           })
         }
 
+        // Clear game ID from storage
+        localStorage.removeItem("chessGameId")
+
         // Navigate back to mode selector
         navigate("/modeselector")
       })
     } else {
+      // Clear game ID from storage
+      localStorage.removeItem("chessGameId")
       navigate("/modeselector")
     }
   }
@@ -808,12 +1061,34 @@ const GlobalMultiplayer = () => {
   // Handle game restart
   const handleRestart = () => {
     setIsGameOver(false)
+    // Clear game ID from storage
+    localStorage.removeItem("chessGameId")
     navigate("/modeselector")
   }
 
   // If waiting for opponent, show wait queue
   if (waitingForOpponent) {
     return <WaitQueue socket={socketRef.current} />
+  }
+
+  // If there's a connection error, show error message
+  if (connectionError && !waitingForOpponent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-900">
+        <div className="bg-red-900/50 p-8 rounded-lg text-white max-w-md text-center">
+          <h2 className="text-2xl font-bold mb-4">Connection Error</h2>
+          <p className="mb-6">
+            Unable to connect to the game server. Please check your internet connection and try again.
+          </p>
+          <button
+            onClick={() => navigate("/modeselector")}
+            className="bg-white text-red-900 px-6 py-2 rounded-md font-semibold hover:bg-gray-200"
+          >
+            Return to Menu
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

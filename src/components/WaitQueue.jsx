@@ -11,6 +11,16 @@ function WaitQueue({ socket = null, length = 2 }) {
   const [playersWaiting, setPlayersWaiting] = useState(1)
   const [connectionStatus, setConnectionStatus] = useState(socket ? "connected" : "disconnected")
   const [retryCount, setRetryCount] = useState(0)
+  const [tips, setTips] = useState([
+    "You can change the board theme in the settings",
+    "Use mobile mode on touch devices for easier play",
+    "Visual hints show you possible moves",
+    "Choose your promotion piece before reaching the 8th rank",
+    "Leaving a game counts as a loss",
+    "Your match history is saved to your profile",
+    "You can mute game sounds with the volume button",
+  ])
+  const [currentTip, setCurrentTip] = useState(0)
 
   useEffect(() => {
     // Animated dots
@@ -26,6 +36,11 @@ function WaitQueue({ socket = null, length = 2 }) {
       setElapsed((prev) => prev + 1)
     }, 1000)
 
+    // Rotate tips every 5 seconds
+    const tipsInterval = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % tips.length)
+    }, 5000)
+
     // Listen for waiting players count if socket is available
     if (socket) {
       console.log("WaitQueue: Socket connected, listening for updates")
@@ -34,7 +49,7 @@ function WaitQueue({ socket = null, length = 2 }) {
       // Request current waiting count
       socket.emit("getWaitingCount")
 
-      socket.on("waitingCount", () => {
+      socket.on("waitingCount", (count) => {
         console.log("Players waiting:", count)
         setPlayersWaiting(count)
       })
@@ -51,7 +66,7 @@ function WaitQueue({ socket = null, length = 2 }) {
         setConnectionStatus("disconnected")
       })
 
-      socket.on("connect_error", () => {
+      socket.on("connect_error", (error) => {
         console.error("Connection error:", error)
         setConnectionStatus("error")
 
@@ -79,6 +94,7 @@ function WaitQueue({ socket = null, length = 2 }) {
         clearInterval(dotsInterval)
         clearInterval(elapsedInterval)
         clearInterval(waitingInterval)
+        clearInterval(tipsInterval)
         socket.off("waitingCount")
         socket.off("connect")
         socket.off("disconnect")
@@ -89,8 +105,9 @@ function WaitQueue({ socket = null, length = 2 }) {
     return () => {
       clearInterval(dotsInterval)
       clearInterval(elapsedInterval)
+      clearInterval(tipsInterval)
     }
-  }, [socket, retryCount])
+  }, [socket, retryCount, tips])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -278,6 +295,20 @@ function WaitQueue({ socket = null, length = 2 }) {
                 ease: "easeInOut",
               }}
             />
+          </div>
+
+          {/* Tips section */}
+          <div className="bg-gray-800/50 p-4 rounded-lg mb-4">
+            <h3 className="text-blue-400 font-medium mb-2">Chess Tip:</h3>
+            <motion.p
+              key={currentTip}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-gray-300"
+            >
+              {tips[currentTip]}
+            </motion.p>
           </div>
 
           <p className="mt-2 text-gray-400 text-sm">
