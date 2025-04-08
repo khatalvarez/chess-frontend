@@ -350,15 +350,56 @@ const GlobalMultiplayer = () => {
     }
   }, [user, navigate, reconnecting])
 
+  // Add a separate useEffect to ensure the board is initialized when playerColor changes
+  useEffect(() => {
+    // This effect runs when playerColor changes
+    if (playerColor && !boardInitialized && chessboardRef.current) {
+      console.log("PlayerColor changed, initializing chessboard...")
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        initializeChessboard()
+      }, 100)
+    }
+  }, [playerColor])
+
+  // Add a useEffect to check if the board needs to be reinitialized after component is fully mounted
+  useEffect(() => {
+    // This runs once after the component is mounted
+    const checkBoardTimer = setTimeout(() => {
+      if (!boardInitialized && chessboardRef.current && playerColor) {
+        console.log("Board not initialized after mount, retrying...")
+        initializeChessboard()
+      }
+    }, 1000)
+
+    return () => clearTimeout(checkBoardTimer)
+  }, [])
+
+  // Modify the useEffect that handles board initialization to ensure it runs when needed
+
   // Handle socket move events and initialize board after player color is set
   useEffect(() => {
-    if (!socketRef.current || !playerColor || !gameRef.current || !chessboardRef.current) return
+    if (!socketRef.current) return
+
+    console.log("Board initialization check - playerColor:", playerColor, "boardInitialized:", boardInitialized)
+
+    // Initialize chessboard if not already initialized and we have a player color
+    if (playerColor && !boardInitialized && chessboardRef.current) {
+      console.log("Initializing chessboard now...")
+      initializeChessboard()
+    }
 
     // Listen for opponent moves
     socketRef.current.on("move", ({ from, to, obtainedPromotion, fen }) => {
       try {
         console.log("Received move from opponent:", from, to, obtainedPromotion, fen)
         resetInactivityTimer()
+
+        // Make sure game ref is initialized
+        if (!gameRef.current) {
+          console.error("Game reference is null")
+          gameRef.current = new Chess()
+        }
 
         // If FEN is provided, use it to sync game state
         if (fen) {
@@ -368,6 +409,19 @@ const GlobalMultiplayer = () => {
           // Update the board position with animation
           if (board) {
             board.position(fen, true) // Use true for animation
+          } else {
+            console.error("Board is null, cannot update position")
+            // Try to reinitialize the board if it's null
+            if (!boardInitialized && chessboardRef.current) {
+              console.log("Attempting to reinitialize board...")
+              initializeChessboard()
+              // After initialization, set the position
+              setTimeout(() => {
+                if (board) {
+                  board.position(fen, false)
+                }
+              }, 500)
+            }
           }
 
           // Highlight the opponent's move
@@ -429,6 +483,18 @@ const GlobalMultiplayer = () => {
           // Update board position
           if (board) {
             board.position(gameRef.current.fen(), true) // Use true for animation
+          } else {
+            console.error("Board is null, cannot update position")
+            // Try to reinitialize the board if it's null
+            if (!boardInitialized && chessboardRef.current) {
+              initializeChessboard()
+              // After initialization, set the position
+              setTimeout(() => {
+                if (board) {
+                  board.position(gameRef.current.fen(), false)
+                }
+              }, 500)
+            }
           }
 
           // Highlight the opponent's move
@@ -477,10 +543,23 @@ const GlobalMultiplayer = () => {
     socketRef.current.on("gameState", (fen) => {
       try {
         console.log("Received game state:", fen)
+        if (!gameRef.current) {
+          gameRef.current = new Chess()
+        }
+
         if (gameRef.current && fen) {
           gameRef.current.load(fen)
           if (board) {
             board.position(fen, false) // Use false to avoid animation for syncing
+          } else if (!boardInitialized && chessboardRef.current) {
+            // Try to initialize the board if it doesn't exist
+            initializeChessboard()
+            // After initialization, set the position
+            setTimeout(() => {
+              if (board) {
+                board.position(fen, false)
+              }
+            }, 500)
           }
           updateStatus()
         }
@@ -488,11 +567,6 @@ const GlobalMultiplayer = () => {
         console.error("Error loading game state:", error)
       }
     })
-
-    // Initialize chessboard if not already initialized
-    if (!boardInitialized) {
-      initializeChessboard()
-    }
 
     // Cleanup
     return () => {
@@ -540,7 +614,7 @@ const GlobalMultiplayer = () => {
         // Define the board configuration with all required handlers
         const config = {
           position: "start",
-          orientation: playerColor,
+          orientation: playerColor || "white", // Default to white if playerColor is null
           draggable: !mobileMode,
           pieceTheme: (piece) => pieceImages[piece],
           onDragStart: onDragStart,
@@ -553,10 +627,18 @@ const GlobalMultiplayer = () => {
           snapSpeed: 100,
         }
 
+        console.log("Initializing chessboard with config:", config)
+
+        // Ensure the chessboard element exists
+        if (!chessboardRef.current) {
+          console.error("Chessboard ref is null, cannot initialize board")
+          return
+        }
+
         const newBoard = window.Chessboard(chessboardRef.current, config)
         setBoard(newBoard)
         setBoardInitialized(true)
-        console.log("Chessboard initialized with orientation:", playerColor)
+        console.log("Chessboard initialized with orientation:", playerColor || "white")
 
         // Handle window resize for mobile
         const handleResize = () => {
