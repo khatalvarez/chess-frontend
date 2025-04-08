@@ -357,21 +357,66 @@ const GlobalMultiplayer = () => {
     // Listen for opponent moves
     socketRef.current.on("move", ({ from, to, obtainedPromotion, fen }) => {
       try {
-        console.log("Received move from opponent:", from, to, obtainedPromotion)
+        console.log("Received move from opponent:", from, to, obtainedPromotion, fen)
         resetInactivityTimer()
 
         // If FEN is provided, use it to sync game state
         if (fen) {
           console.log("Syncing game state with FEN:", fen)
           gameRef.current.load(fen)
+
+          // Update the board position with animation
           if (board) {
-            board.position(fen, false) // Use false to avoid animation for syncing
+            board.position(fen, true) // Use true for animation
           }
+
+          // Highlight the opponent's move
+          highlightLastMove(from, to)
+
+          // Update game state
           updateStatus()
+
+          // Add move to history
+          setMoves((prevMoves) => [
+            ...prevMoves,
+            {
+              from: from,
+              to: to,
+              promotion: obtainedPromotion,
+              player: "opponent",
+            },
+          ])
+
+          // Play sound based on move type
+          if (soundEnabled) {
+            // Check if it was a capture by comparing piece counts before and after
+            const piecesBefore = gameRef.current.history().length
+            const move = gameRef.current.move({
+              from,
+              to,
+              promotion: obtainedPromotion || "q",
+            })
+            gameRef.current.undo() // Undo the move we just made for checking
+
+            if (move && move.captured) {
+              captureSound.play()
+            } else {
+              moveSound.play()
+            }
+
+            if (gameRef.current.inCheck()) {
+              checkSound.play()
+            }
+
+            if (gameRef.current.isCheckmate()) {
+              checkmateSound.play()
+            }
+          }
+
           return
         }
 
-        // Otherwise make the move normally
+        // Otherwise make the move normally (fallback)
         const move = gameRef.current.move({
           from,
           to,
@@ -1337,4 +1382,3 @@ const GlobalMultiplayer = () => {
 }
 
 export default GlobalMultiplayer
-
