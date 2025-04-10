@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { useSelector, useDispatch } from "react-redux"
@@ -22,6 +24,7 @@ import { BASE_URL } from "../url"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import LoadingScreen from "./Loading"
+import { io } from "socket.io-client"
 
 function Profile() {
   const userData = useSelector((state) => state.auth.userData)
@@ -68,9 +71,38 @@ function Profile() {
     }
   }
 
+  // Initial data load
   useEffect(() => {
     refreshProfileData()
   }, [])
+
+  // Set up socket connection for real-time updates
+  useEffect(() => {
+    if (!userData) return
+
+    // Connect to socket server
+    const socket = io(BASE_URL, {
+      withCredentials: true,
+      query: {
+        user: JSON.stringify({
+          userId: userData.userId,
+          username: userData.username,
+        }),
+      },
+    })
+
+    // Listen for match history updates
+    socket.on("matchHistoryUpdated", () => {
+      console.log("Match history updated event received")
+      refreshProfileData()
+      toast.success("Match history updated!")
+    })
+
+    // Clean up socket connection
+    return () => {
+      socket.disconnect()
+    }
+  }, [userData])
 
   // Add this after the existing useEffect
   useEffect(() => {
@@ -507,6 +539,10 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
 
   const config = statusConfig[match.status]
 
+  // Ensure we have a valid date object
+  const matchDate = match.createdAt ? new Date(match.createdAt) : new Date()
+  const isValidDate = !isNaN(matchDate.getTime())
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -529,11 +565,13 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
             <div>
               <p className="font-medium text-white">{config.result}</p>
               <p className="text-xs text-gray-400">
-                {new Date(match.createdAt).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {isValidDate
+                  ? matchDate.toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Date unavailable"}
               </p>
             </div>
           </div>
@@ -564,10 +602,12 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
                 <div className="space-y-1">
                   <p className="text-xs text-gray-400">Match Time</p>
                   <p className="font-medium text-white">
-                    {new Date(match.createdAt).toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {isValidDate
+                      ? matchDate.toLocaleTimeString(undefined, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Time unavailable"}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -586,4 +626,3 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
 }
 
 export default Profile
-
