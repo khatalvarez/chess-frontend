@@ -38,47 +38,86 @@ function Profile() {
     winRate: 0,
     rating: 0,
   })
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const calculateStats = (data) => {
+    if (!data) return { totalGames: 0, winRate: 0, rating: 0 }
+
+    const wins = data.wins || 0
+    const loses = data.loses || 0
+    const draws = data.draws || 0
+    const totalGames = wins + loses + draws
+    const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0
+
+    return {
+      totalGames,
+      winRate,
+      rating: calculateRating(wins, loses, draws),
+    }
+  }
 
   const refreshProfileData = async () => {
-    setIsLoading(true)
+    if (isRefreshing) return // Prevent multiple simultaneous refreshes
+
+    setIsRefreshing(true)
     try {
       console.log("Refreshing profile data...")
       const res = await axios.get(`${BASE_URL}/profile`, {
         withCredentials: true,
       })
 
-      const data = res.data
-      console.log("Profile data received:", data)
-      dispatch(login(data))
-
-      // Calculate stats
-      if (data && data.matchHistory) {
-        const totalGames = data.wins + data.loses + data.draws
-        const winRate = totalGames > 0 ? Math.round((data.wins / totalGames) * 100) : 0
-
-        setStats({
-          totalGames,
-          winRate,
-          rating: calculateRating(data.wins, data.loses, data.draws),
-        })
+      if (!res.data) {
+        throw new Error("No data received from server")
       }
 
-      setIsLoading(false)
+      console.log("Profile data received:", res.data)
+
+      // Update Redux state with fresh data
+      dispatch(login(res.data))
+
+      // Calculate and update stats
+      const newStats = calculateStats(res.data)
+      setStats(newStats)
+
+      toast.success("Profile updated successfully")
     } catch (error) {
       console.error("Error fetching profile:", error)
-      setIsLoading(false)
       toast.error("Failed to load profile data")
+
+      // If unauthorized, redirect to login
+      if (error.response && error.response.status === 401) {
+        Cookies.remove("token", { path: "/" })
+        dispatch(logout())
+        navigate("/login")
+      }
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
     }
   }
 
   // Initial data load
   useEffect(() => {
     refreshProfileData()
+
+    // If no userData in Redux, calculate initial stats when it arrives
+    if (!userData) {
+      return
+    } else {
+      setStats(calculateStats(userData))
+    }
   }, [])
+
+  // Update stats whenever userData changes
+  useEffect(() => {
+    if (userData) {
+      setStats(calculateStats(userData))
+    }
+  }, [userData])
 
   // Set up socket connection for real-time updates
   useEffect(() => {
-    if (!userData) return
+    if (!userData || !userData.userId) return
 
     // Connect to socket server
     const socket = io(BASE_URL, {
@@ -89,13 +128,19 @@ function Profile() {
           username: userData.username,
         }),
       },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     })
 
     // Listen for match history updates
     socket.on("matchHistoryUpdated", () => {
       console.log("Match history updated event received")
       refreshProfileData()
-      toast.success("Match history updated!")
+    })
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err)
     })
 
     // Clean up socket connection
@@ -104,38 +149,29 @@ function Profile() {
     }
   }, [userData])
 
-  // Add this after the existing useEffect
+  // Add window focus event listener
   useEffect(() => {
-    // Create a function to handle when the window gets focus
     const handleFocus = () => {
       console.log("Window focused, refreshing data...")
       refreshProfileData()
     }
 
-    // Add event listener for when the window gets focus
     window.addEventListener("focus", handleFocus)
-
-    // Clean up the event listener when component unmounts
-    return () => {
-      window.removeEventListener("focus", handleFocus)
-    }
+    return () => window.removeEventListener("focus", handleFocus)
   }, [])
 
-  // Add this after the existing useEffect hooks
+  // Add polling for updates (less frequent to avoid overloading)
   useEffect(() => {
-    // Set up polling interval to refresh data
     const intervalId = setInterval(() => {
       console.log("Polling for profile updates...")
       refreshProfileData()
-    }, 30000) // Check every 30 seconds
+    }, 60000) // Check every minute instead of every 30 seconds
 
-    // Clean up interval on component unmount
     return () => clearInterval(intervalId)
   }, [])
 
-  // Add this style tag to your component
+  // Add spin animation
   useEffect(() => {
-    // Define a slow spin animation
     const spinSlowKeyframes = `
       @keyframes spin-slow {
         from {
@@ -146,16 +182,17 @@ function Profile() {
         }
       }
     `
-    // Add the custom animation style to the document
     const styleElement = document.createElement("style")
     styleElement.innerHTML = `
       ${spinSlowKeyframes}
       .animate-spin-slow {
         animation: spin-slow 3s linear infinite;
-        animation-play-state: paused;
       }
-      .animate-spin-slow:hover {
+      .animate-spin-active {
         animation-play-state: running;
+      }
+      .animate-spin-paused {
+        animation-play-state: paused;
       }
     `
     document.head.appendChild(styleElement)
@@ -168,12 +205,19 @@ function Profile() {
   const calculateRating = (wins, loses, draws) => {
     const totalGames = wins + loses + draws
     if (totalGames === 0) return 800
+
+    // More sophisticated rating calculation
     const baseRating = 800
-    return Math.round(baseRating + (wins / totalGames) * 2200)
+    const winPoints = 25
+    const losePoints = 15
+    const drawPoints = 5
+
+    return Math.round(baseRating + wins * winPoints - loses * losePoints + draws * drawPoints)
   }
 
   const handleLogout = async () => {
     try {
+      setIsLoading(true)
       // Call the backend logout endpoint
       await axios.post(
         `${BASE_URL}/user/logout`,
@@ -196,6 +240,8 @@ function Profile() {
       Cookies.remove("token", { path: "/" })
       dispatch(logout())
       navigate("/login")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -204,7 +250,9 @@ function Profile() {
   }
 
   const filterMatchHistory = () => {
-    if (!userData?.matchHistory) return []
+    if (!userData?.matchHistory || !Array.isArray(userData.matchHistory)) {
+      return []
+    }
 
     switch (activeTab) {
       case "wins":
@@ -236,6 +284,7 @@ function Profile() {
           expandedMatch={expandedMatch}
           toggleMatchDetails={toggleMatchDetails}
           filteredMatches={filterMatchHistory()}
+          isRefreshing={isRefreshing}
         />
       </div>
     </div>
@@ -393,6 +442,7 @@ const MatchHistoryCard = ({
   expandedMatch,
   toggleMatchDetails,
   filteredMatches,
+  isRefreshing,
 }) => (
   <motion.div
     initial={{ opacity: 0, x: 50 }}
@@ -407,15 +457,19 @@ const MatchHistoryCard = ({
       </h2>
       <button
         onClick={refreshProfileData}
-        className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
+        disabled={isRefreshing}
+        className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium disabled:bg-blue-800 disabled:cursor-not-allowed"
       >
-        <RefreshCw size={16} className="animate-spin-slow" />
-        <span className="hidden sm:inline">Refresh</span>
+        <RefreshCw
+          size={16}
+          className={`${isRefreshing ? "animate-spin-active" : "animate-spin-paused"} animate-spin-slow`}
+        />
+        <span className="hidden sm:inline">{isRefreshing ? "Refreshing..." : "Refresh"}</span>
       </button>
     </div>
 
     <MatchHistoryTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-    <div className="p-4">
+    <div className="p-4 max-h-[500px] overflow-y-auto">
       <MatchHistoryContent
         matches={filteredMatches}
         activeTab={activeTab}
@@ -470,12 +524,17 @@ const TabButton = ({ label, isActive, onClick, colorClass }) => (
 
 // Component for match history content
 const MatchHistoryContent = ({ matches, activeTab, expandedMatch, toggleMatchDetails }) => {
-  if (!matches || matches.length === 0) {
+  if (!matches || !Array.isArray(matches) || matches.length === 0) {
     return <EmptyMatchHistory activeTab={activeTab} />
   }
 
   // Sort match history by date (newest first)
-  const sortedMatches = [...matches].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  const sortedMatches = [...matches].sort((a, b) => {
+    // Safely handle date comparison
+    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0)
+    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0)
+    return dateB - dateA
+  })
 
   return (
     <div className="space-y-3">
@@ -513,7 +572,7 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
       bgColor: "bg-green-900",
       textColor: "text-green-400",
       label: "VICTORY",
-      result: `You won against ${match.opponent}`,
+      result: `You won against ${match.opponent || "Opponent"}`,
       ratingChange: "+25 Rating",
       ratingColor: "text-green-400",
     },
@@ -522,7 +581,7 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
       bgColor: "bg-red-900",
       textColor: "text-red-400",
       label: "DEFEAT",
-      result: `${match.opponent} defeated you`,
+      result: `${match.opponent || "Opponent"} defeated you`,
       ratingChange: "-15 Rating",
       ratingColor: "text-red-400",
     },
@@ -531,13 +590,14 @@ const MatchItem = ({ match, index, isExpanded, toggleDetails }) => {
       bgColor: "bg-yellow-900",
       textColor: "text-yellow-400",
       label: "DRAW",
-      result: `Draw with ${match.opponent}`,
+      result: `Draw with ${match.opponent || "Opponent"}`,
       ratingChange: "+0 Rating",
       ratingColor: "text-yellow-400",
     },
   }
 
-  const config = statusConfig[match.status]
+  // Default to draw if status is invalid
+  const config = statusConfig[match.status] || statusConfig.draw
 
   // Ensure we have a valid date object
   const matchDate = match.createdAt ? new Date(match.createdAt) : new Date()
