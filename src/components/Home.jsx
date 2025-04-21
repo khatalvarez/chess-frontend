@@ -32,13 +32,8 @@ export default function Home() {
       }
     }
 
-    // Initial calculation
     updateNavbarHeight()
-
-    // Update on resize
     window.addEventListener("resize", updateNavbarHeight)
-
-    // Recalculate after a short delay to ensure navbar is fully rendered
     const timer = setTimeout(updateNavbarHeight, 500)
 
     return () => {
@@ -47,15 +42,18 @@ export default function Home() {
     }
   }, [])
 
-  // Generate particles
+  // Generate fewer particles on mobile for better performance
   useEffect(() => {
+    const isMobile = window.innerWidth < 768
+    const particleCount = isMobile ? 30 : 60
+    
     const newParticles = []
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < particleCount; i++) {
       newParticles.push({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
-        size: Math.random() * 4 + 1,
+        size: Math.random() * (isMobile ? 3 : 4) + 1, // Smaller particles on mobile
         speed: Math.random() * 1 + 0.5,
         color:
           Math.random() > 0.5
@@ -90,7 +88,7 @@ export default function Home() {
       } else {
         clearInterval(interval)
       }
-    }, 65) // Slightly faster typing
+    }, 65)
     return () => clearInterval(interval)
   }, [])
 
@@ -101,23 +99,18 @@ export default function Home() {
     }
   }
 
-  // Chess piece icons for floating animations
+  // Fewer pieces on mobile
   const pieceIcons = [
     { icon: "♚", delay: 1.2, size: 60 },
     { icon: "♛", delay: 1.5, size: 65 },
     { icon: "♜", delay: 1.8, size: 55 },
     { icon: "♝", delay: 2.1, size: 58 },
     { icon: "♞", delay: 2.4, size: 62 },
-    { icon: "♟", delay: 2.7, size: 50 },
-    { icon: "♚", delay: 3.0, size: 70 },
-    { icon: "♛", delay: 3.3, size: 63 },
-    { icon: "♜", delay: 3.6, size: 56 },
-    { icon: "♝", delay: 3.9, size: 59 },
   ]
 
   return (
     <div className="relative w-screen min-h-screen overflow-x-hidden bg-gradient-to-b from-gray-950 via-gray-900 to-black">
-      {/* Chess board pattern background */}
+      {/* Chess board pattern background - simplified for mobile */}
       <div
         className="fixed inset-0 z-0 opacity-5"
         style={{
@@ -125,12 +118,12 @@ export default function Home() {
                             linear-gradient(-45deg, #111 25%, transparent 25%), 
                             linear-gradient(45deg, transparent 75%, #111 75%), 
                             linear-gradient(-45deg, transparent 75%, #111 75%)`,
-          backgroundSize: "60px 60px",
-          backgroundPosition: "0 0, 0 30px, 30px -30px, -30px 0px",
+          backgroundSize: "40px 40px", // Smaller pattern on mobile
+          backgroundPosition: "0 0, 0 20px, 20px -20px, -20px 0px",
         }}
       ></div>
 
-      {/* Animated particles */}
+      {/* Animated particles - fewer and more optimized for mobile */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {particles.map((particle) => (
           <motion.div
@@ -160,8 +153,8 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Floating chess pieces background */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+      {/* Floating chess pieces - fewer on mobile */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none md:block hidden">
         <div className="absolute inset-0">
           {pieceIcons.map((piece, index) => (
             <motion.div
@@ -194,17 +187,17 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Hero Section - Adjusted to account for navbar height */}
+      {/* Hero Section - Adjusted for mobile */}
       <div
         className="relative w-screen min-h-screen flex items-center justify-center overflow-hidden"
         style={{ paddingTop: navbarHeight }}
       >
-        {/* Animated glow effects */}
+        {/* Simplified glow effects for mobile */}
         <motion.div
-          className="absolute z-0 w-96 h-96 rounded-full opacity-30"
+          className="absolute z-0 w-64 md:w-96 h-64 md:h-96 rounded-full opacity-20 md:opacity-30"
           style={{
             background: "radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, rgba(0, 0, 0, 0) 70%)",
-            filter: "blur(40px)",
+            filter: "blur(30px)",
             top: "20%",
             left: "30%",
           }}
@@ -220,10 +213,10 @@ export default function Home() {
         />
 
         <motion.div
-          className="absolute z-0 w-80 h-80 rounded-full opacity-30"
+          className="absolute z-0 w-64 md:w-80 h-64 md:h-80 rounded-full opacity-20 md:opacity-30"
           style={{
             background: "radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, rgba(0, 0, 0, 0) 70%)",
-            filter: "blur(40px)",
+            filter: "blur(30px)",
             top: "30%",
             right: "30%",
           }}
@@ -239,29 +232,28 @@ export default function Home() {
           }}
         />
 
-        <div className="relative z-10 w-11/12 max-w-5xl mt-8 sm:mt-0">
+        <div className="relative z-10 w-11/12 max-w-5xl mt-2 sm:mt-0 px-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-center p-8 sm:p-12 rounded-3xl"
+            className="text-center p-6 sm:p-12 rounded-2xl sm:rounded-3xl"
             style={{
               background:
                 "radial-gradient(circle at center, rgba(17,24,39,0.8) 0%, rgba(5,10,20,0.6) 70%, rgba(0,0,0,0) 100%)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "0 0 60px rgba(59, 130, 246, 0.15), 0 0 20px rgba(139, 92, 246, 0.15)",
+              backdropFilter: "blur(8px)",
+              boxShadow: "0 0 40px rgba(59, 130, 246, 0.15), 0 0 15px rgba(139, 92, 246, 0.15)",
             }}
           >
-
             <ChessMasterLogo variant="home" />
 
             {showPieceArray && (
-              <Suspense fallback={<div className="h-16 flex justify-center" />}>
+              <Suspense fallback={<div className="h-12 sm:h-16 flex justify-center" />}>
                 <motion.div
-                  initial={{ y: -50, opacity: 0 }}
+                  initial={{ y: -30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.8 }}
-                  className="mb-6"
+                  className="mb-4 sm:mb-6"
                 >
                   <PieceArray />
                 </motion.div>
@@ -269,45 +261,45 @@ export default function Home() {
             )}
 
             <motion.div
-              initial={{ y: 30, opacity: 0 }}
+              initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="h-20 mb-2 flex justify-center items-center"
+              className="h-16 sm:h-20 mb-2 flex justify-center items-center"
             >
-              <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-4 sm:mb-8">
                 {typedText}
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
-                  className="inline-block w-1 h-12 ml-1 bg-blue-400"
+                  className="inline-block w-1 h-8 sm:h-12 ml-1 bg-blue-400"
                 />
               </h1>
             </motion.div>
 
             <motion.div
-              initial={{ y: 30, opacity: 0 }}
+              initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.7 }}
-              className="mb-14"
+              className="mb-8 sm:mb-14"
             >
-              <p className="text-center text-xl sm:text-2xl lg:text-3xl text-gray-200 leading-relaxed max-w-4xl mx-auto">
+              <p className="text-center text-lg sm:text-xl lg:text-2xl text-gray-200 leading-relaxed max-w-4xl mx-auto">
                 <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
                   Experience the ultimate chess journey.
                 </span>{" "}
-                Challenge friends, solve puzzles, and test your skills against the world's strongest chess engine.
+                Challenge friends, solve puzzles, and test your skills.
               </p>
             </motion.div>
 
             <motion.div
-              initial={{ y: 30, opacity: 0 }}
+              initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.9 }}
-              className="flex flex-col sm:flex-row justify-center items-center gap-6"
+              className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6"
             >
               {authStatus === true && userData?.username ? (
                 <motion.button
                   onClick={() => navigate("/modeselector")}
-                  className="w-full sm:w-auto px-10 py-5 rounded-full text-xl font-semibold transition duration-300 transform hover:scale-105 hover:shadow-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
+                  className="w-full sm:w-auto px-6 sm:px-10 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-semibold transition duration-300 transform hover:scale-105 hover:shadow-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                   onMouseEnter={() => setIsHovering({ ...isHovering, continue: true })}
@@ -321,15 +313,16 @@ export default function Home() {
                   />
                   <span className="absolute inset-0 flex items-center justify-center text-white">
                     <span className="flex items-center">
-                      <Crown className="mr-2 inline" size={24} />
-                      Continue Your Journey
+                      <Crown className="mr-2 inline" size={20} />
+                      Continue
+                      <span className="hidden sm:inline ml-1">Your Journey</span>
                       {isHovering.continue && (
                         <motion.span
                           initial={{ opacity: 0, x: -5 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <ChevronRight className="ml-2" size={20} />
+                          <ChevronRight className="ml-2" size={16} />
                         </motion.span>
                       )}
                     </span>
@@ -340,7 +333,7 @@ export default function Home() {
                 <>
                   <motion.button
                     onClick={() => navigate("/login")}
-                    className="w-full sm:w-auto px-10 py-5 rounded-full text-xl font-semibold transition duration-300 transform hover:scale-105 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
+                    className="w-full sm:w-auto px-6 sm:px-10 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-semibold transition duration-300 transform hover:scale-105 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.98 }}
                     onMouseEnter={() => setIsHovering({ ...isHovering, login: true })}
@@ -354,7 +347,7 @@ export default function Home() {
                     />
                     <span className="absolute inset-0 flex items-center justify-center text-white">
                       <span className="flex items-center">
-                        <User className="mr-2 inline" size={24} />
+                        <User className="mr-2 inline" size={18} />
                         Login
                         {isHovering.login && (
                           <motion.span
@@ -362,7 +355,7 @@ export default function Home() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <ChevronRight className="ml-2" size={20} />
+                            <ChevronRight className="ml-2" size={16} />
                           </motion.span>
                         )}
                       </span>
@@ -372,7 +365,7 @@ export default function Home() {
 
                   <motion.button
                     onClick={() => navigate("/signup")}
-                    className="w-full sm:w-auto px-10 py-5 rounded-full text-xl font-semibold transition duration-300 transform hover:scale-105 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 relative overflow-hidden group"
+                    className="w-full sm:w-auto px-6 sm:px-10 py-4 sm:py-5 rounded-full text-lg sm:text-xl font-semibold transition duration-300 transform hover:scale-105 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 relative overflow-hidden group"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.98 }}
                     onMouseEnter={() => setIsHovering({ ...isHovering, signup: true })}
@@ -386,7 +379,7 @@ export default function Home() {
                     />
                     <span className="absolute inset-0 flex items-center justify-center text-white">
                       <span className="flex items-center">
-                        <Trophy className="mr-2 inline" size={24} />
+                        <Trophy className="mr-2 inline" size={18} />
                         Sign Up
                         {isHovering.signup && (
                           <motion.span
@@ -394,7 +387,7 @@ export default function Home() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <ChevronRight className="ml-2" size={20} />
+                            <ChevronRight className="ml-2" size={16} />
                           </motion.span>
                         )}
                       </span>
@@ -411,7 +404,7 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 1 }}
-          className="absolute bottom-16 left-0 right-0 flex justify-center"
+          className="absolute bottom-8 sm:bottom-16 left-0 right-0 flex justify-center"
         >
           <motion.button
             onClick={scrollToContent}
@@ -420,9 +413,9 @@ export default function Home() {
             animate={{
               y: [0, 5, 0],
               boxShadow: [
-                "0 0 10px rgba(59, 130, 246, 0.5)",
-                "0 0 20px rgba(139, 92, 246, 0.8)",
-                "0 0 10px rgba(59, 130, 246, 0.5)",
+                "0 0 5px rgba(59, 130, 246, 0.5)",
+                "0 0 10px rgba(139, 92, 246, 0.8)",
+                "0 0 5px rgba(59, 130, 246, 0.5)",
               ],
             }}
             transition={{
@@ -431,7 +424,7 @@ export default function Home() {
             }}
           >
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-full p-2">
-              <ChevronDown size={32} className="text-white" />
+              <ChevronDown size={24} className="text-white" />
             </div>
           </motion.button>
         </motion.div>
@@ -440,11 +433,11 @@ export default function Home() {
       {/* Features Section */}
       <FeaturesSection />
 
-      {/* Call to Action */}
-      <div className="bg-gradient-to-b from-gray-900 to-black py-20 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
-          {[...Array(8)].map((_, i) => (
+      {/* Call to Action - Mobile optimized */}
+      <div className="bg-gradient-to-b from-gray-900 to-black py-12 sm:py-20 relative overflow-hidden">
+        {/* Fewer animated background elements on mobile */}
+        <div className="absolute inset-0 overflow-hidden opacity-20 sm:opacity-30 pointer-events-none">
+          {[...Array(4)].map((_, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full"
@@ -453,15 +446,15 @@ export default function Home() {
                   i % 2 === 0
                     ? `radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`
                     : `radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`,
-                width: `${150 + Math.random() * 150}px`,
-                height: `${150 + Math.random() * 150}px`,
+                width: `${100 + Math.random() * 100}px`,
+                height: `${100 + Math.random() * 100}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                filter: "blur(30px)",
+                filter: "blur(20px)",
               }}
               animate={{
-                x: [0, Math.random() * 100 - 50, 0],
-                y: [0, Math.random() * 100 - 50, 0],
+                x: [0, Math.random() * 50 - 25, 0],
+                y: [0, Math.random() * 50 - 25, 0],
                 scale: [1, 1.2, 1],
                 opacity: [0.2, 0.4, 0.2],
               }}
@@ -481,22 +474,22 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             viewport={{ once: true, margin: "-100px" }}
           >
-            <div className="inline-flex items-center justify-center mb-6">
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-blue-400 mr-4"></div>
-              <span className="text-blue-400 font-semibold tracking-wider uppercase text-sm">Join Now</span>
-              <div className="h-px w-12 bg-gradient-to-l from-transparent to-blue-400 ml-4"></div>
+            <div className="inline-flex items-center justify-center mb-4 sm:mb-6">
+              <div className="h-px w-8 sm:w-12 bg-gradient-to-r from-transparent to-blue-400 mr-3 sm:mr-4"></div>
+              <span className="text-blue-400 font-semibold tracking-wider uppercase text-xs sm:text-sm">Join Now</span>
+              <div className="h-px w-8 sm:w-12 bg-gradient-to-l from-transparent to-blue-400 ml-3 sm:ml-4"></div>
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 mb-4 sm:mb-6">
               Ready to Begin Your Chess Journey?
             </h2>
-            <p className="text-xl text-gray-300 mb-10">
-              Join thousands of players worldwide and start your chess adventure today
+            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-10">
+              Join thousands of players worldwide
             </p>
 
             <motion.button
               onClick={() => navigate(authStatus === true && userData?.username ? "/modeselector" : "/signup")}
-              className="inline-block px-8 py-4 rounded-full text-xl font-semibold transition duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
+              className="inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-semibold transition duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -508,13 +501,13 @@ export default function Home() {
               />
               <span className="absolute inset-0 flex items-center justify-center text-white">
                 <span className="flex items-center">
-                  {authStatus === true && userData?.username ? "Choose Game Mode" : "Get Started Now"}
-                  <ChevronRight className="ml-2" size={20} />
-                  <Sparkles className="ml-1 h-4 w-4" />
+                  {authStatus === true && userData?.username ? "Play Now" : "Get Started"}
+                  <ChevronRight className="ml-2" size={18} />
+                  <Sparkles className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                 </span>
               </span>
               <span className="invisible">
-                {authStatus === true && userData?.username ? "Choose Game Mode" : "Get Started Now"}
+                {authStatus === true && userData?.username ? "Play Now" : "Get Started"}
               </span>
             </motion.button>
           </motion.div>
@@ -523,4 +516,3 @@ export default function Home() {
     </div>
   )
 }
-
