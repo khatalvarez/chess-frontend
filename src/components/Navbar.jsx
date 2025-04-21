@@ -10,6 +10,7 @@ import axios from "axios"
 import { BASE_URL } from "../url"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import ChessMasterLogo from "./ChessMasterLogo"
 
 function Navbar() {
   const dispatch = useDispatch()
@@ -143,46 +144,20 @@ function Navbar() {
       transition={{ duration: 0.5, type: "spring", stiffness: 120 }}
       onMouseEnter={() => handleNavbarHover(true)}
       onMouseLeave={() => handleNavbarHover(false)}
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        scrolled
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${scrolled
           ? "bg-gray-900 shadow-lg"
           : navbarFocused
             ? "bg-gray-900 bg-opacity-95 backdrop-filter backdrop-blur-md"
             : "bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg"
-      }`}
+        }`}
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          {/* Logo with animation */}
+          
           <Link to="/" className="flex items-center space-x-3 group">
-            {/* Animated Chess Logo */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              whileHover={{ scale: 1.1, rotate: 10 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="w-12 h-12 relative"
-            >
-              <div className="w-full h-full relative">
-                <motion.div
-                  animate={{
-                    boxShadow: [
-                      "0 0 15px rgba(59, 130, 246, 0.6)",
-                      "0 0 30px rgba(139, 92, 246, 0.8)",
-                      "0 0 15px rgba(59, 130, 246, 0.6)",
-                    ],
-                  }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                  className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
-                />
-                <FaChess className="absolute inset-0 text-white w-full h-full p-2" />
-              </div>
-            </motion.div>
+            <ChessMasterLogo />
             <div className="flex flex-col">
-              <motion.span
-                className="text-white font-bold text-xl group-hover:text-green-400 transition-colors duration-300"
-                whileHover={{ scale: 1.05 }}
-              >
+              <motion.span className="text-white font-bold text-xl group-hover:text-green-400 transition-colors duration-300">
                 Chess Master
               </motion.span>
               <span className="text-xs text-gray-400 hidden sm:block">Master your game</span>
@@ -194,11 +169,10 @@ function Navbar() {
             <motion.div variants={navItemVariants} whileHover="hover">
               <Link
                 to="/"
-                className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${
-                  location.pathname === "/"
+                className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${location.pathname === "/"
                     ? "text-green-400 border-b border-green-400 pb-1"
                     : "text-white hover:text-green-400"
-                }`}
+                  }`}
               >
                 <Home size={18} />
                 <span>Home</span>
@@ -210,11 +184,10 @@ function Navbar() {
                 <motion.div variants={navItemVariants} whileHover="hover">
                   <Link
                     to="/modeselector"
-                    className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${
-                      location.pathname === "/modeselector"
+                    className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${location.pathname === "/modeselector"
                         ? "text-green-400 border-b border-green-400 pb-1"
                         : "text-white hover:text-green-400"
-                    }`}
+                      }`}
                   >
                     <FaChess size={18} />
                     <span>Play</span>
@@ -224,11 +197,10 @@ function Navbar() {
                 <motion.div variants={navItemVariants} whileHover="hover">
                   <Link
                     to="/puzzle"
-                    className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${
-                      location.pathname === "/puzzle"
+                    className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${location.pathname === "/puzzle"
                         ? "text-green-400 border-b border-green-400 pb-1"
                         : "text-white hover:text-green-400"
-                    }`}
+                      }`}
                   >
                     <BookOpen size={18} />
                     <span>Puzzles</span>
@@ -240,9 +212,8 @@ function Navbar() {
                   <motion.button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     whileHover={{ scale: 1.05 }}
-                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-full transition-all duration-300 ${
-                      isProfileMenuOpen ? "bg-gray-700 text-green-400" : "text-green-400 hover:bg-gray-800"
-                    }`}
+                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-full transition-all duration-300 ${isProfileMenuOpen ? "bg-gray-700 text-green-400" : "text-green-400 hover:bg-gray-800"
+                      }`}
                   >
                     <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
                       {userData?.username?.charAt(0).toUpperCase() || "U"}

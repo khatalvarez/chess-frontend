@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { motion } from "framer-motion"
 import { ChevronDown, Crown, Trophy, User, Sparkles, ChevronRight } from "lucide-react"
-import { FaChess } from "react-icons/fa"
 import FeaturesSection from "./Features"
+import ChessMasterLogo from "./ChessMasterLogo"
 
 const PieceArray = lazy(() => import("./PieceArray"))
 
@@ -252,28 +252,8 @@ export default function Home() {
               boxShadow: "0 0 60px rgba(59, 130, 246, 0.15), 0 0 20px rgba(139, 92, 246, 0.15)",
             }}
           >
-            {/* Animated chess logo */}
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
-              className="w-24 h-24 mx-auto mb-8"
-            >
-              <div className="w-full h-full relative">
-                <motion.div
-                  animate={{
-                    boxShadow: [
-                      "0 0 15px rgba(59, 130, 246, 0.6)",
-                      "0 0 30px rgba(139, 92, 246, 0.8)",
-                      "0 0 15px rgba(59, 130, 246, 0.6)",
-                    ],
-                  }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                  className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
-                />
-                <FaChess className="absolute inset-0 text-white w-full h-full p-4" />
-              </div>
-            </motion.div>
+
+            <ChessMasterLogo variant="home" />
 
             {showPieceArray && (
               <Suspense fallback={<div className="h-16 flex justify-center" />}>
