@@ -10,6 +10,7 @@ import Analysis from "./components/Analysis"
 import Training from "./components/Training"
 import FeaturesSection from "./components/Features"
 import Footer from "./components/Footer"
+import PageNotFound from "./components/PageNotFound"
 
 const Home = lazy(() => import("./components/Home"))
 const SignUp = lazy(() => import("./components/Auth/SignUp"))
@@ -40,6 +41,7 @@ const App = () => {
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="*" element={<PageNotFound />} />
             <Route path="/features" element={<FeaturesSection />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />

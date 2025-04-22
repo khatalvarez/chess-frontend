@@ -17,7 +17,9 @@ import ChessMasterLogo from "./ChessMasterLogo"
 export default function Footer() {
   const currentYear = new Date().getFullYear()
   const [hoveredSection, setHoveredSection] = useState(null)
-  const [emailInput, setEmailInput] = useState("")
+  const [emailInput, setEmailInput] = useState("itxnargiskhatun@gmail.com")
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -67,12 +69,45 @@ export default function Footer() {
     { name: "YouTube", icon: <Youtube size={20} />, link: "https://youtube.com" }
   ]
 
-  const handleEmailSubmit = (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault()
-    // Handle newsletter signup logic here
-    console.log("Email submitted:", emailInput)
-    // Reset form or show success message
-    setEmailInput("")
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailInput)) {
+      setSubscriptionStatus({
+        success: false,
+        message: "Please enter a valid email address"
+      })
+      return
+    }
+    
+    setIsSubmitting(true)
+    
+    try {
+      // Simulating an API call to a newsletter service
+      // In a real implementation, you would replace this with your actual API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      console.log("Email submitted:", emailInput)
+      
+      // Set success status
+      setSubscriptionStatus({
+        success: true,
+        message: "Thank you for subscribing to our newsletter!"
+      })
+      
+      // Clear input after successful submission
+      setEmailInput("")
+    } catch (error) {
+      console.error("Newsletter subscription failed:", error)
+      setSubscriptionStatus({
+        success: false,
+        message: "Subscription failed. Please try again later."
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -165,11 +200,28 @@ export default function Footer() {
                 />
                 <button 
                   type="submit"
-                  className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 rounded-r-md"
+                  disabled={isSubmitting}
+                  className={`relative bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 rounded-r-md ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700'}`}
                 >
-                  Join
+                  {isSubmitting ? 
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Joining...
+                    </span> 
+                    : 'Join'
+                  }
                 </button>
               </div>
+              
+              {subscriptionStatus && (
+                <p className={`text-sm mt-2 ${subscriptionStatus.success ? 'text-green-500' : 'text-red-500'}`}>
+                  {subscriptionStatus.message}
+                </p>
+              )}
+              
               <p className="text-xs mt-2 text-gray-500">
                 Stay up to date with tournaments and special events
               </p>
