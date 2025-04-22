@@ -1,12 +1,11 @@
-"use client"
-
 import { useState, useEffect, lazy, Suspense } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { motion } from "framer-motion"
-import { ChevronDown, Crown, Trophy, User, Sparkles, ChevronRight } from "lucide-react"
+import { ChevronDown, Crown, Trophy, User, ChevronRight } from "lucide-react"
 import FeaturesSection from "./Features"
 import ChessMasterLogo from "./ChessMasterLogo"
+import Footer from "./Footer"
 
 const PieceArray = lazy(() => import("./PieceArray"))
 
@@ -22,6 +21,25 @@ export default function Home() {
   const [typedText, setTypedText] = useState("")
   const [particles, setParticles] = useState([])
   const [isHovering, setIsHovering] = useState({ login: false, signup: false, continue: false })
+  const [devicePerformance, setDevicePerformance] = useState('high') 
+
+            {/* // <meta name="description" content="Chess Master - Experience the ultimate chess journey. Challenge friends, solve puzzles, and test your skills." />
+          // <meta name="keywords" content="chess, online chess, chess game, strategy game, multiplayer chess" />
+          // <meta property="og:title" content="Chess Master - The Ultimate Chess Experience" />
+          // <meta property="og:description" content="Experience the ultimate chess journey. Challenge friends, solve puzzles, and test your skills." />
+          // <meta property="og:type" content="website" />
+          // <meta name="twitter:card" content="summary_large_image" />
+          // <meta name="twitter:title" content="Chess Master - The Ultimate Chess Experience" />
+          // <meta name="twitter:description" content="Experience the ultimate chess journey. Challenge friends, solve puzzles, and test your skills." /> */}
+
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768
+    const isLowMemory = navigator.deviceMemory && navigator.deviceMemory < 4
+    
+    if (isMobile || isLowMemory) {
+      setDevicePerformance('low')
+    }
+  }, [])
 
   // Detect navbar height
   useEffect(() => {
@@ -42,10 +60,10 @@ export default function Home() {
     }
   }, [])
 
-  // Generate fewer particles on mobile for better performance
+  // Generate fewer particles based on device performance
   useEffect(() => {
     const isMobile = window.innerWidth < 768
-    const particleCount = isMobile ? 30 : 60
+    const particleCount = devicePerformance === 'low' ? 15 : isMobile ? 30 : 60
     
     const newParticles = []
     for (let i = 0; i < particleCount; i++) {
@@ -53,7 +71,7 @@ export default function Home() {
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
-        size: Math.random() * (isMobile ? 3 : 4) + 1, // Smaller particles on mobile
+        size: Math.random() * (isMobile ? 2 : 4) + 1, // Smaller particles on mobile
         speed: Math.random() * 1 + 0.5,
         color:
           Math.random() > 0.5
@@ -62,14 +80,15 @@ export default function Home() {
       })
     }
     setParticles(newParticles)
-  }, [])
+  }, [devicePerformance])
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
     }
 
-    window.addEventListener("scroll", handleScroll)
+    // Use passive listener for better scroll performance
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
@@ -99,8 +118,11 @@ export default function Home() {
     }
   }
 
-  // Fewer pieces on mobile
-  const pieceIcons = [
+  // Fewer pieces on mobile or low-performance devices
+  const pieceIcons = devicePerformance === 'low' ? [
+    { icon: "♚", delay: 1.2, size: 60 },
+    { icon: "♛", delay: 1.5, size: 65 },
+  ] : [
     { icon: "♚", delay: 1.2, size: 60 },
     { icon: "♛", delay: 1.5, size: 65 },
     { icon: "♜", delay: 1.8, size: 55 },
@@ -110,87 +132,96 @@ export default function Home() {
 
   return (
     <div className="relative w-screen min-h-screen overflow-x-hidden bg-gradient-to-b from-gray-950 via-gray-900 to-black">
+      {/* Add Meta Tags Component */}
+      {/* <MetaTags /> */}
+      
       {/* Chess board pattern background - simplified for mobile */}
       <div
         className="fixed inset-0 z-0 opacity-5"
         style={{
           backgroundImage: `linear-gradient(45deg, #111 25%, transparent 25%), 
-                            linear-gradient(-45deg, #111 25%, transparent 25%), 
-                            linear-gradient(45deg, transparent 75%, #111 75%), 
-                            linear-gradient(-45deg, transparent 75%, #111 75%)`,
-          backgroundSize: "40px 40px", // Smaller pattern on mobile
+                          linear-gradient(-45deg, #111 25%, transparent 25%), 
+                          linear-gradient(45deg, transparent 75%, #111 75%), 
+                          linear-gradient(-45deg, transparent 75%, #111 75%)`,
+          backgroundSize: devicePerformance === 'low' ? "60px 60px" : "40px 40px", // Bigger pattern on low-perf devices
           backgroundPosition: "0 0, 0 20px, 20px -20px, -20px 0px",
         }}
+        aria-hidden="true"
       ></div>
 
-      {/* Animated particles - fewer and more optimized for mobile */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        {particles.map((particle) => (
-          <motion.div
-            key={particle.id}
-            className="absolute rounded-full"
-            style={{
-              backgroundColor: particle.color,
-              boxShadow: `0 0 ${particle.size * 2}px ${particle.color.replace(")", ", 0.8)")}`,
-              width: `${particle.size}px`,
-              height: `${particle.size}px`,
-            }}
-            initial={{
-              x: `${particle.x}vw`,
-              y: `${particle.y}vh`,
-              opacity: 0,
-            }}
-            animate={{
-              y: [`${particle.y}vh`, `${(particle.y + 20) % 100}vh`, `${particle.y}vh`],
-              opacity: [0, 0.7, 0],
-            }}
-            transition={{
-              duration: 10 / particle.speed,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Floating chess pieces - fewer on mobile */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none md:block hidden">
-        <div className="absolute inset-0">
-          {pieceIcons.map((piece, index) => (
+      {/* Animated particles - conditionally rendered based on device capability */}
+      {devicePerformance !== 'low' && (
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          {particles.map((particle) => (
             <motion.div
-              key={index}
+              key={particle.id}
+              className="absolute rounded-full"
+              style={{
+                backgroundColor: particle.color,
+                boxShadow: `0 0 ${particle.size * 2}px ${particle.color.replace(")", ", 0.8)")}`,
+                width: `${particle.size}px`,
+                height: `${particle.size}px`,
+              }}
               initial={{
-                x: `${Math.random() * 100}vw`,
-                y: `${Math.random() * 100}vh`,
+                x: `${particle.x}vw`,
+                y: `${particle.y}vh`,
                 opacity: 0,
               }}
               animate={{
-                x: [`${Math.random() * 100}vw`, `${Math.random() * 100}vw`, `${Math.random() * 100}vw`],
-                y: [`${Math.random() * 100}vh`, `${Math.random() * 100}vh`, `${Math.random() * 100}vh`],
-                opacity: [0, 0.25, 0],
+                y: [`${particle.y}vh`, `${(particle.y + 20) % 100}vh`, `${particle.y}vh`],
+                opacity: [0, 0.7, 0],
               }}
               transition={{
+                duration: 10 / particle.speed,
                 repeat: Number.POSITIVE_INFINITY,
-                duration: 15 + Math.random() * 10,
-                delay: piece.delay,
-                repeatType: "reverse",
+                ease: "easeInOut",
               }}
-              className="absolute text-white opacity-20"
-              style={{
-                fontSize: `${piece.size}px`,
-                textShadow: "0 0 15px rgba(255, 255, 255, 0.5)",
-              }}
-            >
-              {piece.icon}
-            </motion.div>
+            />
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Hero Section - Adjusted for mobile */}
-      <div
+      {/* Floating chess pieces - conditionally rendered based on device capability */}
+      {devicePerformance !== 'low' && (
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none md:block hidden" aria-hidden="true">
+          <div className="absolute inset-0">
+            {pieceIcons.map((piece, index) => (
+              <motion.div
+                key={index}
+                initial={{
+                  x: `${Math.random() * 100}vw`,
+                  y: `${Math.random() * 100}vh`,
+                  opacity: 0,
+                }}
+                animate={{
+                  x: [`${Math.random() * 100}vw`, `${Math.random() * 100}vw`, `${Math.random() * 100}vw`],
+                  y: [`${Math.random() * 100}vh`, `${Math.random() * 100}vh`, `${Math.random() * 100}vh`],
+                  opacity: [0, 0.25, 0],
+                }}
+                transition={{
+                  repeat: Number.POSITIVE_INFINITY,
+                  duration: 15 + Math.random() * 10,
+                  delay: piece.delay,
+                  repeatType: "reverse",
+                }}
+                className="absolute text-white opacity-20"
+                style={{
+                  fontSize: `${piece.size}px`,
+                  textShadow: "0 0 15px rgba(255, 255, 255, 0.5)",
+                }}
+              >
+                {piece.icon}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hero Section - Adjusted for mobile and accessibility */}
+      <section 
         className="relative w-screen min-h-screen flex items-center justify-center overflow-hidden"
         style={{ paddingTop: navbarHeight }}
+        aria-labelledby="hero-heading"
       >
         {/* Simplified glow effects for mobile */}
         <motion.div
@@ -210,6 +241,7 @@ export default function Home() {
             repeat: Number.POSITIVE_INFINITY,
             repeatType: "reverse",
           }}
+          aria-hidden="true"
         />
 
         <motion.div
@@ -230,6 +262,7 @@ export default function Home() {
             repeatType: "reverse",
             delay: 1,
           }}
+          aria-hidden="true"
         />
 
         <div className="relative z-10 w-11/12 max-w-5xl mt-2 sm:mt-0 px-4">
@@ -248,7 +281,7 @@ export default function Home() {
             <ChessMasterLogo variant="home" />
 
             {showPieceArray && (
-              <Suspense fallback={<div className="h-12 sm:h-16 flex justify-center" />}>
+              <Suspense fallback={<div className="h-12 sm:h-16 flex justify-center" aria-label="Loading piece array..." />}>
                 <motion.div
                   initial={{ y: -30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -266,12 +299,16 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.5 }}
               className="h-16 sm:h-20 mb-2 flex justify-center items-center"
             >
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-4 sm:mb-8">
+              <h1 
+                id="hero-heading"
+                className="text-3xl sm:text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 mb-4 sm:mb-8"
+              >
                 {typedText}
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
                   className="inline-block w-1 h-8 sm:h-12 ml-1 bg-blue-400"
+                  aria-hidden="true"
                 />
               </h1>
             </motion.div>
@@ -283,7 +320,7 @@ export default function Home() {
               className="mb-8 sm:mb-14"
             >
               <p className="text-center text-lg sm:text-xl lg:text-2xl text-gray-200 leading-relaxed max-w-4xl mx-auto">
-                <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+                <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
                   Experience the ultimate chess journey.
                 </span>{" "}
                 Challenge friends, solve puzzles, and test your skills.
@@ -304,16 +341,18 @@ export default function Home() {
                   whileTap={{ scale: 0.98 }}
                   onMouseEnter={() => setIsHovering({ ...isHovering, continue: true })}
                   onMouseLeave={() => setIsHovering({ ...isHovering, continue: false })}
+                  aria-label="Continue Your Chess Journey"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:from-blue-700 group-hover:to-purple-700" />
                   <motion.span
                     className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-white/20 to-blue-600/0"
                     animate={{ x: ["-100%", "100%"] }}
                     transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
+                    aria-hidden="true"
                   />
                   <span className="absolute inset-0 flex items-center justify-center text-white">
                     <span className="flex items-center">
-                      <Crown className="mr-2 inline" size={20} />
+                      <Crown className="mr-2 inline" size={20} aria-hidden="true" />
                       Continue
                       <span className="hidden sm:inline ml-1">Your Journey</span>
                       {isHovering.continue && (
@@ -321,6 +360,7 @@ export default function Home() {
                           initial={{ opacity: 0, x: -5 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.2 }}
+                          aria-hidden="true"
                         >
                           <ChevronRight className="ml-2" size={16} />
                         </motion.span>
@@ -338,22 +378,25 @@ export default function Home() {
                     whileTap={{ scale: 0.98 }}
                     onMouseEnter={() => setIsHovering({ ...isHovering, login: true })}
                     onMouseLeave={() => setIsHovering({ ...isHovering, login: false })}
+                    aria-label="Login to Chess Master"
                   >
                     <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:from-blue-700 group-hover:to-indigo-700" />
                     <motion.span
                       className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-white/20 to-blue-600/0"
                       animate={{ x: ["-100%", "100%"] }}
                       transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
+                      aria-hidden="true"
                     />
                     <span className="absolute inset-0 flex items-center justify-center text-white">
                       <span className="flex items-center">
-                        <User className="mr-2 inline" size={18} />
+                        <User className="mr-2 inline" size={18} aria-hidden="true" />
                         Login
                         {isHovering.login && (
                           <motion.span
                             initial={{ opacity: 0, x: -5 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2 }}
+                            aria-hidden="true"
                           >
                             <ChevronRight className="ml-2" size={16} />
                           </motion.span>
@@ -370,22 +413,25 @@ export default function Home() {
                     whileTap={{ scale: 0.98 }}
                     onMouseEnter={() => setIsHovering({ ...isHovering, signup: true })}
                     onMouseLeave={() => setIsHovering({ ...isHovering, signup: false })}
+                    aria-label="Sign up for Chess Master"
                   >
                     <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 group-hover:from-purple-700 group-hover:to-pink-700" />
                     <motion.span
                       className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-white/20 to-purple-600/0"
                       animate={{ x: ["-100%", "100%"] }}
                       transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
+                      aria-hidden="true"
                     />
                     <span className="absolute inset-0 flex items-center justify-center text-white">
                       <span className="flex items-center">
-                        <Trophy className="mr-2 inline" size={18} />
+                        <Trophy className="mr-2 inline" size={18} aria-hidden="true" />
                         Sign Up
                         {isHovering.signup && (
                           <motion.span
                             initial={{ opacity: 0, x: -5 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2 }}
+                            aria-hidden="true"
                           >
                             <ChevronRight className="ml-2" size={16} />
                           </motion.span>
@@ -422,44 +468,45 @@ export default function Home() {
               y: { repeat: Number.POSITIVE_INFINITY, duration: 1.5 },
               boxShadow: { repeat: Number.POSITIVE_INFINITY, duration: 2 },
             }}
+            aria-label="Scroll to features"
           >
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-full p-2">
-              <ChevronDown size={24} className="text-white" />
+              <ChevronDown size={24} className="text-white" aria-hidden="true" />
             </div>
           </motion.button>
         </motion.div>
-      </div>
+      </section>
 
-      {/* Features Section */}
-      <FeaturesSection />
+      {/* Features Section with ID for scroll target */}
+      <section id="features" aria-label="Chess Master Features">
+        <FeaturesSection />
+      </section>
 
-      {/* Call to Action - Mobile optimized */}
-      <div className="bg-gradient-to-b from-gray-900 to-black py-12 sm:py-20 relative overflow-hidden">
-        {/* Fewer animated background elements on mobile */}
-        <div className="absolute inset-0 overflow-hidden opacity-20 sm:opacity-30 pointer-events-none">
-          {[...Array(4)].map((_, i) => (
+      {/* Call to Action - Semantic and accessible */}
+      <section className="bg-gradient-to-b from-gray-900 to-black py-20 relative overflow-hidden" aria-labelledby="cta-heading">
+        {/* Subtle background elements - minimal but effective */}
+        <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none" aria-hidden="true">
+          {/* Just a few elegant glowing orbs */}
+          {devicePerformance !== 'low' && [...Array(3)].map((_, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full"
               style={{
-                background:
-                  i % 2 === 0
-                    ? `radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`
-                    : `radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`,
-                width: `${100 + Math.random() * 100}px`,
-                height: `${100 + Math.random() * 100}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                filter: "blur(20px)",
+                background: i % 2 === 0
+                  ? `radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`
+                  : `radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`,
+                width: `${200 + Math.random() * 100}px`,
+                height: `${200 + Math.random() * 100}px`,
+                left: `${20 + Math.random() * 60}%`,
+                top: `${20 + Math.random() * 60}%`,
+                filter: "blur(40px)",
               }}
               animate={{
-                x: [0, Math.random() * 50 - 25, 0],
-                y: [0, Math.random() * 50 - 25, 0],
                 scale: [1, 1.2, 1],
-                opacity: [0.2, 0.4, 0.2],
+                opacity: [0.2, 0.3, 0.2],
               }}
               transition={{
-                duration: 10 + Math.random() * 10,
+                duration: 8 + Math.random() * 4,
                 repeat: Number.POSITIVE_INFINITY,
                 repeatType: "reverse",
               }}
@@ -467,52 +514,93 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true, margin: "-100px" }}
           >
-            <div className="inline-flex items-center justify-center mb-4 sm:mb-6">
-              <div className="h-px w-8 sm:w-12 bg-gradient-to-r from-transparent to-blue-400 mr-3 sm:mr-4"></div>
+            {/* Simple clean divider */}
+            <div className="mb-8 flex items-center justify-center">
+              <div className="h-px w-12 bg-gradient-to-r from-transparent to-blue-400"></div>
+              <div className="mx-4">
               <span className="text-blue-400 font-semibold tracking-wider uppercase text-xs sm:text-sm">Join Now</span>
-              <div className="h-px w-8 sm:w-12 bg-gradient-to-l from-transparent to-blue-400 ml-3 sm:ml-4"></div>
+              </div>
+              <div className="h-px w-12 bg-gradient-to-l from-transparent to-blue-400"></div>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 mb-4 sm:mb-6">
+            {/* Clean typography with balanced spacing */}
+            <h2 id="cta-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 mb-4 sm:mb-6">
               Ready to Begin Your Chess Journey?
             </h2>
-            <p className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-10">
-              Join thousands of players worldwide
+            
+            <p className="text-lg text-gray-300 mb-10 max-w-xl mx-auto">
+              Join thousands of players worldwide and become part of the Chess Master community
             </p>
 
-            <motion.button
-              onClick={() => navigate(authStatus === true && userData?.username ? "/modeselector" : "/signup")}
-              className="inline-block px-6 sm:px-8 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-semibold transition duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 relative overflow-hidden group"
-              whileHover={{ scale: 1.05 }}
+            {/* Clean, cool button design */}
+            <motion.div
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:from-blue-700 group-hover:to-purple-700" />
-              <motion.span
-                className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-white/20 to-blue-600/0"
-                animate={{ x: ["-100%", "100%"] }}
-                transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY, repeatDelay: 3 }}
-              />
-              <span className="absolute inset-0 flex items-center justify-center text-white">
-                <span className="flex items-center">
-                  {authStatus === true && userData?.username ? "Play Now" : "Get Started"}
-                  <ChevronRight className="ml-2" size={18} />
-                  <Sparkles className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
-                </span>
-              </span>
-              <span className="invisible">
-                {authStatus === true && userData?.username ? "Play Now" : "Get Started"}
-              </span>
-            </motion.button>
+              <button
+                onClick={() => navigate(authStatus === true && userData?.username ? "/modeselector" : "/signup")}
+                className="rounded-full bg-transparent"
+                aria-label={authStatus === true && userData?.username ? "Play Now" : "Get Started with Chess Master"}
+              >
+                
+                {/* Clean button surface */}
+                <div className="relative flex items-center bg-gradient-to-r from-blue-600 to-purple-600 group-hover:from-blue-700 group-hover:to-purple-700 text-white px-8 py-4 rounded-full">
+                  <span className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600/30 to-purple-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                  
+                  {/* Simple shine effect */}
+                  <motion.span
+                    className="absolute inset-0 rounded-full"
+                    animate={{ x: ["-100%", "100%"] }}
+                    transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, repeatDelay: 4 }}
+                    aria-hidden="true"
+                  />
+                  
+                  {/* Clean content layout */}
+                  <div className="flex items-center space-x-2 text-lg sm:text-xl font-medium">
+                    {authStatus === true && userData?.username ? (
+                      <>
+                        <Crown className="h-5 w-5" aria-hidden="true" />
+                        <span>Play Now</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trophy className="h-5 w-5" aria-hidden="true" />
+                        <span>Get Started</span>
+                      </>
+                    )}
+                    <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" aria-hidden="true" />
+                  </div>
+                </div>
+              </button>
+            </motion.div>
+            
+            {/* Simple feature highlights with clean icons */}
+            <div className="mt-12 flex flex-wrap justify-center gap-8 text-gray-300">
+              <div className="flex items-center">
+                <div className="h-2 w-2 rounded-full bg-blue-500 mr-2" aria-hidden="true"></div>
+                <span>Free to Play</span>
+              </div>
+              <div className="flex items-center">
+                <div className="h-2 w-2 rounded-full bg-purple-500 mr-2" aria-hidden="true"></div>
+                <span>Global Leaderboards</span>
+              </div>
+              <div className="flex items-center">
+                <div className="h-2 w-2 rounded-full bg-indigo-500 mr-2" aria-hidden="true"></div>
+                <span>Advanced AI</span>
+              </div>
+            </div>
           </motion.div>
         </div>
-      </div>
+      </section>
+
+    
     </div>
   )
 }

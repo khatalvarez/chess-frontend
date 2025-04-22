@@ -9,6 +9,7 @@ import LoadingScreen from "./components/Loading"
 import Analysis from "./components/Analysis"
 import Training from "./components/Training"
 import FeaturesSection from "./components/Features"
+import Footer from "./components/Footer"
 
 const Home = lazy(() => import("./components/Home"))
 const SignUp = lazy(() => import("./components/Auth/SignUp"))
@@ -63,6 +64,7 @@ const App = () => {
             <Route path="/training" element={<Training />} />
           </Routes>
         </Suspense>
+        <Footer />
       </Router>
     </Provider>
   )

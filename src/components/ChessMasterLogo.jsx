@@ -66,9 +66,9 @@ const ChessMasterLogo = ({ variant = "default", className = "" }) => {
         transition={{ delay: 0.2, duration: 0.5 }}
         className="hidden sm:block"
       >
-        <h1 className="font-bold text-lg sm:text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+        {/* <h1 className="font-bold text-lg sm:text-xl bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
           Chess Master
-        </h1>
+        </h1> */}
       </motion.div>
     </div>
   );
