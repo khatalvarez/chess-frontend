@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Users, Clock, CastleIcon as ChessKnight, Wifi, WifiOff, Sparkles } from "lucide-react"
 import bg from "../assets/images/bgprofile.webp"
@@ -9,9 +9,9 @@ function WaitQueue({ socket = null, length = 2 }) {
   const [dots, setDots] = useState("")
   const [elapsed, setElapsed] = useState(0)
   const [playersWaiting, setPlayersWaiting] = useState(1)
-  const [connectionStatus, setConnectionStatus] = useState(socket ? "connected" : "disconnected")
+  const [connectionStatus, setConnectionStatus] = useState(socket?.connected ? "connected" : "disconnected")
   const [retryCount, setRetryCount] = useState(0)
-  const [tips, setTips] = useState([
+  const [tips] = useState([
     "You can change the board theme in the settings",
     "Use mobile mode on touch devices for easier play",
     "Visual hints show you possible moves",
@@ -21,6 +21,29 @@ function WaitQueue({ socket = null, length = 2 }) {
     "You can mute game sounds with the volume button",
   ])
   const [currentTip, setCurrentTip] = useState(0)
+
+  // Memoized event handlers to prevent recreation on every render
+  const handleWaitingCount = useCallback((count) => {
+    console.log("Players waiting:", count)
+    setPlayersWaiting(count)
+  }, [])
+
+  const handleConnect = useCallback(() => {
+    console.log("Socket connected")
+    setConnectionStatus("connected")
+    setRetryCount(0)
+    socket?.emit("getWaitingCount")
+  }, [socket])
+
+  const handleDisconnect = useCallback(() => {
+    console.log("Socket disconnected")
+    setConnectionStatus("disconnected")
+  }, [])
+
+  const handleConnectError = useCallback((error) => {
+    console.error("Connection error:", error)
+    setConnectionStatus("error")
+  }, [])
 
   useEffect(() => {
     // Animated dots
@@ -41,47 +64,16 @@ function WaitQueue({ socket = null, length = 2 }) {
       setCurrentTip((prev) => (prev + 1) % tips.length)
     }, 5000)
 
-    // Listen for waiting players count if socket is available
+    // Set up socket listeners if socket exists
     if (socket) {
       console.log("WaitQueue: Socket connected, listening for updates")
-      setConnectionStatus("connected")
+      socket.on("waitingCount", handleWaitingCount)
+      socket.on("connect", handleConnect)
+      socket.on("disconnect", handleDisconnect)
+      socket.on("connect_error", handleConnectError)
 
       // Request current waiting count
       socket.emit("getWaitingCount")
-
-      socket.on("waitingCount", (count) => {
-        console.log("Players waiting:", count)
-        setPlayersWaiting(count)
-      })
-
-      socket.on("connect", () => {
-        console.log("Socket connected")
-        setConnectionStatus("connected")
-        setRetryCount(0)
-        socket.emit("getWaitingCount")
-      })
-
-      socket.on("disconnect", () => {
-        console.log("Socket disconnected")
-        setConnectionStatus("disconnected")
-      })
-
-      socket.on("connect_error", (error) => {
-        console.error("Connection error:", error)
-        setConnectionStatus("error")
-
-        // Implement retry logic with backoff
-        if (retryCount < 5) {
-          const timeout = Math.min(1000 * 2 ** retryCount, 30000)
-          console.log(`Retrying connection in ${timeout / 1000} seconds...`)
-
-          setTimeout(() => {
-            console.log("Attempting to reconnect...")
-            socket.connect()
-            setRetryCount((prev) => prev + 1)
-          }, timeout)
-        }
-      })
 
       // Request updates every 5 seconds
       const waitingInterval = setInterval(() => {
@@ -95,10 +87,10 @@ function WaitQueue({ socket = null, length = 2 }) {
         clearInterval(elapsedInterval)
         clearInterval(waitingInterval)
         clearInterval(tipsInterval)
-        socket.off("waitingCount")
-        socket.off("connect")
-        socket.off("disconnect")
-        socket.off("connect_error")
+        socket.off("waitingCount", handleWaitingCount)
+        socket.off("connect", handleConnect)
+        socket.off("disconnect", handleDisconnect)
+        socket.off("connect_error", handleConnectError)
       }
     }
 
@@ -107,7 +99,23 @@ function WaitQueue({ socket = null, length = 2 }) {
       clearInterval(elapsedInterval)
       clearInterval(tipsInterval)
     }
-  }, [socket, retryCount, tips])
+  }, [socket, handleWaitingCount, handleConnect, handleDisconnect, handleConnectError, tips.length])
+
+  // Implement retry logic with backoff
+  useEffect(() => {
+    if (connectionStatus === "error" && retryCount < 5 && socket) {
+      const timeout = Math.min(1000 * 2 ** retryCount, 30000)
+      console.log(`Retrying connection in ${timeout / 1000} seconds...`)
+
+      const retryTimer = setTimeout(() => {
+        console.log("Attempting to reconnect...")
+        socket.connect()
+        setRetryCount((prev) => prev + 1)
+      }, timeout)
+
+      return () => clearTimeout(retryTimer)
+    }
+  }, [connectionStatus, retryCount, socket])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -119,6 +127,7 @@ function WaitQueue({ socket = null, length = 2 }) {
   const playersNeeded = Math.max(0, length - playersWaiting)
 
   return (
+    // ... rest of your JSX remains the same ...
     <div className="w-screen min-h-screen flex flex-col items-center justify-center relative">
       {/* Background with overlay */}
       <div className="absolute inset-0 z-0">
@@ -333,4 +342,3 @@ function WaitQueue({ socket = null, length = 2 }) {
 }
 
 export default WaitQueue
-

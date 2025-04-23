@@ -1,12 +1,23 @@
+"use client"
+
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Trophy, X, RotateCcw, Home, Sparkles, ChevronRight } from "lucide-react"
+import { Trophy, X, RotateCcw, Home, Sparkles, ChevronRight, Clock } from "lucide-react"
 import { Link } from "react-router-dom"
 import bg from "../assets/images/bgprofile.webp"
 
-
-const GameOverModal = ({ isOpen, message, onRestart }) => {
+const GameOverModal = ({
+  isOpen,
+  message,
+  onRestart,
+  onPlayAgain,
+  playAgainRequested,
+  playAgainCountdown,
+  opponentPlayAgainRequested,
+  onAcceptPlayAgain,
+  onDeclinePlayAgain,
+}) => {
   useEffect(() => {
     if (isOpen && message.toLowerCase().includes("win")) {
       // Trigger confetti celebration for wins
@@ -188,38 +199,64 @@ const GameOverModal = ({ isOpen, message, onRestart }) => {
                     : "Don't worry, every loss is a learning opportunity. Try again!"}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onRestart}
-                  className="flex-1 py-3 px-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white font-semibold flex items-center justify-center group relative overflow-hidden"
-                >
-                  {/* Button shine effect */}
+              {/* Multiplayer Play Again Section */}
+              {opponentPlayAgainRequested ? (
+                <div className="w-full mb-6">
                   <motion.div
-                    className="absolute inset-0 w-full h-full"
-                    initial={{ x: "-100%" }}
-                    animate={{ x: ["100%", "100%", "-100%"] }}
-                    transition={{
-                      repeat: Number.POSITIVE_INFINITY,
-                      repeatDelay: 3,
-                      duration: 1.5,
-                      ease: "easeInOut",
-                    }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-lg border border-yellow-500/30 mb-4"
                   >
-                    <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent transform rotate-30 blur-md" />
+                    <p className="text-yellow-300 font-semibold mb-2">Your opponent wants to play again!</p>
+                    <p className="text-gray-300 text-sm mb-4">Would you like to accept their challenge?</p>
+
+                    <div className="flex gap-3">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onAcceptPlayAgain}
+                        className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white font-semibold flex items-center justify-center group"
+                      >
+                        <span>Accept</span>
+                        <ChevronRight className="ml-1 h-4 w-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onDeclinePlayAgain}
+                        className="flex-1 py-2 px-4 bg-gradient-to-r from-red-500 to-red-600 rounded-lg text-white font-semibold flex items-center justify-center group"
+                      >
+                        <span>Decline</span>
+                        <X className="ml-1 h-4 w-4" />
+                      </motion.button>
+                    </div>
                   </motion.div>
-
-                  <RotateCcw className="mr-2" size={18} />
-                  <span>Play Again</span>
-                  <ChevronRight className="ml-2 h-5 w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
-                </motion.button>
-
-                <Link to="/modeselector" className="flex-1">
+                </div>
+              ) : playAgainRequested ? (
+                <div className="w-full mb-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-lg border border-blue-500/30"
+                  >
+                    <p className="text-blue-300 font-semibold mb-2">Waiting for opponent to respond...</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <Clock className="text-gray-400 animate-pulse" size={18} />
+                      <p className="text-gray-300">
+                        Request expires in <span className="text-white font-semibold">{playAgainCountdown}</span>{" "}
+                        seconds
+                      </p>
+                    </div>
+                  </motion.div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4 w-full">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-full py-3 px-6 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold flex items-center justify-center transition-colors duration-200 group relative overflow-hidden"
+                    onClick={onPlayAgain}
+                    className="flex-1 py-3 px-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg text-white font-semibold flex items-center justify-center group relative overflow-hidden"
                   >
                     {/* Button shine effect */}
                     <motion.div
@@ -231,18 +268,48 @@ const GameOverModal = ({ isOpen, message, onRestart }) => {
                         repeatDelay: 3,
                         duration: 1.5,
                         ease: "easeInOut",
-                        delay: 0.5,
                       }}
                     >
-                      <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform rotate-30 blur-md" />
+                      <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent transform rotate-30 blur-md" />
                     </motion.div>
 
-                    <Home className="mr-2" size={18} />
-                    <span>Game Modes</span>
+                    <RotateCcw className="mr-2" size={18} />
+                    <span>Play Again</span>
                     <ChevronRight className="ml-2 h-5 w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
                   </motion.button>
-                </Link>
-              </div>
+
+                  <Link to="/modeselector" className="flex-1">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full py-3 px-6 bg-gray-700 hover:bg-gray-600 rounded-lg text-white font-semibold flex items-center justify-center transition-colors duration-200 group relative overflow-hidden"
+                    >
+                      {/* Button shine effect */}
+                      <motion.div
+                        className="absolute inset-0 w-full h-full"
+                        initial={{ x: "-100%" }}
+                        animate={{ x: ["100%", "100%", "-100%"] }}
+                        transition={{
+                          repeat: Number.POSITIVE_INFINITY,
+                          repeatDelay: 3,
+                          duration: 1.5,
+                          ease: "easeInOut",
+                          delay: 0.5,
+                        }}
+                      >
+                        <div className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform rotate-30 blur-md" />
+                      </motion.div>
+
+                      <Home className="mr-2" size={18} />
+                      <span>Game Modes</span>
+                      <ChevronRight className="ml-2 h-5 w-5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
+                    </motion.button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Status message at bottom */}
+              <p className="text-gray-400 text-sm mt-6">Your game results have been recorded in your profile.</p>
             </div>
           </motion.div>
         </motion.div>
@@ -252,4 +319,3 @@ const GameOverModal = ({ isOpen, message, onRestart }) => {
 }
 
 export default GameOverModal
-
