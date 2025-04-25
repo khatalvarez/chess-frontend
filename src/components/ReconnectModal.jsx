@@ -1,68 +1,41 @@
-import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "framer-motion"
 
-const ReconnectModal = ({ games, onRejoin, onDecline }) => {
+const ReconnectModal = ({ game, onRejoin, onCancel }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full"
-      >
-        <h2 className="text-2xl font-bold text-white mb-4">Rejoin Game</h2>
-        <p className="text-gray-300 mb-6">You have unfinished games. Would you like to rejoin one of them?</p>
-
-        <div className="space-y-4 max-h-60 overflow-y-auto mb-6">
-          {games.map((game) => {
-            const lastMoveTime = new Date(game.lastMoveTime).getTime();
-            const now = Date.now();
-            const minutesSinceLastMove = Math.floor((now - lastMoveTime) / (1000 * 60));
-
-            return (
-              <motion.div
-                key={game.gameId}
-                whileHover={{ scale: 1.02 }}
-                className="bg-gray-700 p-4 rounded-lg cursor-pointer"
-                onClick={() => onRejoin(game.gameId)}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-white font-medium">vs. {game.opponent.username}</p>
-                    <p className="text-gray-400 text-sm">
-                      {minutesSinceLastMove < 60
-                        ? `Last move: ${minutesSinceLastMove} minutes ago`
-                        : `Last move: ${Math.floor(minutesSinceLastMove / 60)} hours ago`}
-                    </p>
-                  </div>
-                  <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRejoin(game.gameId);
-                    }}
-                  >
-                    Rejoin
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3 text-center">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">Reconnect to Game?</h3>
+          <div className="mt-2 px-7 py-3">
+            <p className="text-sm text-gray-500">
+              It looks like you were disconnected from the game. Would you like to rejoin?
+            </p>
+          </div>
+          <div className="items-center px-4 py-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300"
+              onClick={(e) => {
+                e.stopPropagation()
+                onRejoin(game.gameId)
+              }}
+            >
+              Rejoin Game
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="mt-2 px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
+              onClick={onCancel}
+            >
+              Cancel
+            </motion.button>
+          </div>
         </div>
-
-        <div className="flex justify-between">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onDecline}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Start New Game
-          </motion.button>
-          <p className="text-gray-400 text-sm self-center">Declining will forfeit these games</p>
-        </div>
-      </motion.div>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default ReconnectModal;
+export default ReconnectModal

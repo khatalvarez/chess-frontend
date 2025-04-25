@@ -22,7 +22,7 @@ import boardbg from "../../assets/images/bgboard.webp"
 import { BASE_URL } from "../../url"
 import { io } from "socket.io-client"
 
-// Initialize sound effects
+// Initialize sound effects with preloading to avoid delays
 const moveSound = new Howl({ src: [moveSoundFile], preload: true })
 const captureSound = new Howl({ src: [captureSoundFile], preload: true })
 const checkSound = new Howl({ src: [checkSoundFile], preload: true })
@@ -120,6 +120,7 @@ const GlobalMultiplayer = () => {
   const lastActivityRef = useRef(Date.now())
   const currentStatusRef = useRef("Waiting for opponent...")
   const isComponentMountedRef = useRef(true)
+  const socketInitializedRef = useRef(false)
 
   // Celebration effect when player wins
   const triggerWinCelebration = useCallback(() => {
@@ -477,7 +478,7 @@ const GlobalMultiplayer = () => {
             obtainedPromotion: promotionPiece,
             fen: game.fen(),
             gameId: gameId,
-            player: user.userId,
+            player: user?.userId,
           }
 
           console.log("Sending move to server:", moveData)
@@ -645,7 +646,7 @@ const GlobalMultiplayer = () => {
                 obtainedPromotion: promotionPiece,
                 fen: game.fen(),
                 gameId: gameId,
-                player: user.userId,
+                player: user?.userId,
               }
 
               console.log("Sending move to server:", moveData)
@@ -875,6 +876,7 @@ const GlobalMultiplayer = () => {
       })
 
       socketRef.current = socket
+      socketInitializedRef.current = true
 
       // Debug connection status
       socket.on("connect", () => {
@@ -1088,7 +1090,7 @@ const GlobalMultiplayer = () => {
 
             // Only add to moves history if it's from the opponent
             // (our own moves are added in onDrop)
-            if (player !== user.userId) {
+            if (player !== user?.userId) {
               setMoves((prevMoves) => [
                 ...prevMoves,
                 {
@@ -1119,12 +1121,12 @@ const GlobalMultiplayer = () => {
           } else {
             console.error("Invalid move received:", from, to, obtainedPromotion)
             // Request current game state
-            socketRef.current.emit("requestGameState", { gameId })
+            socket.emit("requestGameState", { gameId })
           }
         } catch (error) {
           console.error("Error processing move:", error)
           // Request current game state on error
-          socketRef.current.emit("requestGameState", { gameId })
+          socket.emit("requestGameState", { gameId })
         }
       })
 
@@ -1151,7 +1153,7 @@ const GlobalMultiplayer = () => {
         console.log("Received play again request from:", requestingUserId)
         if (!isComponentMountedRef.current) return
 
-        if (requestingUserId !== user.userId) {
+        if (requestingUserId !== user?.userId) {
           setOpponentPlayAgainRequested(true)
 
           // Auto-decline after 30 seconds
@@ -1227,6 +1229,7 @@ const GlobalMultiplayer = () => {
     handleReconnection,
     addMatchToHistory,
     showChatModal,
+    maxReconnectAttempts,
   ])
 
   // Connect to socket server when component mounts
