@@ -1,19 +1,15 @@
-"use client"
-
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { Howl } from "howler"
-import { Maximize2, Minimize2, Volume2, VolumeX, LogOut, MessageSquare } from "lucide-react"
+import { Maximize2, Minimize2, Volume2, VolumeX, LogOut } from "lucide-react"
 import axios from "axios"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
 import WaitQueue from "../WaitQueue"
 import pieceImages from "../pieceImages"
 import GameOverModal from "../GameOverModal"
-import ChatModal from "../ChatModal"
-import ReconnectModal from "../ReconnectModal"
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
 import checkSoundFile from "../../assets/sounds/check.mp3"
@@ -22,11 +18,11 @@ import boardbg from "../../assets/images/bgboard.webp"
 import { BASE_URL } from "../../url"
 import { io } from "socket.io-client"
 
-// Initialize sound effects with preloading to avoid delays
-const moveSound = new Howl({ src: [moveSoundFile], preload: true })
-const captureSound = new Howl({ src: [captureSoundFile], preload: true })
-const checkSound = new Howl({ src: [checkSoundFile], preload: true })
-const checkmateSound = new Howl({ src: [checkmateSoundFile], preload: true })
+// Initialize sound effects
+const moveSound = new Howl({ src: [moveSoundFile] })
+const captureSound = new Howl({ src: [captureSoundFile] })
+const checkSound = new Howl({ src: [checkSoundFile] })
+const checkmateSound = new Howl({ src: [checkmateSoundFile] })
 
 // Themed board colors
 const themes = {
@@ -94,71 +90,53 @@ const GlobalMultiplayer = () => {
   const [visualHints, setVisualHints] = useState(true)
   const [lastMove, setLastMove] = useState(null)
   const [showMovesList, setShowMovesList] = useState(false)
-  const [gameId, setGameId] = useState(null)
-  const [reconnecting, setReconnecting] = useState(false)
-  const [showReconnectModal, setShowReconnectModal] = useState(false)
-  const [availableGames, setAvailableGames] = useState([])
-  const [connectionStatus, setConnectionStatus] = useState("connecting")
-  const [showChatModal, setShowChatModal] = useState(false)
-  const [chatMessages, setChatMessages] = useState([])
-  const [unreadMessages, setUnreadMessages] = useState(0)
-  const [playAgainRequested, setPlayAgainRequested] = useState(false)
-  const [opponentPlayAgainRequested, setOpponentPlayAgainRequested] = useState(false)
-  const [playAgainCountdown, setPlayAgainCountdown] = useState(null)
-  const [inactivityTimer, setInactivityTimer] = useState(null)
 
   // Refs
   const chessboardRef = useRef(null)
   const socketRef = useRef(null)
   const gameRef = useRef(null)
   const boardContainerRef = useRef(null)
-  const reconnectAttemptsRef = useRef(0)
-  const maxReconnectAttempts = 5
-  const reconnectTimeoutRef = useRef(null)
-  const inactivityTimeoutRef = useRef(null)
-  const playAgainTimeoutRef = useRef(null)
-  const lastActivityRef = useRef(Date.now())
-  const currentStatusRef = useRef("Waiting for opponent...")
-  const isComponentMountedRef = useRef(true)
-  const socketInitializedRef = useRef(false)
 
-  // Celebration effect when player wins
-  const triggerWinCelebration = useCallback(() => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#ffb347", "#ffcc33", "#fff"],
-    })
-
-    // Second burst for more effect
-    setTimeout(() => {
-      confetti({
-        particleCount: 50,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.6 },
-      })
-
-      confetti({
-        particleCount: 50,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.6 },
-      })
-    }, 500)
-  }, [])
+  // Add match to history function
+  const addMatchToHistory = async (userId, opponentName, status) => {
+    try {
+      console.log("Sending match data:", { userId, opponentName, status })
+      const response = await axios.post(
+        `${BASE_URL}/user/${userId}/match-history`,
+        {
+          opponent: opponentName,
+          status,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      )
+      console.log("Match history added:", response.data)
+      return response.data
+    } catch (error) {
+      console.error("Error adding match to history:", error.response?.data || error.message)
+      // Implement retry logic
+      setTimeout(() => {
+        console.log("Retrying match history update...")
+        addMatchToHistory(userId, opponentName, status)
+      }, 3000)
+      return null
+    }
+  }
 
   // Utility functions for highlighting moves
-  const removeHighlights = useCallback(() => {
+  const removeHighlights = () => {
     const squares = document.querySelectorAll(".square-55d63")
     squares.forEach((square) => {
       square.classList.remove("highlight-square", "possible-move", "last-move")
       square.style.background = ""
     })
-  }, [])
+  }
 
-  const highlightSquare = useCallback((square, type = "highlight") => {
+  const highlightSquare = (square, type = "highlight") => {
     const squareEl = document.querySelector(`.square-${square}`)
     if (squareEl) {
       if (type === "highlight") {
@@ -169,591 +147,241 @@ const GlobalMultiplayer = () => {
         squareEl.classList.add("last-move")
       }
     }
-  }, [])
+  }
 
-  const highlightLastMove = useCallback(
-    (from, to) => {
-      if (!visualHints) return
+  const highlightLastMove = (from, to) => {
+    if (!visualHints) return
 
-      removeHighlights()
-      highlightSquare(from, "last-move")
-      highlightSquare(to, "last-move")
-      setLastMove({ from, to })
-    },
-    [visualHints, removeHighlights, highlightSquare],
-  )
+    removeHighlights()
+    highlightSquare(from, "last-move")
+    highlightSquare(to, "last-move")
+    setLastMove({ from, to })
+  }
 
-  // Reset game state for a new game
-  const resetGameState = useCallback(() => {
+  // Celebration effect when player wins
+  const triggerWinCelebration = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ["#ffb347", "#ffcc33", "#fff"],
+    })
+  }
+
+  // Connect to socket server when component mounts
+  useEffect(() => {
+    if (!user) return
+
+    // Create socket connection
+    const socketUrl = BASE_URL.startsWith("http") ? BASE_URL : `http://${BASE_URL}`
+    console.log("Connecting to socket server at:", socketUrl)
+
+    const socket = io(socketUrl, {
+      query: { user: JSON.stringify(user) },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      transports: ["websocket", "polling"],
+    })
+
+    socketRef.current = socket
+
+    // Debug connection status
+    socket.on("connect", () => {
+      console.log("Connected to server with ID:", socket.id)
+    })
+
+    socket.on("connect_error", (error) => {
+      console.error("Connection error:", error)
+    })
+
+    socket.on("waiting", (isWaiting) => {
+      console.log("Waiting status:", isWaiting)
+      setWaitingForOpponent(isWaiting)
+    })
+
+    socket.on("color", (color) => {
+      console.log("Received color:", color)
+      setPlayerColor(color)
+      setWaitingForOpponent(false)
+    })
+
+    socket.on("opponent", (obtainedOpponent) => {
+      console.log("Opponent received:", obtainedOpponent)
+      setOpponent(obtainedOpponent)
+    })
+
+    socket.on("opponentDisconnected", (opponentName) => {
+      console.log("Opponent disconnected:", opponentName || "Opponent")
+
+      if (user) {
+        // Record win due to opponent disconnection
+        addMatchToHistory(user.userId, opponent?.username || "Opponent", "win").then(() => {
+          console.log("Match recorded as win due to opponent disconnection")
+          // Trigger celebration for win
+          triggerWinCelebration()
+        })
+      }
+
+      // Show game over modal
+      setGameOverMessage(`You win! ${opponentName || "Opponent"} has disconnected.`)
+      setIsGameOver(true)
+    })
+
+    // Initialize chess game
     const newGame = new Chess()
     setGame(newGame)
     gameRef.current = newGame
-    setMoves([])
-    setLastMove(null)
-    setIsGameOver(false)
-    setGameOverMessage("")
-    setCurrentStatus("Game starting...")
-    currentStatusRef.current = "Game starting..."
-    removeHighlights()
-  }, [removeHighlights])
 
-  // Add match to history function
-  const addMatchToHistory = useCallback(
-    async (userId, opponentName, status) => {
+    // Cleanup on unmount
+    return () => {
+      if (socket) {
+        socket.disconnect()
+      }
+      if (board) {
+        board.destroy()
+      }
+    }
+  }, [user, navigate])
+
+  // Handle socket move events and initialize board after player color is set
+  useEffect(() => {
+    if (!socketRef.current || !playerColor || !gameRef.current || !chessboardRef.current) return
+
+    // Listen for opponent moves
+    socketRef.current.on("move", ({ from, to, obtainedPromotion, fen }) => {
       try {
-        console.log("Sending match data:", { userId, opponentName, status })
-        const response = await axios.post(
-          `${BASE_URL}/user/${userId}/match-history`,
-          {
-            opponent: opponentName,
-            status,
-            gameId: gameId || "unknown",
-          },
-          {
-            withCredentials: true,
-            headers: {
-              "Content-Type": "application/json",
+        console.log("Received move from opponent:", from, to, obtainedPromotion)
+
+        // If FEN is provided, use it to sync game state
+        if (fen) {
+          console.log("Syncing game state with FEN:", fen)
+          gameRef.current.load(fen)
+          if (board) {
+            board.position(fen, false) // Use false to avoid animation for syncing
+          }
+          updateStatus()
+          return
+        }
+
+        // Otherwise make the move normally
+        const move = gameRef.current.move({
+          from,
+          to,
+          promotion: obtainedPromotion || "q",
+        })
+
+        if (move) {
+          console.log("Successfully applied opponent's move:", move)
+
+          // Update board position
+          if (board) {
+            board.position(gameRef.current.fen(), true) // Use true for animation
+          }
+
+          // Highlight the opponent's move
+          highlightLastMove(from, to)
+
+          // Update game state
+          updateStatus()
+          setMoves((prevMoves) => [
+            ...prevMoves,
+            {
+              from: move.from,
+              to: move.to,
+              promotion: obtainedPromotion,
+              player: "opponent",
             },
-          },
-        )
-        console.log("Match history added:", response.data)
-        return response.data
-      } catch (error) {
-        console.error("Error adding match to history:", error.response?.data || error.message)
-        // Implement retry logic with exponential backoff
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            console.log("Retrying match history update...")
-            resolve(addMatchToHistory(userId, opponentName, status))
-          }, 3000)
-        })
-      }
-    },
-    [gameId],
-  )
+          ])
 
-  // Update game status text
-  const updateStatus = useCallback(() => {
-    const game = gameRef.current
-    if (!game) return
-
-    let status = ""
-    const turn = game.turn() === "w" ? "White" : "Black"
-    const isPlayerTurn = (playerColor === "white" && turn === "White") || (playerColor === "black" && turn === "Black")
-
-    if (game.isCheckmate()) {
-      const winner = turn === "White" ? "Black" : "White"
-      status = `Game over, ${winner} wins by checkmate.`
-
-      // Record match result
-      if (user && opponent) {
-        const userWon =
-          (playerColor === "white" && winner === "White") || (playerColor === "black" && winner === "Black")
-
-        console.log("Recording match result:", {
-          userWon,
-          playerColor,
-          winner,
-          user: user.userId,
-          opponent: opponent.username,
-        })
-
-        addMatchToHistory(user.userId, opponent.username, userWon ? "win" : "lose").then(() => {
-          // Force refresh profile data after match
-          if (socketRef.current && socketRef.current.connected) {
-            socketRef.current.emit("matchCompleted", {
-              winner: userWon ? user.userId : opponent.userId,
-              loser: userWon ? opponent.userId : user.userId,
-              gameId: gameId,
-            })
-          }
-
-          // Show game over modal
-          setGameOverMessage(userWon ? "You win!" : "You lose!")
-          setIsGameOver(true)
-
-          // Trigger celebration if player wins
-          if (userWon) {
-            triggerWinCelebration()
-          }
-        })
-      }
-    } else if (game.isDraw()) {
-      status = "Game over, draw."
-
-      if (user && opponent) {
-        console.log("Recording draw result")
-        addMatchToHistory(user.userId, opponent.username, "draw").then(() => {
-          // Force refresh profile data after match
-          if (socketRef.current && socketRef.current.connected) {
-            socketRef.current.emit("matchCompleted", {
-              draw: true,
-              players: [user.userId, opponent.userId],
-              gameId: gameId,
-            })
-          }
-
-          // Show game over modal
-          setGameOverMessage("It's a draw!")
-          setIsGameOver(true)
-        })
-      }
-    } else {
-      status = `${turn} to move${isPlayerTurn ? " (Your turn)" : ""}`
-      if (game.inCheck()) {
-        status += ", check!"
-      }
-    }
-
-    // Only update state if status has changed
-    if (status !== currentStatusRef.current) {
-      currentStatusRef.current = status
-      setCurrentStatus(status)
-    }
-  }, [gameId, opponent, playerColor, triggerWinCelebration, user, addMatchToHistory])
-
-  // Handle leave game
-  const handleLeaveGame = useCallback(
-    (autoForfeit = false) => {
-      if (user && opponent) {
-        // Record loss due to leaving
-        addMatchToHistory(user.userId, opponent.username, "lose").then(() => {
-          console.log("Match recorded as loss due to leaving")
-
-          // Notify opponent
-          if (socketRef.current && socketRef.current.connected) {
-            socketRef.current.emit("playerLeft", {
-              userId: user.userId,
-              username: user.username,
-              opponentId: opponent.userId,
-              gameId: gameId,
-              autoForfeit: autoForfeit,
-            })
-          }
-
-          // Navigate back to mode selector
-          navigate("/modeselector")
-        })
-      } else {
-        navigate("/modeselector")
-      }
-    },
-    [user, opponent, addMatchToHistory, navigate, gameId],
-  )
-
-  // Reset inactivity timer on any user action
-  const resetInactivityTimer = useCallback(() => {
-    lastActivityRef.current = Date.now()
-
-    // Clear existing timeout
-    if (inactivityTimeoutRef.current) {
-      clearTimeout(inactivityTimeoutRef.current)
-    }
-
-    // Set new timeout - warn user after 5 minutes of inactivity
-    inactivityTimeoutRef.current = setTimeout(
-      () => {
-        if (!isGameOver && opponent) {
-          setInactivityTimer(60) // 60 second countdown
-
-          // Start countdown
-          let timeLeft = 60
-          const countdownInterval = setInterval(() => {
-            timeLeft -= 1
-            setInactivityTimer(timeLeft)
-
-            if (timeLeft <= 0) {
-              clearInterval(countdownInterval)
-              setInactivityTimer(null)
-              // Auto-forfeit the game
-              handleLeaveGame(true)
-            }
-          }, 1000)
-
-          // Clear countdown if user becomes active
-          const clearCountdown = () => {
-            clearInterval(countdownInterval)
-            setInactivityTimer(null)
-            document.removeEventListener("mousemove", clearCountdown)
-            document.removeEventListener("keydown", clearCountdown)
-            document.removeEventListener("click", clearCountdown)
-            document.removeEventListener("touchstart", clearCountdown)
-          }
-
-          document.addEventListener("mousemove", clearCountdown)
-          document.addEventListener("keydown", clearCountdown)
-          document.addEventListener("click", clearCountdown)
-          document.addEventListener("touchstart", clearCountdown)
-        }
-      },
-      5 * 60 * 1000,
-    ) // 5 minutes
-  }, [isGameOver, opponent, handleLeaveGame])
-
-  // Drag start handler - only allow dragging pieces if it's the player's turn
-  const onDragStart = useCallback(
-    (source, piece) => {
-      const game = gameRef.current
-      if (!game) return false
-
-      // Check if the game is over
-      if (game.isGameOver()) return false
-
-      // Check if it's the player's turn
-      if (
-        (playerColor === "white" && piece.search(/^b/) !== -1) ||
-        (playerColor === "black" && piece.search(/^w/) !== -1)
-      ) {
-        return false
-      }
-
-      // Check if it's the player's turn based on game state
-      if ((playerColor === "white" && game.turn() === "b") || (playerColor === "black" && game.turn() === "w")) {
-        return false
-      }
-
-      // Show possible moves when piece is picked up
-      if (visualHints) {
-        removeHighlights()
-        highlightSquare(source)
-
-        const moves = game.moves({
-          square: source,
-          verbose: true,
-        })
-
-        for (let i = 0; i < moves.length; i++) {
-          highlightSquare(moves[i].to, "possible")
-        }
-      }
-
-      return true
-    },
-    [playerColor, visualHints, removeHighlights, highlightSquare],
-  )
-
-  // Drop handler - attempt to make a move when a piece is dropped
-  const onDrop = useCallback(
-    (source, target) => {
-      const game = gameRef.current
-      if (!game) return "snapback"
-
-      // Remove highlighted squares
-      removeHighlights()
-
-      try {
-        // Check if it's the player's turn
-        const playerTurn = playerColor === "white" ? "w" : "b"
-        if (game.turn() !== playerTurn) {
-          console.warn("Not your turn")
-          return "snapback"
-        }
-
-        // Attempt to make the move
-        const move = game.move({
-          from: source,
-          to: target,
-          promotion: promotionPiece,
-        })
-
-        // If the move is invalid, return 'snapback'
-        if (!move) {
-          console.warn("Invalid move attempted:", source, target)
-          return "snapback"
-        }
-
-        console.log("Valid move made:", move)
-
-        // Highlight the move
-        highlightLastMove(source, target)
-
-        // Update game state
-        updateStatus()
-
-        // Send move to server with current FEN for state synchronization
-        if (socketRef.current && socketRef.current.connected) {
-          const moveData = {
-            from: source,
-            to: target,
-            obtainedPromotion: promotionPiece,
-            fen: game.fen(),
-            gameId: gameId,
-            player: user?.userId,
-          }
-
-          console.log("Sending move to server:", moveData)
-          socketRef.current.emit("move", moveData)
-        }
-
-        // Add move to history
-        setMoves((prevMoves) => [
-          ...prevMoves,
-          {
-            from: move.from,
-            to: move.to,
-            promotion: promotionPiece,
-            player: "player",
-          },
-        ])
-
-        // Play sound based on move type
-        if (soundEnabled) {
-          if (move.captured) {
-            captureSound.play()
-          } else {
-            moveSound.play()
-          }
-
-          if (game.inCheck()) {
-            checkSound.play()
-          }
-
-          if (game.isCheckmate()) {
-            checkmateSound.play()
-          }
-        }
-
-        return undefined // Move is valid
-      } catch (error) {
-        console.error("Error making move:", error)
-        return "snapback"
-      }
-    },
-    [removeHighlights, playerColor, promotionPiece, highlightLastMove, updateStatus, gameId, user, soundEnabled],
-  )
-
-  // Snap end handler - ensure board position matches game state
-  const onSnapEnd = useCallback(() => {
-    if (board && gameRef.current) {
-      board.position(gameRef.current.fen())
-    }
-  }, [board])
-
-  // Highlight legal moves
-  const onMouseoverSquare = useCallback(
-    (square, piece) => {
-      if (!visualHints || mobileMode) return
-
-      // Get list of possible moves for this square
-      const game = gameRef.current
-      if (!game) return
-
-      // Don't show moves if it's not the player's turn
-      if ((playerColor === "white" && game.turn() === "b") || (playerColor === "black" && game.turn() === "w")) {
-        return
-      }
-
-      const moves = game.moves({
-        square: square,
-        verbose: true,
-      })
-
-      // Exit if there are no moves available for this square
-      if (moves.length === 0) return
-
-      // Highlight the square they moused over
-      highlightSquare(square)
-
-      // Highlight the possible squares for this piece
-      for (let i = 0; i < moves.length; i++) {
-        highlightSquare(moves[i].to, "possible")
-      }
-    },
-    [visualHints, mobileMode, playerColor, highlightSquare],
-  )
-
-  const onMouseoutSquare = useCallback(() => {
-    if (!visualHints || mobileMode) return
-
-    // Don't remove highlights if we're showing the last move
-    if (lastMove) {
-      removeHighlights()
-      highlightSquare(lastMove.from, "last-move")
-      highlightSquare(lastMove.to, "last-move")
-    } else {
-      removeHighlights()
-    }
-  }, [visualHints, mobileMode, lastMove, removeHighlights, highlightSquare])
-
-  // Handle square click for mobile mode
-  const onSquareClick = useCallback(
-    (square) => {
-      if (!mobileMode || isGameOver) return
-
-      const game = gameRef.current
-      if (!game) return
-
-      // Check if it's the player's turn
-      const playerTurn = playerColor === "white" ? "w" : "b"
-      if (game.turn() !== playerTurn) {
-        return
-      }
-
-      // If no square is selected yet, check if the clicked square has a piece that can be moved
-      if (!selectedSquare) {
-        const piece = game.get(square)
-        if (
-          piece &&
-          ((playerColor === "white" && piece.color === "w") || (playerColor === "black" && piece.color === "b"))
-        ) {
-          // Get possible moves for this piece
-          const moves = game.moves({
-            square: square,
-            verbose: true,
-          })
-
-          if (moves.length > 0) {
-            setSelectedSquare(square)
-            setPossibleMoves(moves)
-
-            // Highlight the selected square and possible moves
-            removeHighlights()
-            highlightSquare(square)
-            moves.forEach((move) => {
-              highlightSquare(move.to, "possible")
-            })
-          }
-        }
-      } else {
-        // A square is already selected, check if the clicked square is a valid destination
-        const isValidMove = possibleMoves.some((move) => move.to === square)
-
-        if (isValidMove) {
-          // Make the move
-          const move = game.move({
-            from: selectedSquare,
-            to: square,
-            promotion: promotionPiece,
-          })
-
-          if (move) {
-            // Update board position
-            if (board) {
-              board.position(game.fen())
+          // Play sound based on move type
+          if (soundEnabled) {
+            if (move.captured) {
+              captureSound.play()
+            } else {
+              moveSound.play()
             }
 
-            // Highlight the move
-            highlightLastMove(selectedSquare, square)
-
-            // Update game state
-            updateStatus()
-
-            // Send move to server
-            if (socketRef.current && socketRef.current.connected) {
-              const moveData = {
-                from: selectedSquare,
-                to: square,
-                obtainedPromotion: promotionPiece,
-                fen: game.fen(),
-                gameId: gameId,
-                player: user?.userId,
-              }
-
-              console.log("Sending move to server:", moveData)
-              socketRef.current.emit("move", moveData)
+            if (gameRef.current.inCheck()) {
+              checkSound.play()
             }
 
-            // Add move to history
-            setMoves((prevMoves) => [
-              ...prevMoves,
-              {
-                from: move.from,
-                to: move.to,
-                promotion: promotionPiece,
-                player: "player",
-              },
-            ])
-
-            // Play sound based on move type
-            if (soundEnabled) {
-              if (move.captured) {
-                captureSound.play()
-              } else {
-                moveSound.play()
-              }
-
-              if (game.inCheck()) {
-                checkSound.play()
-              }
-
-              if (game.isCheckmate()) {
-                checkmateSound.play()
-              }
+            if (gameRef.current.isCheckmate()) {
+              checkmateSound.play()
             }
-          }
-
-          // Reset selection state
-          setSelectedSquare(null)
-          setPossibleMoves([])
-        } else if (square === selectedSquare) {
-          // Clicked the same square again, deselect it
-          setSelectedSquare(null)
-          setPossibleMoves([])
-          removeHighlights()
-
-          // Restore last move highlight if there was one
-          if (lastMove) {
-            highlightLastMove(lastMove.from, lastMove.to)
           }
         } else {
-          // Clicked a different invalid square, check if it has a player's piece
-          const piece = game.get(square)
-          if (
-            piece &&
-            ((playerColor === "white" && piece.color === "w") || (playerColor === "black" && piece.color === "b"))
-          ) {
-            // Select this new piece instead
-            const moves = game.moves({
-              square: square,
-              verbose: true,
-            })
-
-            if (moves.length > 0) {
-              setSelectedSquare(square)
-              setPossibleMoves(moves)
-
-              // Highlight the selected square and possible moves
-              removeHighlights()
-              highlightSquare(square)
-              moves.forEach((move) => {
-                highlightSquare(move.to, "possible")
-              })
-            }
-          } else {
-            // Clicked an empty square or opponent's piece, deselect
-            setSelectedSquare(null)
-            setPossibleMoves([])
-            removeHighlights()
-
-            // Restore last move highlight if there was one
-            if (lastMove) {
-              highlightLastMove(lastMove.from, lastMove.to)
-            }
-          }
+          console.error("Invalid move received from opponent:", from, to, obtainedPromotion)
+          // Request current game state
+          socketRef.current.emit("requestGameState")
         }
+      } catch (error) {
+        console.error("Error processing opponent's move:", error)
+        // Request current game state on error
+        socketRef.current.emit("requestGameState")
       }
-    },
-    [
-      mobileMode,
-      isGameOver,
-      playerColor,
-      selectedSquare,
-      possibleMoves,
-      board,
-      promotionPiece,
-      gameId,
-      user,
-      soundEnabled,
-      removeHighlights,
-      highlightSquare,
-      highlightLastMove,
-      lastMove,
-      updateStatus,
-    ],
-  )
+    })
+
+    socketRef.current.on("gameState", (fen) => {
+      try {
+        console.log("Received game state:", fen)
+        if (gameRef.current && fen) {
+          gameRef.current.load(fen)
+          if (board) {
+            board.position(fen, false) // Use false to avoid animation for syncing
+          }
+          updateStatus()
+        }
+      } catch (error) {
+        console.error("Error loading game state:", error)
+      }
+    })
+
+    // Initialize chessboard if not already initialized
+    if (!boardInitialized) {
+      initializeChessboard()
+    }
+
+    // Cleanup
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("move")
+        socketRef.current.off("gameState")
+      }
+    }
+  }, [playerColor, soundEnabled, board, boardInitialized, visualHints])
+
+  // Apply theme colors to the board
+  useEffect(() => {
+    const applyTheme = () => {
+      const currentTheme = themes[theme]
+      const styleSheet = document.createElement("style")
+      styleSheet.id = "chess-theme"
+
+      const css = `
+        .white-1e1d7 { background-color: ${currentTheme.light} !important; }
+        .black-3c85d { background-color: ${currentTheme.dark} !important; }
+        .highlight-square { background-color: ${currentTheme.highlight} !important; }
+        .possible-move { background-color: ${currentTheme.possible} !important; }
+        .last-move { box-shadow: inset 0 0 0 4px ${currentTheme.accent} !important; }
+      `
+
+      styleSheet.textContent = css
+
+      // Remove existing theme stylesheet if it exists
+      const existingStyle = document.getElementById("chess-theme")
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+
+      document.head.appendChild(styleSheet)
+    }
+
+    applyTheme()
+  }, [theme])
 
   // Function to initialize the chessboard
-  const initializeChessboard = useCallback(() => {
+  const initializeChessboard = () => {
     try {
       // Make sure we're using a library that's available in the browser
       if (typeof window !== "undefined" && window.Chessboard) {
@@ -768,7 +396,6 @@ const GlobalMultiplayer = () => {
           onSnapEnd: onSnapEnd,
           onMouseoverSquare: onMouseoverSquare,
           onMouseoutSquare: onMouseoutSquare,
-          onSquareClick: mobileMode ? onSquareClick : undefined,
           snapbackSpeed: 500,
           snapSpeed: 100,
         }
@@ -806,544 +433,255 @@ const GlobalMultiplayer = () => {
     } catch (error) {
       console.error("Error initializing chessboard:", error)
     }
-  }, [playerColor, mobileMode, onDragStart, onDrop, onSnapEnd, onMouseoverSquare, onMouseoutSquare, onSquareClick])
+  }
 
-  // Handle reconnection logic
-  const handleReconnection = useCallback(() => {
-    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      console.log("Max reconnection attempts reached")
-      setConnectionStatus("failed")
+  // Highlight legal moves
+  const onMouseoverSquare = (square, piece) => {
+    if (!visualHints) return
 
-      // If we were in a game, show game over
-      if (gameId && opponent) {
-        setGameOverMessage("Connection lost. Unable to reconnect to the game.")
-        setIsGameOver(true)
-      }
+    // Get list of possible moves for this square
+    const game = gameRef.current
+    if (!game) return
+
+    // Don't show moves if it's not the player's turn
+    if ((playerColor === "white" && game.turn() === "b") || (playerColor === "black" && game.turn() === "w")) {
       return
     }
 
-    reconnectAttemptsRef.current += 1
-    console.log(`Attempting to reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`)
+    const moves = game.moves({
+      square: square,
+      verbose: true,
+    })
 
-    // Clear any existing timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current)
+    // Exit if there are no moves available for this square
+    if (moves.length === 0) return
+
+    // Highlight the square they moused over
+    highlightSquare(square)
+
+    // Highlight the possible squares for this piece
+    for (let i = 0; i < moves.length; i++) {
+      highlightSquare(moves[i].to, "possible")
+    }
+  }
+
+  const onMouseoutSquare = () => {
+    if (!visualHints) return
+
+    // Don't remove highlights if we're showing the last move
+    if (lastMove) {
+      removeHighlights()
+      highlightSquare(lastMove.from, "last-move")
+      highlightSquare(lastMove.to, "last-move")
+    } else {
+      removeHighlights()
+    }
+  }
+
+  // Drag start handler - only allow dragging pieces if it's the player's turn
+  const onDragStart = (source, piece) => {
+    const game = gameRef.current
+    if (!game) return false
+
+    // Check if the game is over
+    if (game.isGameOver()) return false
+
+    // Check if it's the player's turn
+    if (
+      (playerColor === "white" && piece.search(/^b/) !== -1) ||
+      (playerColor === "black" && piece.search(/^w/) !== -1)
+    ) {
+      return false
     }
 
-    // Set reconnecting state
-    setReconnecting(true)
-    setConnectionStatus("reconnecting")
-
-    // Exponential backoff for reconnection
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000)
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      setupSocket()
-    }, delay)
-  }, [gameId, opponent])
-
-  // Setup socket connection
-  const setupSocket = useCallback(() => {
-    if (!user || !isComponentMountedRef.current) return null
-
-    // Only create a new socket if we don't have one or it's not connected
-    if (socketRef.current && socketRef.current.connected && !reconnecting) {
-      console.log("Using existing socket connection")
-      return socketRef.current
+    // Check if it's the player's turn based on game state
+    if ((playerColor === "white" && game.turn() === "b") || (playerColor === "black" && game.turn() === "w")) {
+      return false
     }
 
-    // Cleanup any existing socket
-    if (socketRef.current) {
-      socketRef.current.disconnect()
+    // Show possible moves when piece is picked up
+    if (visualHints) {
+      removeHighlights()
+      highlightSquare(source)
+
+      const moves = game.moves({
+        square: source,
+        verbose: true,
+      })
+
+      for (let i = 0; i < moves.length; i++) {
+        highlightSquare(moves[i].to, "possible")
+      }
     }
 
-    // Create socket connection
-    const socketUrl = BASE_URL.includes("://") ? BASE_URL : `https://${BASE_URL}`
-    console.log("Connecting to socket server at:", socketUrl)
+    return true
+  }
+
+  // Drop handler - attempt to make a move when a piece is dropped
+  const onDrop = (source, target) => {
+    const game = gameRef.current
+    if (!game) return "snapback"
+
+    // Remove highlighted squares
+    removeHighlights()
 
     try {
-      const socket = io(socketUrl, {
-        query: {
-          user: JSON.stringify(user),
-          reconnecting: reconnecting,
-          gameId: gameId,
+      // Check if it's the player's turn
+      const playerTurn = playerColor === "white" ? "w" : "b"
+      if (game.turn() !== playerTurn) {
+        console.warn("Not your turn")
+        return "snapback"
+      }
+
+      // Attempt to make the move
+      const move = game.move({
+        from: source,
+        to: target,
+        promotion: promotionPiece,
+      })
+
+      // If the move is invalid, return 'snapback'
+      if (!move) {
+        console.warn("Invalid move attempted:", source, target)
+        return "snapback"
+      }
+
+      console.log("Valid move made:", move)
+
+      // Highlight the move
+      highlightLastMove(source, target)
+
+      // Update game state
+      updateStatus()
+
+      // Send move to server with current FEN for state synchronization
+      if (socketRef.current) {
+        const moveData = {
+          from: source,
+          to: target,
+          obtainedPromotion: promotionPiece,
+          fen: game.fen(), // Include FEN for state synchronization
+        }
+
+        console.log("Sending move to server:", moveData)
+        socketRef.current.emit("move", moveData)
+      }
+
+      // Add move to history
+      setMoves((prevMoves) => [
+        ...prevMoves,
+        {
+          from: move.from,
+          to: move.to,
+          promotion: promotionPiece,
+          player: "player",
         },
-        reconnection: true,
-        reconnectionAttempts: maxReconnectAttempts,
-        reconnectionDelay: 1000,
-        timeout: 10000,
-        transports: ["websocket", "polling"],
-      })
+      ])
 
-      socketRef.current = socket
-      socketInitializedRef.current = true
-
-      // Debug connection status
-      socket.on("connect", () => {
-        console.log("Connected to server with ID:", socket.id)
-        setConnectionStatus("connected")
-        reconnectAttemptsRef.current = 0
-
-        // Add error handling
-        try {
-          // If we were reconnecting, request current game state
-          if (reconnecting && gameId) {
-            console.log("Requesting game state after reconnection for game:", gameId)
-            socket.emit("rejoinGame", { gameId, userId: user.userId })
-          }
-        } catch (error) {
-          console.error("Error during reconnection:", error)
-        }
-      })
-
-      socket.on("connect_error", (error) => {
-        console.error("Connection error:", error)
-        setConnectionStatus("error")
-        handleReconnection()
-      })
-
-      socket.on("disconnect", (reason) => {
-        console.log("Disconnected from server:", reason)
-        setConnectionStatus("disconnected")
-
-        // Don't attempt to reconnect if the game is over
-        if (!isGameOver && isComponentMountedRef.current) {
-          handleReconnection()
-        }
-      })
-
-      socket.on("waiting", (isWaiting) => {
-        console.log("Waiting status:", isWaiting)
-        if (isComponentMountedRef.current) {
-          setWaitingForOpponent(isWaiting)
-        }
-      })
-
-      socket.on("gameCreated", (data) => {
-        console.log("Game created:", data)
-        if (isComponentMountedRef.current) {
-          setGameId(data.gameId)
-        }
-      })
-
-      socket.on("color", (color) => {
-        console.log("Received color:", color)
-        if (isComponentMountedRef.current) {
-          setPlayerColor(color)
-          setWaitingForOpponent(false)
-        }
-      })
-
-      socket.on("opponent", (obtainedOpponent) => {
-        console.log("Opponent received:", obtainedOpponent)
-        if (isComponentMountedRef.current) {
-          setOpponent(obtainedOpponent)
-          setReconnecting(false)
-          setShowReconnectModal(false)
-        }
-      })
-
-      socket.on("opponentDisconnected", (data) => {
-        const { opponentName, temporary } = data
-        console.log("Opponent disconnected:", opponentName || "Opponent", "Temporary:", temporary)
-
-        if (!isComponentMountedRef.current) return
-
-        if (temporary) {
-          // Opponent might reconnect
-          setCurrentStatus(`${opponentName || "Opponent"} disconnected. Waiting for reconnection...`)
-          currentStatusRef.current = `${opponentName || "Opponent"} disconnected. Waiting for reconnection...`
+      // Play sound based on move type
+      if (soundEnabled) {
+        if (move.captured) {
+          captureSound.play()
         } else {
-          // Opponent has fully disconnected
-          if (user) {
-            // Record win due to opponent disconnection
-            addMatchToHistory(user.userId, opponent?.username || "Opponent", "win").then(() => {
-              console.log("Match recorded as win due to opponent disconnection")
-              // Trigger celebration for win
-              triggerWinCelebration()
+          moveSound.play()
+        }
+
+        if (game.inCheck()) {
+          checkSound.play()
+        }
+
+        if (game.isCheckmate()) {
+          checkmateSound.play()
+        }
+      }
+
+      return undefined // Move is valid
+    } catch (error) {
+      console.error("Error making move:", error)
+      return "snapback"
+    }
+  }
+
+  // Snap end handler - ensure board position matches game state
+  const onSnapEnd = () => {
+    if (board && gameRef.current) {
+      board.position(gameRef.current.fen())
+    }
+  }
+
+  // Update game status text
+  const updateStatus = () => {
+    const game = gameRef.current
+    if (!game) return
+
+    let status = ""
+    const turn = game.turn() === "w" ? "White" : "Black"
+    const isPlayerTurn = (playerColor === "white" && turn === "White") || (playerColor === "black" && turn === "Black")
+
+    if (game.isCheckmate()) {
+      const winner = turn === "White" ? "Black" : "White"
+      status = `Game over, ${winner} wins by checkmate.`
+
+      // Record match result
+      if (user && opponent) {
+        const userWon =
+          (playerColor === "white" && winner === "White") || (playerColor === "black" && winner === "Black")
+
+        console.log("Recording match result:", {
+          userWon,
+          playerColor,
+          winner,
+          user: user.userId,
+          opponent: opponent.username,
+        })
+
+        addMatchToHistory(user.userId, opponent.username, userWon ? "win" : "lose").then(() => {
+          // Force refresh profile data after match
+          if (socketRef.current) {
+            socketRef.current.emit("matchCompleted", {
+              winner: userWon ? user.userId : opponent.userId,
+              loser: userWon ? opponent.userId : user.userId,
             })
           }
 
           // Show game over modal
-          setGameOverMessage(`You win! ${opponentName || "Opponent"} has disconnected.`)
+          setGameOverMessage(userWon ? "You win!" : "You lose!")
           setIsGameOver(true)
-        }
-      })
 
-      socket.on("opponentReconnected", (opponentData) => {
-        console.log("Opponent reconnected:", opponentData)
-        if (!isComponentMountedRef.current) return
-
-        setCurrentStatus(`${opponentData.username || "Opponent"} has reconnected. Game continues.`)
-        currentStatusRef.current = `${opponentData.username || "Opponent"} has reconnected. Game continues.`
-
-        // Update opponent data if needed
-        if (opponentData && (!opponent || opponent.userId !== opponentData.userId)) {
-          setOpponent(opponentData)
-        }
-      })
-
-      socket.on("availableGames", (games) => {
-        console.log("Available games to rejoin:", games)
-        if (!isComponentMountedRef.current) return
-
-        setAvailableGames(games)
-
-        if (games.length > 0 && !gameId) {
-          setShowReconnectModal(true)
-        }
-      })
-
-      socket.on("gameState", (data) => {
-        try {
-          console.log("Received game state:", data)
-          if (!isComponentMountedRef.current) return
-
-          const {
-            fen,
-            gameId: receivedGameId,
-            playerColor: receivedColor,
-            opponent: receivedOpponent,
-            moves: gameMoves,
-          } = data
-
-          // Update game ID if provided
-          if (receivedGameId) {
-            setGameId(receivedGameId)
+          // Trigger celebration if player wins
+          if (userWon) {
+            triggerWinCelebration()
           }
-
-          // Update player color if provided
-          if (receivedColor) {
-            setPlayerColor(receivedColor)
-          }
-
-          // Update opponent if provided
-          if (receivedOpponent) {
-            setOpponent(receivedOpponent)
-          }
-
-          // Update moves history if provided
-          if (gameMoves && Array.isArray(gameMoves)) {
-            setMoves(gameMoves)
-          }
-
-          // Update game state with FEN
-          if (gameRef.current && fen) {
-            gameRef.current.load(fen)
-            if (board) {
-              board.position(fen, false) // Use false to avoid animation for syncing
-            }
-            updateStatus()
-
-            // If there are moves, highlight the last one
-            if (gameMoves && gameMoves.length > 0) {
-              const lastGameMove = gameMoves[gameMoves.length - 1]
-              highlightLastMove(lastGameMove.from, lastGameMove.to)
-            }
-          }
-
-          // No longer waiting for opponent or reconnecting
-          setWaitingForOpponent(false)
-          setReconnecting(false)
-          setShowReconnectModal(false)
-        } catch (error) {
-          console.error("Error loading game state:", error)
-        }
-      })
-
-      socket.on("move", ({ from, to, obtainedPromotion, fen, player }) => {
-        try {
-          console.log("Received move:", from, to, obtainedPromotion, "from player:", player)
-          if (!isComponentMountedRef.current) return
-
-          // If FEN is provided, use it to sync game state
-          if (fen) {
-            console.log("Syncing game state with FEN:", fen)
-            gameRef.current.load(fen)
-            if (board) {
-              board.position(fen, false) // Use false to avoid animation for syncing
-            }
-            updateStatus()
-            return
-          }
-
-          // Otherwise make the move normally
-          const move = gameRef.current.move({
-            from,
-            to,
-            promotion: obtainedPromotion || "q",
-          })
-
-          if (move) {
-            console.log("Successfully applied move:", move)
-
-            // Update board position
-            if (board) {
-              board.position(gameRef.current.fen(), true) // Use true for animation
-            }
-
-            // Highlight the move
-            highlightLastMove(from, to)
-
-            // Update game state
-            updateStatus()
-
-            // Only add to moves history if it's from the opponent
-            // (our own moves are added in onDrop)
-            if (player !== user?.userId) {
-              setMoves((prevMoves) => [
-                ...prevMoves,
-                {
-                  from: move.from,
-                  to: move.to,
-                  promotion: obtainedPromotion,
-                  player: "opponent",
-                },
-              ])
-
-              // Play sound based on move type
-              if (soundEnabled) {
-                if (move.captured) {
-                  captureSound.play()
-                } else {
-                  moveSound.play()
-                }
-
-                if (gameRef.current.inCheck()) {
-                  checkSound.play()
-                }
-
-                if (gameRef.current.isCheckmate()) {
-                  checkmateSound.play()
-                }
-              }
-            }
-          } else {
-            console.error("Invalid move received:", from, to, obtainedPromotion)
-            // Request current game state
-            socket.emit("requestGameState", { gameId })
-          }
-        } catch (error) {
-          console.error("Error processing move:", error)
-          // Request current game state on error
-          socket.emit("requestGameState", { gameId })
-        }
-      })
-
-      // Chat message handling
-      socket.on("chatMessage", (message) => {
-        console.log("Received chat message:", message)
-        if (!isComponentMountedRef.current) return
-
-        setChatMessages((prev) => [...prev, message])
-
-        // Increment unread count if chat is not open
-        if (!showChatModal) {
-          setUnreadMessages((prev) => prev + 1)
-        }
-
-        // Play notification sound if enabled
-        if (soundEnabled) {
-          // You could add a chat notification sound here
-        }
-      })
-
-      // Play again request handling
-      socket.on("playAgainRequest", (requestingUserId) => {
-        console.log("Received play again request from:", requestingUserId)
-        if (!isComponentMountedRef.current) return
-
-        if (requestingUserId !== user?.userId) {
-          setOpponentPlayAgainRequested(true)
-
-          // Auto-decline after 30 seconds
-          if (playAgainTimeoutRef.current) {
-            clearTimeout(playAgainTimeoutRef.current)
-          }
-
-          playAgainTimeoutRef.current = setTimeout(() => {
-            setOpponentPlayAgainRequested(false)
-          }, 30000)
-        }
-      })
-
-      socket.on("playAgainAccepted", (newGameData) => {
-        console.log("Play again accepted, new game data:", newGameData)
-        if (!isComponentMountedRef.current) return
-
-        // Reset game state
-        resetGameState()
-
-        // Set new game data
-        setGameId(newGameData.gameId)
-        setPlayerColor(newGameData.playerColor)
-        setOpponent(newGameData.opponent)
-        setWaitingForOpponent(false)
-
-        // Reset play again state
-        setPlayAgainRequested(false)
-        setOpponentPlayAgainRequested(false)
-        if (playAgainTimeoutRef.current) {
-          clearTimeout(playAgainTimeoutRef.current)
-        }
-
-        // Initialize new board
-        if (board) {
-          board.destroy()
-        }
-        setTimeout(() => {
-          initializeChessboard()
-        }, 100)
-      })
-
-      socket.on("playAgainDeclined", () => {
-        console.log("Play again request declined")
-        if (!isComponentMountedRef.current) return
-
-        setPlayAgainRequested(false)
-        setPlayAgainCountdown(null)
-
-        // Show message in game over modal
-        setGameOverMessage((prev) => prev + " Opponent declined to play again.")
-      })
-
-      return socket
-    } catch (error) {
-      console.error("Error setting up socket:", error)
-      setConnectionStatus("error")
-      return null
-    }
-  }, [
-    user,
-    gameId,
-    reconnecting,
-    opponent,
-    isGameOver,
-    board,
-    highlightLastMove,
-    soundEnabled,
-    updateStatus,
-    triggerWinCelebration,
-    resetGameState,
-    initializeChessboard,
-    handleReconnection,
-    addMatchToHistory,
-    showChatModal,
-    maxReconnectAttempts,
-  ])
-
-  // Connect to socket server when component mounts
-  useEffect(() => {
-    if (!user) {
-      navigate("/login")
-      return
-    }
-
-    isComponentMountedRef.current = true
-
-    // Setup socket connection
-    const socket = setupSocket()
-
-    // Initialize chess game
-    const newGame = new Chess()
-    setGame(newGame)
-    gameRef.current = newGame
-
-    // Setup activity tracking
-    resetInactivityTimer()
-
-    // Add event listeners for activity tracking
-    const handleActivity = () => resetInactivityTimer()
-    document.addEventListener("mousemove", handleActivity)
-    document.addEventListener("keydown", handleActivity)
-    document.addEventListener("click", handleActivity)
-    document.addEventListener("touchstart", handleActivity)
-
-    // Cleanup on unmount
-    return () => {
-      isComponentMountedRef.current = false
-
-      if (socket) {
-        socket.disconnect()
+        })
       }
-      if (board) {
-        board.destroy()
+    } else if (game.isDraw()) {
+      status = "Game over, draw."
+
+      if (user && opponent) {
+        console.log("Recording draw result")
+        addMatchToHistory(user.userId, opponent.username, "draw").then(() => {
+          // Force refresh profile data after match
+          if (socketRef.current) {
+            socketRef.current.emit("matchCompleted", {
+              draw: true,
+              players: [user.userId, opponent.userId],
+            })
+          }
+
+          // Show game over modal
+          setGameOverMessage("It's a draw!")
+          setIsGameOver(true)
+        })
       }
-
-      // Clear all timeouts and intervals
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
-      }
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current)
-      }
-      if (playAgainTimeoutRef.current) {
-        clearTimeout(playAgainTimeoutRef.current)
-      }
-
-      // Remove event listeners
-      document.removeEventListener("mousemove", handleActivity)
-      document.removeEventListener("keydown", handleActivity)
-      document.removeEventListener("click", handleActivity)
-      document.removeEventListener("touchstart", handleActivity)
-    }
-  }, [user, navigate, setupSocket, resetInactivityTimer])
-
-  // Handle socket move events and initialize board after player color is set
-  useEffect(() => {
-    if (!playerColor || !gameRef.current || !chessboardRef.current || !isComponentMountedRef.current) return
-
-    // Initialize chessboard if not already initialized
-    if (!boardInitialized && playerColor) {
-      initializeChessboard()
-    }
-  }, [playerColor, boardInitialized, initializeChessboard])
-
-  // Apply theme colors to the board
-  useEffect(() => {
-    if (!isComponentMountedRef.current) return
-
-    const applyTheme = () => {
-      const currentTheme = themes[theme]
-      const styleSheet = document.createElement("style")
-      styleSheet.id = "chess-theme"
-
-      const css = `
-        .white-1e1d7 { background-color: ${currentTheme.light} !important; }
-        .black-3c85d { background-color: ${currentTheme.dark} !important; }
-        .highlight-square { background-color: ${currentTheme.highlight} !important; }
-        .possible-move { background-color: ${currentTheme.possible} !important; }
-        .last-move { box-shadow: inset 0 0 0 4px ${currentTheme.accent} !important; }
-      `
-
-      styleSheet.textContent = css
-
-      // Remove existing theme stylesheet if it exists
-      const existingStyle = document.getElementById("chess-theme")
-      if (existingStyle) {
-        existingStyle.remove()
-      }
-
-      document.head.appendChild(styleSheet)
-    }
-
-    applyTheme()
-
-    // Cleanup on theme change
-    return () => {
-      const existingStyle = document.getElementById("chess-theme")
-      if (existingStyle) {
-        existingStyle.remove()
+    } else {
+      status = `${turn} to move${isPlayerTurn ? " (Your turn)" : ""}`
+      if (game.inCheck()) {
+        status += ", check!"
       }
     }
-  }, [theme])
 
-  // Reset unread messages when chat modal is opened
-  useEffect(() => {
-    if (showChatModal && isComponentMountedRef.current) {
-      setUnreadMessages(0)
-    }
-  }, [showChatModal])
+    setCurrentStatus(status)
+  }
 
   // Calculate player rating
   const calculateRating = (wins, loses, draws) => {
@@ -1438,6 +776,30 @@ const GlobalMultiplayer = () => {
     setShowLeaveConfirmation(true)
   }
 
+  // Handle leave game
+  const handleLeaveGame = () => {
+    if (user && opponent) {
+      // Record loss due to leaving
+      addMatchToHistory(user.userId, opponent.username, "lose").then(() => {
+        console.log("Match recorded as loss due to leaving")
+
+        // Notify opponent
+        if (socketRef.current) {
+          socketRef.current.emit("playerLeft", {
+            userId: user.userId,
+            username: user.username,
+            opponentId: opponent.userId,
+          })
+        }
+
+        // Navigate back to mode selector
+        navigate("/modeselector")
+      })
+    } else {
+      navigate("/modeselector")
+    }
+  }
+
   // Cancel leave game
   const cancelLeaveGame = () => {
     setShowLeaveConfirmation(false)
@@ -1449,119 +811,9 @@ const GlobalMultiplayer = () => {
     navigate("/modeselector")
   }
 
-  // Handle play again request
-  const requestPlayAgain = () => {
-    if (!socketRef.current || !socketRef.current.connected || !gameId || !opponent) return
-
-    setPlayAgainRequested(true)
-
-    // Start countdown
-    let countdown = 30
-    setPlayAgainCountdown(countdown)
-
-    const countdownInterval = setInterval(() => {
-      countdown -= 1
-      setPlayAgainCountdown(countdown)
-
-      if (countdown <= 0) {
-        clearInterval(countdownInterval)
-        setPlayAgainRequested(false)
-        setPlayAgainCountdown(null)
-      }
-    }, 1000)
-
-    // Send request to server
-    socketRef.current.emit("requestPlayAgain", {
-      gameId: gameId,
-      userId: user.userId,
-      opponentId: opponent.userId,
-    })
-
-    // Store interval for cleanup
-    playAgainTimeoutRef.current = countdownInterval
-  }
-
-  // Handle accepting play again request
-  const acceptPlayAgain = () => {
-    if (!socketRef.current || !socketRef.current.connected || !gameId || !opponent) return
-
-    socketRef.current.emit("acceptPlayAgain", {
-      gameId: gameId,
-      userId: user.userId,
-      opponentId: opponent.userId,
-    })
-
-    setOpponentPlayAgainRequested(false)
-  }
-
-  // Handle declining play again request
-  const declinePlayAgain = () => {
-    if (!socketRef.current || !socketRef.current.connected || !gameId || !opponent) return
-
-    socketRef.current.emit("declinePlayAgain", {
-      gameId: gameId,
-      userId: user.userId,
-      opponentId: opponent.userId,
-    })
-
-    setOpponentPlayAgainRequested(false)
-  }
-
-  // Handle sending chat message
-  const sendChatMessage = (message) => {
-    if (!socketRef.current || !socketRef.current.connected || !gameId || !opponent || !message.trim()) return
-
-    const chatMessage = {
-      sender: user.userId,
-      senderName: user.username,
-      message: message.trim(),
-      timestamp: new Date().toISOString(),
-      gameId: gameId,
-    }
-
-    socketRef.current.emit("chatMessage", chatMessage)
-
-    // Add to local chat messages
-    setChatMessages((prev) => [...prev, chatMessage])
-  }
-
-  // Handle rejoining a specific game
-  const handleRejoinGame = (selectedGameId) => {
-    if (!socketRef.current) return
-
-    setGameId(selectedGameId)
-    setReconnecting(true)
-
-    socketRef.current.emit("rejoinGame", {
-      gameId: selectedGameId,
-      userId: user.userId,
-    })
-
-    setShowReconnectModal(false)
-  }
-
-  // Handle declining to rejoin games
-  const declineRejoinGames = () => {
-    if (!socketRef.current) return
-
-    // Inform server user doesn't want to rejoin
-    socketRef.current.emit("declineRejoinGames", {
-      userId: user.userId,
-      gameIds: availableGames.map((game) => game.gameId),
-    })
-
-    setShowReconnectModal(false)
-    setAvailableGames([])
-  }
-
   // If waiting for opponent, show wait queue
   if (waitingForOpponent) {
     return <WaitQueue socket={socketRef.current} />
-  }
-
-  // If reconnecting and showing reconnect modal
-  if (showReconnectModal && availableGames.length > 0) {
-    return <ReconnectModal games={availableGames} onRejoin={handleRejoinGame} onDecline={declineRejoinGames} />
   }
 
   return (
@@ -1572,35 +824,6 @@ const GlobalMultiplayer = () => {
         backgroundSize: "cover",
       }}
     >
-      {/* Connection status indicator */}
-      {connectionStatus !== "connected" && (
-        <div
-          className={`fixed top-0 left-0 right-0 z-50 p-2 text-center text-white ${
-            connectionStatus === "reconnecting"
-              ? "bg-yellow-600"
-              : connectionStatus === "error"
-                ? "bg-red-600"
-                : connectionStatus === "failed"
-                  ? "bg-red-800"
-                  : "bg-blue-600"
-          }`}
-        >
-          {connectionStatus === "connecting" && "Connecting to server..."}
-          {connectionStatus === "reconnecting" &&
-            `Reconnecting to server (Attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`}
-          {connectionStatus === "error" && "Connection error. Attempting to reconnect..."}
-          {connectionStatus === "disconnected" && "Disconnected from server. Attempting to reconnect..."}
-          {connectionStatus === "failed" && "Failed to connect to server. Please refresh the page."}
-        </div>
-      )}
-
-      {/* Inactivity warning */}
-      {inactivityTimer && (
-        <div className="fixed top-12 left-0 right-0 z-50 p-2 text-center text-white bg-red-600">
-          Warning: You will forfeit the game due to inactivity in {inactivityTimer} seconds. Move a piece to continue.
-        </div>
-      )}
-
       <div className="w-screen mt-16 flex flex-col lg:flex-row mx-auto my-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1631,7 +854,6 @@ const GlobalMultiplayer = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={toggleSound}
                 className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
-                title={soundEnabled ? "Mute sounds" : "Enable sounds"}
               >
                 {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
               </motion.button>
@@ -1640,23 +862,8 @@ const GlobalMultiplayer = () => {
                 whileTap={{ scale: 0.9 }}
                 onClick={toggleFullscreen}
                 className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
-                title={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
               >
                 {fullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShowChatModal(true)}
-                className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all relative"
-                title="Chat with opponent"
-              >
-                <MessageSquare size={20} />
-                {unreadMessages > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadMessages}
-                  </span>
-                )}
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.1 }}
@@ -1767,7 +974,6 @@ const GlobalMultiplayer = () => {
               >
                 <h2 className="text-3xl font-bold mb-2">Global Multiplayer</h2>
                 <p className="text-lg">Playing against: {opponent?.username || "Opponent"}</p>
-                {gameId && <p className="text-sm mt-1">Game ID: {gameId}</p>}
               </motion.div>
 
               <div className="mt-6">
@@ -1818,17 +1024,7 @@ const GlobalMultiplayer = () => {
       </div>
 
       {/* Game Over Modal */}
-      <GameOverModal
-        isOpen={isGameOver}
-        message={gameOverMessage}
-        onRestart={handleRestart}
-        onPlayAgain={requestPlayAgain}
-        playAgainRequested={playAgainRequested}
-        playAgainCountdown={playAgainCountdown}
-        opponentPlayAgainRequested={opponentPlayAgainRequested}
-        onAcceptPlayAgain={acceptPlayAgain}
-        onDeclinePlayAgain={declinePlayAgain}
-      />
+      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
 
       {/* Leave Confirmation Modal */}
       {showLeaveConfirmation && (
@@ -1861,15 +1057,6 @@ const GlobalMultiplayer = () => {
           </motion.div>
         </div>
       )}
-
-      {/* Chat Modal */}
-      <ChatModal
-        isOpen={showChatModal}
-        onClose={() => setShowChatModal(false)}
-        messages={chatMessages}
-        onSendMessage={sendChatMessage}
-        currentUser={user}
-      />
     </div>
   )
 }
