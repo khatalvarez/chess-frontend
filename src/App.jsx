@@ -11,6 +11,7 @@ import Training from "./components/Training"
 import FeaturesSection from "./components/Features"
 import Footer from "./components/Footer"
 import PageNotFound from "./components/PageNotFound"
+import About from "./components/About"
 
 const Home = lazy(() => import("./components/Home"))
 const SignUp = lazy(() => import("./components/Auth/SignUp"))
@@ -64,6 +65,7 @@ const App = () => {
 
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/training" element={<Training />} />
+            <Route path="/about" element={<About />} />
           </Routes>
         </Suspense>
         <Footer />
