@@ -12,6 +12,9 @@ import FeaturesSection from "./components/Features"
 import Footer from "./components/Footer"
 import PageNotFound from "./components/PageNotFound"
 import About from "./components/About"
+import Contact from "./components/Contact"
+import PrivacyPolicy from "./components/PrivacyPolicy"
+import TermsAndConditions from "./components/TermsOfUse"
 
 const Home = lazy(() => import("./components/Home"))
 const SignUp = lazy(() => import("./components/Auth/SignUp"))
@@ -66,6 +69,9 @@ const App = () => {
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/training" element={<Training />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsAndConditions />} />
           </Routes>
         </Suspense>
         <Footer />
