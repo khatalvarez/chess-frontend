@@ -1,59 +1,52 @@
-import { useState, useEffect, useRef } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { useSelector, useDispatch } from "react-redux"
-import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, ChevronDown, User, LogOut, BookOpen, Home } from "lucide-react"
-import { logout, login } from "../store/authSlice"
-import { FaChess } from "react-icons/fa"
-import Cookies from "js-cookie"
-import axios from "axios"
-import { BASE_URL } from "../url"
-import { toast } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
-import ChessMasterLogo from "./ChessMasterLogo"
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { Users, Globe, ChevronDown, User, LogOut, BookOpen, Home, Shield, Award, Sword } from "lucide-react";
+import { logout, login } from "../store/authSlice";
+import { FaChess } from "react-icons/fa";
+import Cookies from "js-cookie";
+import axios from "axios";
+import { BASE_URL } from "../url";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ChessMasterLogo from "./ChessMasterLogo";
 
-function Navbar() {
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  const authStatus = useSelector((state) => state.auth.status)
-  const userData = useSelector((state) => state.auth.userData)
-  const location = useLocation()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const profileMenuRef = useRef(null)
-  const [navbarFocused, setNavbarFocused] = useState(false)
-
-  // Add a hover effect for the entire navbar
-  const handleNavbarHover = (focused) => {
-    setNavbarFocused(focused)
-  }
+function ChessNavbar() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const authStatus = useSelector((state) => state.auth.status);
+  const userData = useSelector((state) => state.auth.userData);
+  const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const profileMenuRef = useRef(null);
 
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20)
-    }
+      setScrolled(window.scrollY > 20);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Close mobile menu when route changes
   useEffect(() => {
-    setIsMenuOpen(false)
-  }, [location.pathname])
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   // Close profile menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setIsProfileMenuOpen(false)
+        setIsProfileMenuOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -64,23 +57,23 @@ function Navbar() {
         {
           withCredentials: true,
         },
-      )
+      );
 
       // Then remove the cookie and update Redux state
-      Cookies.remove("token", { path: "/" })
-      dispatch(logout())
-      toast.success("Logged out successfully")
-      navigate("/login")
+      Cookies.remove("token", { path: "/" });
+      dispatch(logout());
+      toast.success("Logged out successfully");
+      navigate("/login");
     } catch (error) {
-      console.error("Error during logout:", error)
-      toast.error("Logout failed. Please try again.")
+      console.error("Error during logout:", error);
+      toast.error("Logout failed. Please try again.");
 
       // As a fallback, still try to remove the cookie and update Redux state
-      Cookies.remove("token", { path: "/" })
-      dispatch(logout())
-      navigate("/login")
+      Cookies.remove("token", { path: "/" });
+      dispatch(logout());
+      navigate("/login");
     }
-  }
+  };
 
   // Check authentication once on component mount
   useEffect(() => {
@@ -91,131 +84,88 @@ function Navbar() {
           withCredentials: true,
         })
         .then((res) => {
-          dispatch(login(res.data))
+          dispatch(login(res.data));
         })
         .catch((error) => {
-          console.error("Error fetching profile:", error)
-        })
+          console.error("Error fetching profile:", error);
+        });
     }
-  }, [authStatus, userData, dispatch])
+  }, [authStatus, userData, dispatch]);
 
   // Override authStatus to false if the route is /login or /signup
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup"
-  const effectiveAuthStatus = isAuthPage ? false : authStatus
-
-  // Animation variants
-  const navItemVariants = {
-    hover: {
-      scale: 1.05,
-      textShadow: "0 0 8px rgba(74, 222, 128, 0.6)",
-      transition: { duration: 0.2 },
-    },
-  }
-
-  const mobileMenuVariants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: {
-      opacity: 1,
-      height: "auto",
-      transition: {
-        height: { duration: 0.3 },
-        opacity: { duration: 0.25, delay: 0.1 },
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-    exit: {
-      opacity: 0,
-      height: 0,
-      transition: { duration: 0.3 },
-    },
-  }
-
-  const mobileItemVariants = {
-    hidden: { x: -20, opacity: 0 },
-    visible: { x: 0, opacity: 1 },
-    exit: { x: -20, opacity: 0 },
-  }
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
+  const effectiveAuthStatus = isAuthPage ? false : authStatus;
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5, type: "spring", stiffness: 120 }}
-      onMouseEnter={() => handleNavbarHover(true)}
-      onMouseLeave={() => handleNavbarHover(false)}
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${scrolled
-          ? "bg-gray-900 shadow-lg"
-          : navbarFocused
-            ? "bg-gray-900 bg-opacity-95 backdrop-filter backdrop-blur-md"
-            : "bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg"
-        }`}
-    >
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
-          
-          <Link to="/" className="flex items-center space-x-3 group">
-            <ChessMasterLogo />
+    <div className="w-full bg-gray-900 border-b-4 border-blue-800 shadow-lg text-blue-100 font-mono z-50 fixed top-0 left-0">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-3">
+          <ChessMasterLogo />
             <div className="flex flex-col">
-              <motion.span className="text-white font-bold text-xl group-hover:text-green-400 transition-colors duration-300">
-                Chess Master
-              </motion.span>
-              <span className="text-xs text-gray-400 hidden sm:block">Master your game</span>
+              <span className="text-xl font-bold text-yellow-400 pixelated">CHESS MASTER</span>
+              <span className="text-xs text-blue-300">Master your game</span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <motion.div variants={navItemVariants} whileHover="hover">
-              <Link
-                to="/"
-                className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${location.pathname === "/"
-                    ? "text-green-400 border-b border-green-400 pb-1"
-                    : "text-white hover:text-green-400"
-                  }`}
-              >
+          <div className="hidden md:flex items-center space-x-6">
+            <Link
+              to="/"
+              className={`px-3 py-2 font-bold uppercase transition-colors ${
+                location.pathname === "/"
+                  ? "text-yellow-400 border-b-2 border-yellow-500"
+                  : "text-blue-200 hover:text-yellow-400"
+              }`}
+            >
+              <div className="flex items-center space-x-1">
                 <Home size={18} />
                 <span>Home</span>
-              </Link>
-            </motion.div>
+              </div>
+            </Link>
 
-            {effectiveAuthStatus === true && userData?.username ? (
+            {effectiveAuthStatus && userData?.username ? (
               <>
-                <motion.div variants={navItemVariants} whileHover="hover">
-                  <Link
-                    to="/modeselector"
-                    className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${location.pathname === "/modeselector"
-                        ? "text-green-400 border-b border-green-400 pb-1"
-                        : "text-white hover:text-green-400"
-                      }`}
-                  >
-                    <FaChess size={18} />
+                <Link
+                  to="/modeselector"
+                  className={`px-3 py-2 font-bold uppercase transition-colors ${
+                    location.pathname === "/modeselector"
+                      ? "text-yellow-400 border-b-2 border-yellow-500"
+                      : "text-blue-200 hover:text-yellow-400"
+                  }`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <Shield size={18} />
                     <span>Play</span>
-                  </Link>
-                </motion.div>
+                  </div>
+                </Link>
 
-                <motion.div variants={navItemVariants} whileHover="hover">
-                  <Link
-                    to="/puzzle"
-                    className={`flex items-center space-x-1 text-lg font-medium transition-all duration-300 ${location.pathname === "/puzzle"
-                        ? "text-green-400 border-b border-green-400 pb-1"
-                        : "text-white hover:text-green-400"
-                      }`}
-                  >
-                    <BookOpen size={18} />
+                <Link
+                  to="/puzzle"
+                  className={`px-3 py-2 font-bold uppercase transition-colors ${
+                    location.pathname === "/puzzle"
+                      ? "text-yellow-400 border-b-2 border-yellow-500"
+                      : "text-blue-200 hover:text-yellow-400"
+                  }`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <Sword size={18} />
                     <span>Puzzles</span>
-                  </Link>
-                </motion.div>
+                  </div>
+                </Link>
 
-                {/* Profile Dropdown */}
+                {/* Profile dropdown */}
                 <div className="relative" ref={profileMenuRef}>
-                  <motion.button
+                  <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                    whileHover={{ scale: 1.05 }}
-                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-full transition-all duration-300 ${isProfileMenuOpen ? "bg-gray-700 text-green-400" : "text-green-400 hover:bg-gray-800"
-                      }`}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded font-bold uppercase ${
+                      isProfileMenuOpen
+                        ? "bg-blue-800 text-yellow-400 border-2 border-yellow-500"
+                        : "text-blue-200 hover:text-yellow-400"
+                    }`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
+                    <div className="w-8 h-8 rounded-full bg-blue-900 border-2 border-yellow-500 flex items-center justify-center text-yellow-400 font-bold">
                       {userData?.username?.charAt(0).toUpperCase() || "U"}
                     </div>
                     <span className="capitalize">{userData?.username?.split(" ")[0]}</span>
@@ -223,192 +173,141 @@ function Navbar() {
                       size={16}
                       className={`transition-transform duration-300 ${isProfileMenuOpen ? "rotate-180" : ""}`}
                     />
-                  </motion.button>
+                  </button>
 
-                  <AnimatePresence>
-                    {isProfileMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg py-2 z-50 border border-gray-700"
+                  {isProfileMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-900 border-2 border-blue-700 rounded shadow-lg py-2 z-50">
+                      <Link
+                        to="/profile"
+                        className="flex items-center px-4 py-2 text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300"
+                        onClick={() => setIsProfileMenuOpen(false)}
                       >
-                        <Link
-                          to="/profile"
-                          className="flex items-center px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors duration-300"
-                          onClick={() => setIsProfileMenuOpen(false)}
-                        >
-                          <User size={16} className="mr-3 text-green-400" />
-                          <span>Profile</span>
-                        </Link>
+                        <User size={16} className="mr-3 text-yellow-400" />
+                        <span>Profile</span>
+                      </Link>
 
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors duration-300 w-full text-left group"
-                        >
-                          <LogOut
-                            size={16}
-                            className="mr-3 text-red-400 group-hover:translate-x-1 transition-transform duration-300"
-                          />
-                          <span>Logout</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center px-4 py-2 text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300 w-full text-left"
+                      >
+                        <LogOut size={16} className="mr-3 text-yellow-400" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
               <>
-                <motion.div variants={navItemVariants} whileHover="hover">
-                  <Link
-                    to="/signup"
-                    className="text-lg font-medium text-white hover:text-green-400 transition-colors duration-300"
-                  >
-                    Sign Up
-                  </Link>
-                </motion.div>
+                <Link
+                  to="/signup"
+                  className="px-4 py-2 font-bold uppercase text-blue-200 hover:text-yellow-400 transition-colors duration-300"
+                >
+                  Sign Up
+                </Link>
 
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} className="group relative">
-                  <span className="absolute -inset-0.5 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-green-600 to-teal-700 rounded-lg blur opacity-95 group-hover:opacity-100 transition duration-300"></span>
-                  <Link
-                    to="/login"
-                    className="relative px-5 py-1 font-bold text-lg text-white rounded-lg leading-none flex items-center group-hover:text-green-200 transition-colors duration-300"
-                  >
-                    Login
-                  </Link>
-                </motion.button>
+                <Link
+                  to="/login"
+                  className="px-6 py-2 bg-blue-800 hover:bg-blue-700 text-yellow-400 border-2 border-yellow-500 font-bold uppercase rounded transition-colors duration-300"
+                >
+                  Login
+                </Link>
               </>
             )}
           </div>
 
           {/* Mobile Menu Button */}
-          <motion.button
-            className="md:hidden relative w-10 h-10 flex items-center justify-center bg-gray-800 text-white rounded-full focus:outline-none"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+          <button
+            className="md:hidden flex items-center p-2 bg-blue-800 text-yellow-400 border-2 border-yellow-500 rounded"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <AnimatePresence mode="wait">
-              {isMenuOpen ? (
-                <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <X size={20} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="menu"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Menu size={20} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
+            {isMenuOpen ? <span>✕</span> : <span>≡</span>}
+          </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            variants={mobileMenuVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="md:hidden bg-gray-800 border-t border-gray-700 overflow-hidden"
-          >
-            <div className="px-4 py-4 space-y-3">
-              <motion.div variants={mobileItemVariants} className="overflow-hidden">
+      {isMenuOpen && (
+        <div className="md:hidden bg-gray-900 border-t-2 border-blue-700">
+          <div className="px-4 py-4 space-y-2">
+            <Link
+              to="/"
+              className="flex items-center space-x-3 py-2 px-3 text-lg font-bold uppercase text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300 rounded"
+            >
+              <Home size={18} className="text-yellow-400" />
+              <span>Home</span>
+            </Link>
+
+            {effectiveAuthStatus && userData?.username ? (
+              <>
                 <Link
-                  to="/"
-                  className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-green-400 transition-colors duration-300"
+                  to="/modeselector"
+                  className="flex items-center space-x-3 py-2 px-3 text-lg font-bold uppercase text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300 rounded"
                 >
-                  <Home size={18} className="text-green-400" />
-                  <span>Home</span>
+                  <Shield size={18} className="text-yellow-400" />
+                  <span>Play</span>
                 </Link>
-              </motion.div>
 
-              {effectiveAuthStatus === true && userData?.username ? (
-                <>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      to="/modeselector"
-                      className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-green-400 transition-colors duration-300"
-                    >
-                      <FaChess size={18} className="text-green-400" />
-                      <span>Play</span>
-                    </Link>
-                  </motion.div>
+                <Link
+                  to="/puzzle"
+                  className="flex items-center space-x-3 py-2 px-3 text-lg font-bold uppercase text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300 rounded"
+                >
+                  <Sword size={18} className="text-yellow-400" />
+                  <span>Puzzles</span>
+                </Link>
 
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      to="/puzzle"
-                      className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-green-400 transition-colors duration-300"
-                    >
-                      <BookOpen size={18} className="text-green-400" />
-                      <span>Puzzles</span>
-                    </Link>
-                  </motion.div>
+                <Link
+                  to="/profile"
+                  className="flex items-center space-x-3 py-2 px-3 text-lg font-bold uppercase text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300 rounded"
+                >
+                  <User size={18} className="text-yellow-400" />
+                  <span>Profile</span>
+                </Link>
 
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      to="/profile"
-                      className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-green-400 transition-colors duration-300"
-                    >
-                      <User size={18} className="text-green-400" />
-                      <span>Profile</span>
-                    </Link>
-                  </motion.div>
+                <div className="pt-2 mt-2 border-t border-blue-700">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 py-2 px-3 text-lg font-bold uppercase text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300 w-full rounded"
+                  >
+                    <LogOut size={18} className="text-yellow-400" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/signup"
+                  className="flex items-center space-x-3 py-2 px-3 text-lg font-bold uppercase text-blue-200 hover:bg-blue-800 hover:text-yellow-400 transition-colors duration-300 rounded"
+                >
+                  <User size={18} className="text-yellow-400" />
+                  <span>Sign Up</span>
+                </Link>
 
-                  <motion.div variants={mobileItemVariants} className="pt-2 mt-2 border-t border-gray-700">
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-red-400 transition-colors duration-300 w-full"
-                    >
-                      <LogOut size={18} className="text-red-400" />
-                      <span>Logout</span>
-                    </button>
-                  </motion.div>
-                </>
-              ) : (
-                <>
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      to="/signup"
-                      className="flex items-center space-x-3 py-2 px-3 rounded-lg text-lg font-medium text-white hover:bg-gray-700 hover:text-green-400 transition-colors duration-300"
-                    >
-                      <User size={18} className="text-green-400" />
-                      <span>Sign Up</span>
-                    </Link>
-                  </motion.div>
+                <Link
+                  to="/login"
+                  className="flex items-center space-x-3 py-2 px-3 bg-blue-800 text-yellow-400 border-2 border-yellow-500 rounded text-lg font-bold uppercase transition-colors duration-300 mt-2"
+                >
+                  <LogOut size={18} />
+                  <span>Login</span>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
-                  <motion.div variants={mobileItemVariants}>
-                    <Link
-                      to="/login"
-                      className="flex items-center space-x-3 py-2 px-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-300 mt-2"
-                    >
-                      <LogOut size={18} />
-                      <span>Login</span>
-                    </Link>
-                  </motion.div>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.nav>
-  )
+      {/* Style for pixelated text */}
+      <style jsx>{`
+        .pixelated {
+          letter-spacing: 2px;
+          text-shadow: 
+            2px 2px 0 rgba(0,0,0,0.5),
+            4px 4px 0 rgba(0,0,0,0.25);
+        }
+      `}</style>
+    </div>
+  );
 }
 
-export default Navbar
-
+export default ChessNavbar;
