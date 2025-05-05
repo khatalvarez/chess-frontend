@@ -1,52 +1,53 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { Users, Globe, ChevronDown, User, LogOut, BookOpen, Home, Shield, Award, Sword } from "lucide-react";
-import { logout, login } from "../store/authSlice";
-import { FaChess } from "react-icons/fa";
-import Cookies from "js-cookie";
-import axios from "axios";
-import { BASE_URL } from "../url";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import ChessMasterLogo from "./ChessMasterLogo";
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { useSelector, useDispatch } from "react-redux"
+import { ChevronDown, User, LogOut, Home, Shield, Sword } from "lucide-react"
+import { logout, login } from "../store/authSlice"
+import Cookies from "js-cookie"
+import axios from "axios"
+import { BASE_URL } from "../url"
+import { toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import ChessMasterLogo from "./ChessMasterLogo"
 
 function ChessNavbar() {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const authStatus = useSelector((state) => state.auth.status);
-  const userData = useSelector((state) => state.auth.userData);
-  const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const profileMenuRef = useRef(null);
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const authStatus = useSelector((state) => state.auth.status)
+  const userData = useSelector((state) => state.auth.userData)
+  const location = useLocation()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const profileMenuRef = useRef(null)
 
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
+      setScrolled(window.scrollY > 20)
+    }
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   // Close mobile menu when route changes
   useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
+    setIsMenuOpen(false)
+  }, [location.pathname])
 
   // Close profile menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setIsProfileMenuOpen(false);
+        setIsProfileMenuOpen(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -57,23 +58,23 @@ function ChessNavbar() {
         {
           withCredentials: true,
         },
-      );
+      )
 
       // Then remove the cookie and update Redux state
-      Cookies.remove("token", { path: "/" });
-      dispatch(logout());
-      toast.success("Logged out successfully");
-      navigate("/login");
+      Cookies.remove("token", { path: "/" })
+      dispatch(logout())
+      toast.success("Logged out successfully")
+      navigate("/login")
     } catch (error) {
-      console.error("Error during logout:", error);
-      toast.error("Logout failed. Please try again.");
+      console.error("Error during logout:", error)
+      toast.error("Logout failed. Please try again.")
 
       // As a fallback, still try to remove the cookie and update Redux state
-      Cookies.remove("token", { path: "/" });
-      dispatch(logout());
-      navigate("/login");
+      Cookies.remove("token", { path: "/" })
+      dispatch(logout())
+      navigate("/login")
     }
-  };
+  }
 
   // Check authentication once on component mount
   useEffect(() => {
@@ -84,17 +85,17 @@ function ChessNavbar() {
           withCredentials: true,
         })
         .then((res) => {
-          dispatch(login(res.data));
+          dispatch(login(res.data))
         })
         .catch((error) => {
-          console.error("Error fetching profile:", error);
-        });
+          console.error("Error fetching profile:", error)
+        })
     }
-  }, [authStatus, userData, dispatch]);
+  }, [authStatus, userData, dispatch])
 
   // Override authStatus to false if the route is /login or /signup
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
-  const effectiveAuthStatus = isAuthPage ? false : authStatus;
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup"
+  const effectiveAuthStatus = isAuthPage ? false : authStatus
 
   return (
     <div className="w-full bg-gray-900 border-b-4 border-blue-800 shadow-lg text-blue-100 font-mono z-50 fixed top-0 left-0">
@@ -102,7 +103,7 @@ function ChessNavbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-          <ChessMasterLogo />
+            <ChessMasterLogo />
             <div className="flex flex-col">
               <span className="text-xl font-bold text-yellow-400 pixelated">CHESS MASTER</span>
               <span className="text-xs text-blue-300">Master your game</span>
@@ -298,7 +299,7 @@ function ChessNavbar() {
       )}
 
       {/* Style for pixelated text */}
-      <style jsx>{`
+      <style jsx="true">{`
         .pixelated {
           letter-spacing: 2px;
           text-shadow: 
@@ -307,7 +308,7 @@ function ChessNavbar() {
         }
       `}</style>
     </div>
-  );
+  )
 }
 
-export default ChessNavbar;
+export default ChessNavbar

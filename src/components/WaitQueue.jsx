@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import { Users, Clock, CastleIcon as ChessKnight, Wifi, WifiOff, Sparkles } from "lucide-react"
-import bg from "../assets/images/bgprofile.webp"
+import { Users, Clock, CastleIcon as ChessKnight, Wifi, WifiOff, Sparkles, HelpCircle } from "lucide-react"
 
-function WaitQueue({ socket = null, length = 2 }) {
+const WaitQueue = ({ socket = null, length = 2 }) => {
   const [dots, setDots] = useState("")
   const [elapsed, setElapsed] = useState(0)
   const [playersWaiting, setPlayersWaiting] = useState(1)
   const [connectionStatus, setConnectionStatus] = useState(socket?.connected ? "connected" : "disconnected")
   const [retryCount, setRetryCount] = useState(0)
+  const [showHelpModal, setShowHelpModal] = useState(false)
   const [tips] = useState([
     "You can change the board theme in the settings",
     "Use mobile mode on touch devices for easier play",
@@ -126,217 +126,326 @@ function WaitQueue({ socket = null, length = 2 }) {
   // Calculate remaining players needed
   const playersNeeded = Math.max(0, length - playersWaiting)
 
+  // Help modal content
+  const HelpModal = () => (
+    <div className={`fixed inset-0 z-50 flex items-center justify-center ${showHelpModal ? "block" : "hidden"}`}>
+      <div className="absolute inset-0 bg-black/70" onClick={() => setShowHelpModal(false)}></div>
+      <div className="relative bg-gray-900 border-2 border-blue-700 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-blue-800 -mt-6 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
+          <h2 className="text-2xl font-bold text-yellow-400 uppercase">Matchmaking Info</h2>
+        </div>
+
+        <div className="space-y-4 text-blue-100">
+          <div>
+            <h3 className="text-lg font-bold text-yellow-400 mb-1">How Matchmaking Works</h3>
+            <p>
+              Our system pairs you with players of similar skill level. The longer you wait, the wider the skill range
+              becomes to ensure you find a match.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-yellow-400 mb-1">Connection Issues</h3>
+            <p>
+              If you experience connection problems, the system will automatically try to reconnect. If problems
+              persist, try refreshing the page.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-yellow-400 mb-1">Rating Impact</h3>
+            <p>
+              Matches found through the queue will affect your rating. Winning against higher-rated players will
+              increase your rating more significantly.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setShowHelpModal(false)}
+          className="mt-6 w-full bg-yellow-500 text-blue-900 font-bold py-2 rounded-md hover:bg-yellow-400"
+        >
+          Got it!
+        </button>
+      </div>
+    </div>
+  )
+
   return (
-    // ... rest of your JSX remains the same ...
-    <div className="w-screen min-h-screen flex flex-col items-center justify-center relative">
-      {/* Background with overlay */}
-      <div className="absolute inset-0 z-0">
-        <img
-          src={bg || "/placeholder.svg?height=1080&width=1920"}
-          alt="Chess background"
-          className="absolute inset-0 w-full h-full object-cover brightness-[0.3]"
-        />
-        <div className="absolute inset-0 bg-black opacity-70"></div>
+    <div className="relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono">
+      {/* Chess board background with perspective */}
+      <div className="fixed inset-0 z-0 perspective-1000">
+        <div
+          className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
+          style={{
+            backgroundImage: `linear-gradient(to right, transparent 0%, transparent 12.5%, #222 12.5%, #222 25%, 
+                             transparent 25%, transparent 37.5%, #222 37.5%, #222 50%,
+                             transparent 50%, transparent 62.5%, #222 62.5%, #222 75%,
+                             transparent 75%, transparent 87.5%, #222 87.5%, #222 100%)`,
+            backgroundSize: "200px 100px",
+            opacity: 0.15,
+          }}
+        ></div>
       </div>
 
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden opacity-30 pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full"
-            style={{
-              background:
-                i % 2 === 0
-                  ? `radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`
-                  : `radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(0, 0, 0, 0) 70%)`,
-              width: `${150 + Math.random() * 150}px`,
-              height: `${150 + Math.random() * 150}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              filter: "blur(30px)",
-            }}
-            animate={{
-              x: [0, Math.random() * 100 - 50, 0],
-              y: [0, Math.random() * 100 - 50, 0],
-              scale: [1, 1.2, 1],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 10 + Math.random() * 10,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "reverse",
-            }}
-          />
-        ))}
-      </div>
+      {/* Game UI Container */}
+      <div className="relative z-10 py-8 md:py-16 min-h-screen flex flex-col">
+        {/* Game Header Banner */}
+        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
+              FINDING OPPONENT
+            </h1>
+            <div className="h-1 w-32 mx-auto bg-yellow-500 mb-4"></div>
+            <p className="text-lg text-blue-100">Please wait while we match you with another player</p>
+          </div>
+        </div>
 
-      <div className="relative z-10 max-w-md w-full mx-4 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-gray-700">
-        <div className="text-center">
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-              repeatType: "reverse",
-            }}
-            className="w-24 h-24 mx-auto mb-6 relative"
-          >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/50 to-purple-600/50 blur-xl" />
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center relative">
-              <ChessKnight className="w-12 h-12 text-white" />
+        {/* Main Content Area */}
+        <div className="flex-grow px-4 py-8 flex items-center justify-center">
+          <div className="max-w-2xl w-full">
+            <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
+              <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
+                <h2 className="text-2xl font-bold text-yellow-400 uppercase">Matchmaking Queue</h2>
+              </div>
 
-              {/* Orbiting sparkles */}
-              <motion.div
-                className="absolute"
-                animate={{
-                  rotate: [0, 360],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "linear",
-                }}
-                style={{ transformOrigin: "center center" }}
-              >
-                <motion.div
-                  className="absolute"
-                  style={{ left: 0, top: -30 }}
-                  animate={{
-                    scale: [1, 1.5, 1],
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Number.POSITIVE_INFINITY,
-                    repeatType: "reverse",
-                  }}
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                {/* Left side - Chess Knight Icon */}
+                <div className="flex-shrink-0">
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Number.POSITIVE_INFINITY,
+                      repeatType: "reverse",
+                    }}
+                    className="w-32 h-32 mx-auto relative"
+                  >
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/50 to-purple-600/50 blur-xl" />
+                    <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center relative">
+                      <ChessKnight className="w-16 h-16 text-white" />
+
+                      {/* Orbiting sparkles */}
+                      <motion.div
+                        className="absolute"
+                        animate={{
+                          rotate: [0, 360],
+                        }}
+                        transition={{
+                          duration: 8,
+                          repeat: Number.POSITIVE_INFINITY,
+                          ease: "linear",
+                        }}
+                        style={{ transformOrigin: "center center" }}
+                      >
+                        <motion.div
+                          className="absolute"
+                          style={{ left: 0, top: -40 }}
+                          animate={{
+                            scale: [1, 1.5, 1],
+                            opacity: [0.5, 1, 0.5],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Number.POSITIVE_INFINITY,
+                            repeatType: "reverse",
+                          }}
+                        >
+                          <Sparkles className="text-blue-300 w-5 h-5" />
+                        </motion.div>
+                      </motion.div>
+
+                      <motion.div
+                        className="absolute"
+                        animate={{
+                          rotate: [0, -360],
+                        }}
+                        transition={{
+                          duration: 10,
+                          repeat: Number.POSITIVE_INFINITY,
+                          ease: "linear",
+                        }}
+                        style={{ transformOrigin: "center center" }}
+                      >
+                        <motion.div
+                          className="absolute"
+                          style={{ right: -40, top: 0 }}
+                          animate={{
+                            scale: [1, 1.5, 1],
+                            opacity: [0.5, 1, 0.5],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Number.POSITIVE_INFINITY,
+                            repeatType: "reverse",
+                            delay: 0.5,
+                          }}
+                        >
+                          <Sparkles className="text-purple-300 w-5 h-5" />
+                        </motion.div>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Right side - Queue Info */}
+                <div className="flex-grow">
+                  <div className="text-center md:text-left mb-6">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Waiting for {playersNeeded} more player{playersNeeded !== 1 ? "s" : ""} to join{dots}
+                    </h3>
+                    <p className="text-blue-200">
+                      You'll be automatically matched with an opponent as soon as one becomes available.
+                    </p>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-900 flex items-center justify-center mb-2 border-2 border-yellow-500">
+                        <Users className="w-6 h-6 text-yellow-400" />
+                      </div>
+                      <div className="text-lg font-bold text-yellow-400">Players Needed</div>
+                      <div className="text-2xl font-bold text-white">{playersNeeded}</div>
+                    </div>
+
+                    <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-full bg-blue-900 flex items-center justify-center mb-2 border-2 border-yellow-500">
+                        <Clock className="w-6 h-6 text-yellow-400" />
+                      </div>
+                      <div className="text-lg font-bold text-yellow-400">Wait Time</div>
+                      <div className="text-2xl font-bold text-white">{formatTime(elapsed)}</div>
+                    </div>
+
+                    <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex flex-col items-center">
+                      <div
+                        className={`w-12 h-12 rounded-full bg-blue-900 flex items-center justify-center mb-2 border-2 border-yellow-500`}
+                      >
+                        {connectionStatus === "connected" ? (
+                          <Wifi className="w-6 h-6 text-yellow-400" />
+                        ) : (
+                          <WifiOff className="w-6 h-6 text-yellow-400" />
+                        )}
+                      </div>
+                      <div className="text-lg font-bold text-yellow-400">Connection</div>
+                      <div className="text-2xl font-bold text-white capitalize">
+                        {connectionStatus === "connected" ? "Online" : "Offline"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden mb-6 border border-blue-700">
+                    <motion.div
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-purple-600"
+                      animate={{
+                        width: ["0%", "100%", "0%"],
+                        x: ["0%", "0%", "100%"],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Number.POSITIVE_INFINITY,
+                        repeatType: "loop",
+                        ease: "easeInOut",
+                      }}
+                    />
+                  </div>
+
+                  {/* Tips Section */}
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 mb-4">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-2">Chess Tip:</h3>
+                    <motion.p
+                      key={currentTip}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-blue-100"
+                    >
+                      {tips[currentTip]}
+                    </motion.p>
+                  </div>
+
+                  {/* Connection Error Message */}
+                  {connectionStatus !== "connected" && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="bg-red-900/30 p-4 rounded-lg border-2 border-red-700 text-red-300 flex items-center"
+                    >
+                      <WifiOff className="w-5 h-5 mr-2 flex-shrink-0" />
+                      <span>
+                        Connection issue detected. Please check your internet connection or try refreshing the page.
+                      </span>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+
+              {/* Help Button */}
+              <div className="mt-6 flex justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowHelpModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
                 >
-                  <Sparkles className="text-blue-300 w-4 h-4" />
-                </motion.div>
-              </motion.div>
-
-              <motion.div
-                className="absolute"
-                animate={{
-                  rotate: [0, -360],
-                }}
-                transition={{
-                  duration: 10,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "linear",
-                }}
-                style={{ transformOrigin: "center center" }}
-              >
-                <motion.div
-                  className="absolute"
-                  style={{ right: -30, top: 0 }}
-                  animate={{
-                    scale: [1, 1.5, 1],
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Number.POSITIVE_INFINITY,
-                    repeatType: "reverse",
-                    delay: 0.5,
-                  }}
-                >
-                  <Sparkles className="text-purple-300 w-4 h-4" />
-                </motion.div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <h2 className="text-3xl font-bold text-white mb-2">Finding Opponent</h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Waiting for {playersNeeded} more player{playersNeeded !== 1 ? "s" : ""} to join{dots}
-          </p>
-
-          <div className="flex items-center justify-center space-x-8 mb-8">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-2">
-                <Users className="w-6 h-6 text-blue-400" />
+                  <HelpCircle size={18} />
+                  How Matchmaking Works
+                </motion.button>
               </div>
-              <p className="text-sm text-gray-400">Players Needed</p>
-              <p className="text-2xl font-bold text-white">{playersNeeded}</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-2">
-                <Clock className="w-6 h-6 text-green-400" />
-              </div>
-              <p className="text-sm text-gray-400">Wait Time</p>
-              <p className="text-2xl font-bold text-white">{formatTime(elapsed)}</p>
-            </div>
-
-            <div className="text-center">
-              <div
-                className={`w-12 h-12 rounded-full ${connectionStatus === "connected" ? "bg-green-500/20" : "bg-red-500/20"} flex items-center justify-center mx-auto mb-2`}
-              >
-                {connectionStatus === "connected" ? (
-                  <Wifi className="w-6 h-6 text-green-400" />
-                ) : (
-                  <WifiOff className="w-6 h-6 text-red-400" />
-                )}
-              </div>
-              <p className="text-sm text-gray-400">Connection</p>
-              <p className="text-2xl font-bold text-white capitalize">
-                {connectionStatus === "connected" ? "Online" : "Offline"}
-              </p>
             </div>
           </div>
-
-          <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden mb-6">
-            <motion.div
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-600"
-              animate={{
-                width: ["0%", "100%", "0%"],
-                x: ["0%", "0%", "100%"],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Number.POSITIVE_INFINITY,
-                repeatType: "loop",
-                ease: "easeInOut",
-              }}
-            />
-          </div>
-
-          {/* Tips section */}
-          <div className="bg-gray-800/50 p-4 rounded-lg mb-4">
-            <h3 className="text-blue-400 font-medium mb-2">Chess Tip:</h3>
-            <motion.p
-              key={currentTip}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="text-gray-300"
-            >
-              {tips[currentTip]}
-            </motion.p>
-          </div>
-
-          <p className="mt-2 text-gray-400 text-sm">
-            You'll be automatically matched with an opponent as soon as one becomes available.
-          </p>
-
-          {connectionStatus !== "connected" && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="mt-4 text-red-400 text-sm flex items-center justify-center"
-            >
-              <WifiOff className="w-4 h-4 mr-2" />
-              Connection issue detected. Please check your internet connection or try refreshing the page.
-            </motion.p>
-          )}
         </div>
       </div>
+
+      {/* Help Modal */}
+      <HelpModal />
+
+      {/* Game UI CSS */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+  .game-panel {
+    position: relative;
+    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
+  }
+  
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .rotate-x-60 {
+    transform: rotateX(60deg);
+  }
+  
+  .pixelated {
+    letter-spacing: 2px;
+    text-shadow: 
+      2px 2px 0 rgba(0,0,0,0.5),
+      4px 4px 0 rgba(0,0,0,0.25);
+  }
+
+  /* Button press effect */
+  button:active:not(:disabled) {
+    transform: translateY(2px);
+  }
+  
+  /* Improve piece visibility */
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  `,
+        }}
+      />
     </div>
   )
 }

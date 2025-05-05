@@ -1,9 +1,11 @@
+"use client"
+
 import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { Howl } from "howler"
-import { Maximize2, Minimize2, Volume2, VolumeX, LogOut } from "lucide-react"
+import { Maximize2, Minimize2, Volume2, VolumeX, LogOut, HelpCircle, Shield, Award } from "lucide-react"
 import axios from "axios"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
@@ -14,7 +16,6 @@ import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
 import checkSoundFile from "../../assets/sounds/check.mp3"
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3"
-import boardbg from "../../assets/images/bgboard.webp"
 import { BASE_URL } from "../../url"
 import { io } from "socket.io-client"
 
@@ -75,7 +76,6 @@ const GlobalMultiplayer = () => {
   const [waitingForOpponent, setWaitingForOpponent] = useState(true)
   const [currentStatus, setCurrentStatus] = useState("Waiting for opponent...")
   const [moves, setMoves] = useState([])
-  const [isTableCollapsed, setIsTableCollapsed] = useState(false)
   const [mobileMode, setMobileMode] = useState(false)
   const [promotionPiece, setPromotionPiece] = useState("q")
   const [soundEnabled, setSoundEnabled] = useState(true)
@@ -86,16 +86,25 @@ const GlobalMultiplayer = () => {
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
   const [selectedSquare, setSelectedSquare] = useState(null)
   const [possibleMoves, setPossibleMoves] = useState([])
-  const [theme, setTheme] = useState("forest") // Default theme
+  const [theme, setTheme] = useState("royal") // Changed to royal to match other components
   const [visualHints, setVisualHints] = useState(true)
   const [lastMove, setLastMove] = useState(null)
   const [showMovesList, setShowMovesList] = useState(false)
+  const [activeTab, setActiveTab] = useState("game")
+  const [showHelpModal, setShowHelpModal] = useState(false)
 
   // Refs
   const chessboardRef = useRef(null)
   const socketRef = useRef(null)
   const gameRef = useRef(null)
   const boardContainerRef = useRef(null)
+
+  // Play sound with check for sound enabled
+  const playSound = (sound) => {
+    if (soundEnabled) {
+      sound.play()
+    }
+  }
 
   // Add match to history function
   const addMatchToHistory = async (userId, opponentName, status) => {
@@ -295,20 +304,18 @@ const GlobalMultiplayer = () => {
           ])
 
           // Play sound based on move type
-          if (soundEnabled) {
-            if (move.captured) {
-              captureSound.play()
-            } else {
-              moveSound.play()
-            }
+          if (move.captured) {
+            playSound(captureSound)
+          } else {
+            playSound(moveSound)
+          }
 
-            if (gameRef.current.inCheck()) {
-              checkSound.play()
-            }
+          if (gameRef.current.inCheck()) {
+            playSound(checkSound)
+          }
 
-            if (gameRef.current.isCheckmate()) {
-              checkmateSound.play()
-            }
+          if (gameRef.current.isCheckmate()) {
+            playSound(checkmateSound)
           }
         } else {
           console.error("Invalid move received from opponent:", from, to, obtainedPromotion)
@@ -337,8 +344,8 @@ const GlobalMultiplayer = () => {
       }
     })
 
-    // Initialize chessboard if not already initialized
-    if (!boardInitialized) {
+    // Initialize chessboard if not already initialized and we're on the game tab
+    if (!board && activeTab === "game") {
       initializeChessboard()
     }
 
@@ -349,7 +356,7 @@ const GlobalMultiplayer = () => {
         socketRef.current.off("gameState")
       }
     }
-  }, [playerColor, soundEnabled, board, boardInitialized, visualHints])
+  }, [playerColor, soundEnabled, board, boardInitialized, visualHints, activeTab])
 
   // Apply theme colors to the board
   useEffect(() => {
@@ -378,6 +385,14 @@ const GlobalMultiplayer = () => {
     }
 
     applyTheme()
+
+    return () => {
+      // Clean up theme stylesheet
+      const existingStyle = document.getElementById("chess-theme")
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+    }
   }, [theme])
 
   // Function to initialize the chessboard
@@ -579,20 +594,18 @@ const GlobalMultiplayer = () => {
       ])
 
       // Play sound based on move type
-      if (soundEnabled) {
-        if (move.captured) {
-          captureSound.play()
-        } else {
-          moveSound.play()
-        }
+      if (move.captured) {
+        playSound(captureSound)
+      } else {
+        playSound(moveSound)
+      }
 
-        if (game.inCheck()) {
-          checkSound.play()
-        }
+      if (game.inCheck()) {
+        playSound(checkSound)
+      }
 
-        if (game.isCheckmate()) {
-          checkmateSound.play()
-        }
+      if (game.isCheckmate()) {
+        playSound(checkmateSound)
       }
 
       return undefined // Move is valid
@@ -715,7 +728,7 @@ const GlobalMultiplayer = () => {
   }
 
   // Toggle moves table
-  const toggleTable = () => {
+  const toggleMovesList = () => {
     setShowMovesList(!showMovesList)
   }
 
@@ -811,217 +824,565 @@ const GlobalMultiplayer = () => {
     navigate("/modeselector")
   }
 
+  // Help modal content
+  const HelpModal = () => (
+    <div className={`fixed inset-0 z-50 flex items-center justify-center ${showHelpModal ? "block" : "hidden"}`}>
+      <div className="absolute inset-0 bg-black/70" onClick={() => setShowHelpModal(false)}></div>
+      <div className="relative bg-gray-900 border-2 border-blue-700 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-blue-800 -mt-6 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
+          <h2 className="text-2xl font-bold text-yellow-400 uppercase">How to Play</h2>
+        </div>
+
+        <div className="space-y-4 text-blue-100">
+          <div>
+            <h3 className="text-lg font-bold text-yellow-400 mb-1">Online Multiplayer</h3>
+            <p>Play against other players online. You'll be matched with an opponent of similar skill level.</p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-yellow-400 mb-1">Mobile Mode</h3>
+            <p>Tap a piece to select it, then tap a highlighted square to move. Perfect for touchscreens.</p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-yellow-400 mb-1">Desktop Mode</h3>
+            <p>Drag and drop pieces to make moves. Hover over pieces to see possible moves.</p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-yellow-400 mb-1">Leaving Games</h3>
+            <p>Leaving a game before it's finished will count as a loss. Please play your games to completion.</p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setShowHelpModal(false)}
+          className="mt-6 w-full bg-yellow-500 text-blue-900 font-bold py-2 rounded-md hover:bg-yellow-400"
+        >
+          Got it!
+        </button>
+      </div>
+    </div>
+  )
+
   // If waiting for opponent, show wait queue
   if (waitingForOpponent) {
     return <WaitQueue socket={socketRef.current} />
   }
 
   return (
-    <div
-      className="flex min-h-screen overflow-auto items-center justify-center w-screen"
-      style={{
-        backgroundImage: `url(${boardbg})`,
-        backgroundSize: "cover",
-      }}
-    >
-      <div className="w-screen mt-16 flex flex-col lg:flex-row mx-auto my-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="lg:mx-8 w-full mx-auto mb-6 lg:mb-0 lg:w-1/2"
-          ref={boardContainerRef}
-        >
-          {opponent && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex justify-between text-center mr-8 mb-4 text-lg lg:text-xl xl:text-2xl text-white backdrop-blur-sm bg-black/30 p-3 rounded-lg"
-            >
-              <p>Opponent: {opponent.username?.split(" ")[0] || "Opponent"}</p>
-              <p>Rating: {calculateRating(opponent.wins || 0, opponent.loses || 0, opponent.draws || 0)}</p>
-            </motion.div>
-          )}
+    <div className="relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono">
+      {/* Chess board background with perspective */}
+      <div className="fixed inset-0 z-0 perspective-1000">
+        <div
+          className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
+          style={{
+            backgroundImage: `linear-gradient(to right, transparent 0%, transparent 12.5%, #222 12.5%, #222 25%, 
+                             transparent 25%, transparent 37.5%, #222 37.5%, #222 50%,
+                             transparent 50%, transparent 62.5%, #222 62.5%, #222 75%,
+                             transparent 75%, transparent 87.5%, #222 87.5%, #222 100%)`,
+            backgroundSize: "200px 100px",
+            opacity: 0.15,
+          }}
+        ></div>
+      </div>
 
-          <div
-            className="relative mx-auto backdrop-blur-sm bg-white/10 p-4 shadow-xl rounded-lg"
-            style={{ width: window.innerWidth > 1028 ? "40vw" : "90vw" }}
-          >
-            <div className="absolute top-2 right-2 z-10 flex space-x-2">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleSound}
-                className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
-              >
-                {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleFullscreen}
-                className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
-              >
-                {fullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={confirmLeaveGame}
-                className="p-2 bg-red-600 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
-                title="Leave Game (counts as a loss)"
-              >
-                <LogOut size={20} />
-              </motion.button>
-            </div>
-            <div ref={chessboardRef} className="mx-auto"></div>
+      {/* Game UI Container */}
+      <div className="relative z-10 py-8 md:py-16 min-h-screen flex flex-col">
+        {/* Game Header Banner */}
+        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
+              GLOBAL MULTIPLAYER
+            </h1>
+            <div className="h-1 w-32 mx-auto bg-yellow-500 mb-4"></div>
+            <p className="text-lg text-blue-100">Challenge players from around the world</p>
           </div>
+        </div>
 
-          {user && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex text-lg lg:text-xl xl:text-2xl justify-between text-center mr-8 mt-4 mb-4 text-white backdrop-blur-sm bg-black/30 p-3 rounded-lg"
-            >
-              <p>You ({user.username || "Player"})</p>
-              <p>Rating: {calculateRating(user.wins || 0, user.loses || 0, user.draws || 0)}</p>
-            </motion.div>
-          )}
-
-          <div className="mt-4 p-4 backdrop-blur-sm bg-white/10 border-2 border-white/30 rounded-xl shadow-lg">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-white font-semibold bg-blue-600/80 p-2 rounded-md">
-                  <input type="checkbox" checked={mobileMode} onChange={handleMobileModeChange} className="w-4 h-4" />
-                  <span>Mobile Mode</span>
-                </label>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-white font-semibold bg-purple-600/80 p-2 rounded-md">
-                  <input type="checkbox" checked={visualHints} onChange={toggleVisualHints} className="w-4 h-4" />
-                  <span>Visual Hints</span>
-                </label>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <select
-                  value={theme}
-                  onChange={handleThemeChange}
-                  className="bg-amber-600/80 text-white p-2 rounded-md font-semibold"
-                >
-                  <option value="classic">Classic</option>
-                  <option value="forest">Forest</option>
-                  <option value="ocean">Ocean</option>
-                  <option value="night">Night</option>
-                  <option value="royal">Royal</option>
-                </select>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <select
-                  value={promotionPiece}
-                  onChange={handlePromotionChange}
-                  className="bg-green-600/80 text-white p-2 rounded-md font-semibold"
-                >
-                  <option value="q">Queen</option>
-                  <option value="r">Rook</option>
-                  <option value="b">Bishop</option>
-                  <option value="n">Knight</option>
-                </select>
-              </motion.div>
-            </div>
-
-            {/* Status display */}
-            <div className="mt-4">
-              <motion.div
-                initial={{ scale: 0.95 }}
-                animate={{ scale: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 20,
-                }}
-                className="rounded-lg text-center p-3 bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white border border-white/30 shadow-lg"
+        {/* Game Menu Tabs */}
+        <nav className="bg-gray-900 border-b-2 border-blue-800 shadow-md">
+          <div className="max-w-6xl mx-auto px-4 py-2 flex justify-center overflow-x-auto">
+            {["game", "settings", "help"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-3 mx-2 text-lg font-bold uppercase transition-all ${
+                  activeTab === tab
+                    ? "bg-blue-800 text-yellow-400 border-2 border-yellow-500 shadow-yellow-400/20 shadow-md"
+                    : "text-blue-300 hover:bg-blue-900 border-2 border-transparent"
+                }`}
               >
-                <p className="text-xl font-semibold">{currentStatus}</p>
-              </motion.div>
-            </div>
+                {tab === "game" && "Game"}
+                {tab === "settings" && "Settings"}
+                {tab === "help" && "Help"}
+              </button>
+            ))}
+          </div>
+        </nav>
 
-            {/* Help text for mobile mode */}
-            {mobileMode && (
-              <div className="mt-4 p-3 bg-black/50 text-white text-center rounded-lg">
-                {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
+        {/* Main Content Area - Game Panel Style */}
+        <div className="flex-grow px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Game Tab Content */}
+            {activeTab === "game" && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Chess board container with stylish border */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-full"
+                  ref={boardContainerRef}
+                >
+                  <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
+                    <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
+                      <h2 className="text-2xl font-bold text-yellow-400 uppercase">Chess Board</h2>
+                    </div>
+
+                    {opponent && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="flex justify-between text-center mb-4 text-lg text-white backdrop-blur-sm bg-black/30 p-3 rounded-lg"
+                      >
+                        <p>Opponent: {opponent.username?.split(" ")[0] || "Opponent"}</p>
+                        <p>Rating: {calculateRating(opponent.wins || 0, opponent.loses || 0, opponent.draws || 0)}</p>
+                      </motion.div>
+                    )}
+
+                    <div className="relative backdrop-blur-sm bg-black/30 p-4 rounded-lg border-2 border-blue-600">
+                      <div className="absolute top-2 right-2 z-10 flex space-x-2">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={toggleSound}
+                          className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
+                        >
+                          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={toggleFullscreen}
+                          className="p-2 bg-gray-800 bg-opacity-70 rounded-full text-white hover:bg-opacity-100 transition-all"
+                        >
+                          {fullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+                        </motion.button>
+                      </div>
+                      <div ref={chessboardRef} className="mx-auto"></div>
+                    </div>
+
+                    {user && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="flex text-lg justify-between text-center mt-4 mb-4 text-white backdrop-blur-sm bg-black/30 p-3 rounded-lg"
+                      >
+                        <p>You ({user.username || "Player"})</p>
+                        <p>Rating: {calculateRating(user.wins || 0, user.loses || 0, user.draws || 0)}</p>
+                      </motion.div>
+                    )}
+
+                    {/* Status display */}
+                    <div className="mt-4">
+                      <motion.div
+                        initial={{ scale: 0.95 }}
+                        animate={{ scale: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 260,
+                          damping: 20,
+                        }}
+                        className="rounded-lg text-center p-3 bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white border border-white/30 shadow-lg"
+                      >
+                        <p className="text-xl font-semibold">{currentStatus}</p>
+                      </motion.div>
+                    </div>
+
+                    {/* Help text for mobile mode */}
+                    {mobileMode && (
+                      <div className="mt-4 p-3 bg-black/50 text-white text-center rounded-lg border border-blue-600">
+                        {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
+                      </div>
+                    )}
+
+                    {/* Quick controls */}
+                    <div className="mt-4 flex flex-wrap justify-center gap-3">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={confirmLeaveGame}
+                        className="bg-gradient-to-r from-red-600 to-red-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                      >
+                        <LogOut size={18} />
+                        Leave Game
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={toggleSound}
+                        className={`px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2 ${
+                          soundEnabled
+                            ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white"
+                            : "bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300"
+                        }`}
+                      >
+                        {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                        {soundEnabled ? "Sound On" : "Sound Off"}
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowHelpModal(true)}
+                        className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                      >
+                        <HelpCircle size={18} />
+                        How to Play
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Game info and controls */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="w-full"
+                >
+                  <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel h-full">
+                    <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
+                      <h2 className="text-2xl font-bold text-yellow-400 uppercase">Game Info</h2>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Game stats */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
+                          <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
+                            <Shield size={24} className="text-yellow-400" />
+                          </div>
+                          <div>
+                            <div className="text-lg font-bold text-yellow-400">Mode</div>
+                            <div className="text-blue-200">Global Multiplayer</div>
+                          </div>
+                        </div>
+
+                        <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
+                          <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
+                            <Award size={24} className="text-yellow-400" />
+                          </div>
+                          <div>
+                            <div className="text-lg font-bold text-yellow-400">Moves</div>
+                            <div className="text-blue-200">{moves.length}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Promotion piece selector */}
+                      <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                        <h3 className="text-xl font-bold text-yellow-400 mb-3">Promotion Piece</h3>
+                        <p className="text-blue-300 text-sm mb-4">Choose which piece to promote pawns to</p>
+                        <select
+                          value={promotionPiece}
+                          onChange={handlePromotionChange}
+                          className="w-full bg-gray-800 text-blue-100 p-3 rounded-md border-2 border-blue-500 focus:border-yellow-500 focus:outline-none"
+                        >
+                          <option value="q">Queen</option>
+                          <option value="r">Rook</option>
+                          <option value="b">Bishop</option>
+                          <option value="n">Knight</option>
+                        </select>
+                      </div>
+
+                      {/* Move history */}
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-xl font-semibold text-yellow-400">Move History</h3>
+                          <button
+                            onClick={toggleMovesList}
+                            className="text-white bg-blue-600/80 px-3 py-1 rounded-md text-sm border border-blue-400"
+                          >
+                            {showMovesList ? "Hide" : "Show"}
+                          </button>
+                        </div>
+
+                        {showMovesList && (
+                          <div className="bg-black/30 rounded-lg p-2 max-h-[300px] overflow-y-auto border-2 border-blue-600">
+                            {moves.length > 0 ? (
+                              <table className="w-full border-collapse">
+                                <thead>
+                                  <tr className="text-white border-b border-white/20">
+                                    <th className="p-2 text-left">#</th>
+                                    <th className="p-2 text-left">From</th>
+                                    <th className="p-2 text-left">To</th>
+                                    <th className="p-2 text-left">Player</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {moves.map((move, index) => (
+                                    <tr key={index} className={`text-white ${index % 2 === 0 ? "bg-white/5" : ""}`}>
+                                      <td className="p-2">{index + 1}</td>
+                                      <td className="p-2">{move.from}</td>
+                                      <td className="p-2">{move.to}</td>
+                                      <td className="p-2">{move.player === "player" ? "You" : "Opponent"}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <div className="text-center py-4 text-blue-300">No moves yet</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Mobile mode toggle */}
+                      <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-bold text-yellow-400">Mobile Mode</h3>
+                            <p className="text-blue-300 text-sm">Tap to select and move pieces</p>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <label className="relative inline-flex items-center cursor-pointer mb-1">
+                              <input
+                                type="checkbox"
+                                checked={mobileMode}
+                                onChange={handleMobileModeChange}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                            <span className="text-sm font-medium text-yellow-400">
+                              {mobileMode ? "Enabled" : "Disabled"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-8 text-white text-center">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={confirmLeaveGame}
+                          className="bg-gradient-to-r from-red-600 to-red-400 text-white px-6 py-3 rounded-lg w-full text-lg font-semibold"
+                        >
+                          Leave Game (Counts as Loss)
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Settings Tab Content */}
+            {activeTab === "settings" && (
+              <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
+                <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
+                  <h2 className="text-2xl font-bold text-yellow-400 uppercase">Game Settings</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Board Theme</h3>
+                    <p className="text-blue-300 text-sm mb-4">Choose your preferred board style</p>
+                    <select
+                      value={theme}
+                      onChange={handleThemeChange}
+                      className="w-full bg-gray-800 text-blue-100 p-3 rounded-md border-2 border-blue-500 focus:border-yellow-500 focus:outline-none"
+                    >
+                      <option value="classic">Classic</option>
+                      <option value="forest">Forest</option>
+                      <option value="ocean">Ocean</option>
+                      <option value="night">Night</option>
+                      <option value="royal">Royal</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-yellow-400">Visual Hints</h3>
+                        <p className="text-blue-300 text-sm">Show possible moves and highlights</p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <label className="relative inline-flex items-center cursor-pointer mb-1">
+                          <input
+                            type="checkbox"
+                            checked={visualHints}
+                            onChange={toggleVisualHints}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-sm font-medium text-yellow-400">
+                          {visualHints ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-yellow-400">Sound Effects</h3>
+                        <p className="text-blue-300 text-sm">Enable or disable game sounds</p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <label className="relative inline-flex items-center cursor-pointer mb-1">
+                          <input
+                            type="checkbox"
+                            checked={soundEnabled}
+                            onChange={toggleSound}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-sm font-medium text-yellow-400">
+                          {soundEnabled ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-yellow-400">Mobile Mode</h3>
+                        <p className="text-blue-300 text-sm">Tap to select and move pieces</p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <label className="relative inline-flex items-center cursor-pointer mb-1">
+                          <input
+                            type="checkbox"
+                            checked={mobileMode}
+                            onChange={handleMobileModeChange}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-sm font-medium text-yellow-400">
+                          {mobileMode ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Help Tab Content */}
+            {activeTab === "help" && (
+              <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
+                <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
+                  <h2 className="text-2xl font-bold text-yellow-400 uppercase">How to Play</h2>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Online Multiplayer</h3>
+                    <ul className="space-y-3 text-blue-100">
+                      <li className="flex items-start">
+                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500">
+                          1
+                        </div>
+                        <p>You'll be matched with an opponent of similar skill level.</p>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500">
+                          2
+                        </div>
+                        <p>The color you play as (White or Black) is randomly assigned.</p>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500">
+                          3
+                        </div>
+                        <p>Leaving a game early counts as a loss and affects your rating.</p>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Controls</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-lg font-semibold text-blue-200 mb-2">Desktop Mode</h4>
+                        <p className="text-blue-100 mb-2">
+                          Click and drag pieces to make moves. Hover over pieces to see possible moves when visual hints
+                          are enabled.
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="text-lg font-semibold text-blue-200 mb-2">Mobile Mode</h4>
+                        <p className="text-blue-100 mb-2">
+                          Tap a piece to select it, then tap a highlighted square to move. This mode is perfect for
+                          touchscreens.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Rating System</h3>
+                    <p className="text-blue-100 mb-4">
+                      Your rating is calculated based on your win/loss record. Winning games against higher-rated
+                      players will increase your rating more significantly.
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-green-900/50 p-2 rounded-md">
+                        <div className="text-green-400 font-bold">Win</div>
+                        <div className="text-blue-100">+Rating</div>
+                      </div>
+                      <div className="bg-yellow-900/50 p-2 rounded-md">
+                        <div className="text-yellow-400 font-bold">Draw</div>
+                        <div className="text-blue-100">±0 Rating</div>
+                      </div>
+                      <div className="bg-red-900/50 p-2 rounded-md">
+                        <div className="text-red-400 font-bold">Loss</div>
+                        <div className="text-blue-100">-Rating</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
 
-        {/* Game info sidebar */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="lg:w-1/2 w-full lg:mx-8 mx-auto"
-        >
-          <div className="bg-black/50 backdrop-blur-xl border border-white/30 rounded-xl shadow-lg overflow-hidden">
-            <div className="p-4">
-              <motion.div
-                whileHover={{ scale: 1.01 }}
-                className="rounded-xl shadow-lg text-center p-6 bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white border border-white/30"
-              >
-                <h2 className="text-3xl font-bold mb-2">Global Multiplayer</h2>
-                <p className="text-lg">Playing against: {opponent?.username || "Opponent"}</p>
-              </motion.div>
+        {/* Call to Action - Game Button Style */}
+        <div className="w-full bg-gray-900 border-t-4 border-blue-800 py-8 px-4 mt-8">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg">
+              <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">
+                Playing Against: {opponent?.username || "Opponent"}
+              </h2>
 
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-white">Move History</h3>
-                  <button onClick={toggleTable} className="text-white bg-blue-600/80 px-3 py-1 rounded-md text-sm">
-                    {showMovesList ? "Hide" : "Show"}
-                  </button>
-                </div>
-
-                {showMovesList && (
-                  <div className="bg-black/30 rounded-lg p-2 max-h-[300px] overflow-y-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="text-white border-b border-white/20">
-                          <th className="p-2 text-left">#</th>
-                          <th className="p-2 text-left">From</th>
-                          <th className="p-2 text-left">To</th>
-                          <th className="p-2 text-left">Player</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {moves.map((move, index) => (
-                          <tr key={index} className={`text-white ${index % 2 === 0 ? "bg-white/5" : ""}`}>
-                            <td className="p-2">{index + 1}</td>
-                            <td className="p-2">{move.from}</td>
-                            <td className="p-2">{move.to}</td>
-                            <td className="p-2">{move.player === "player" ? "You" : "Opponent"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              <p className="text-blue-100 mb-6">Enjoy your game and may the best player win!</p>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={confirmLeaveGame}
-                className="mt-6 w-full bg-gradient-to-r from-red-600 to-red-400 text-white py-3 px-4 rounded-md font-semibold shadow-md"
+                className="px-8 py-4 bg-red-500 text-white text-xl font-bold uppercase rounded-lg hover:bg-red-400 transition-colors shadow-lg border-2 border-red-700"
               >
-                Leave Game (Counts as Loss)
+                LEAVE GAME
               </motion.button>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
+
+      {/* Help Modal */}
+      <HelpModal />
 
       {/* Game Over Modal */}
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
@@ -1057,6 +1418,62 @@ const GlobalMultiplayer = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Game UI CSS */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+  .game-panel {
+    position: relative;
+    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
+  }
+  
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .rotate-x-60 {
+    transform: rotateX(60deg);
+  }
+  
+  .pixelated {
+    letter-spacing: 2px;
+    text-shadow: 
+      2px 2px 0 rgba(0,0,0,0.5),
+      4px 4px 0 rgba(0,0,0,0.25);
+  }
+
+  /* Button press effect */
+  button:active:not(:disabled) {
+    transform: translateY(2px);
+  }
+  
+  /* Responsive board sizing */
+  @media (max-width: 640px) {
+    .square-55d63 {
+      width: 40px !important;
+      height: 40px !important;
+    }
+  }
+  
+  /* Improve piece visibility */
+  img {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  
+  /* Improve mobile touch targets */
+  .square-55d63 {
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  `,
+        }}
+      />
     </div>
   )
 }

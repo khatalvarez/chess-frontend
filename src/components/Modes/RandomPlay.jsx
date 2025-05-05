@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import Chessboard from "chessboardjs"
 import { Howl } from "howler"
-import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle } from "lucide-react"
+import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle } from 'lucide-react'
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
 import checkSoundFile from "../../assets/sounds/check.mp3"
@@ -38,6 +38,7 @@ const ChessboardComponent = () => {
   const [activeTab, setActiveTab] = useState("game")
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showHelpModal, setShowHelpModal] = useState(false)
+  const [boardInitialized, setBoardInitialized] = useState(false)
 
   // Themed board colors
   const themes = {
@@ -127,33 +128,47 @@ const ChessboardComponent = () => {
 
   // Utility functions for highlighting moves
   const removeHighlights = () => {
-    const squares = document.querySelectorAll(".square-55d63")
-    squares.forEach((square) => {
-      square.classList.remove("highlight-square", "possible-move", "last-move")
-      square.style.background = ""
-    })
+    try {
+      const squares = document.querySelectorAll(".square-55d63")
+      if (!squares || squares.length === 0) return
+      
+      squares.forEach((square) => {
+        square.classList.remove("highlight-square", "possible-move", "last-move")
+        square.style.background = ""
+      })
+    } catch (error) {
+      console.error("Error removing highlights:", error)
+    }
   }
 
   const highlightSquare = (square, type = "highlight") => {
-    const squareEl = document.querySelector(`.square-${square}`)
-    if (squareEl) {
-      if (type === "highlight") {
-        squareEl.classList.add("highlight-square")
-      } else if (type === "possible") {
-        squareEl.classList.add("possible-move")
-      } else if (type === "last-move") {
-        squareEl.classList.add("last-move")
+    try {
+      const squareEl = document.querySelector(`.square-${square}`)
+      if (squareEl) {
+        if (type === "highlight") {
+          squareEl.classList.add("highlight-square")
+        } else if (type === "possible") {
+          squareEl.classList.add("possible-move")
+        } else if (type === "last-move") {
+          squareEl.classList.add("last-move")
+        }
       }
+    } catch (error) {
+      console.error("Error highlighting square:", error)
     }
   }
 
   const highlightLastMove = (from, to) => {
     if (!visualHints) return
 
-    removeHighlights()
-    highlightSquare(from, "last-move")
-    highlightSquare(to, "last-move")
-    setLastMove({ from, to })
+    try {
+      removeHighlights()
+      highlightSquare(from, "last-move")
+      highlightSquare(to, "last-move")
+      setLastMove({ from, to })
+    } catch (error) {
+      console.error("Error highlighting last move:", error)
+    }
   }
 
   // Celebration effect when player wins
@@ -173,7 +188,11 @@ const ChessboardComponent = () => {
     }
   }
 
+  // Initialize the chessboard
   useEffect(() => {
+    // Only initialize if we're on the game tab
+    if (activeTab !== "game") return
+    
     const game = gameRef.current
 
     const onDragStart = (source, piece, position, orientation) => {
@@ -199,6 +218,8 @@ const ChessboardComponent = () => {
           highlightSquare(moves[i].to, "possible")
         }
       }
+      
+      return true
     }
 
     const makeAiMove = () => {
@@ -270,7 +291,9 @@ const ChessboardComponent = () => {
           promotion: move.promotion || "q",
         })
 
-        boardRef.current.position(game.fen())
+        if (boardRef.current) {
+          boardRef.current.position(game.fen())
+        }
 
         // Play sound based on move type
         result.captured ? playSound(captureSound) : playSound(moveSound)
@@ -348,31 +371,45 @@ const ChessboardComponent = () => {
     }
 
     const onSnapEnd = () => {
-      boardRef.current.position(game.fen())
+      if (boardRef.current) {
+        boardRef.current.position(game.fen())
+      }
     }
 
-    const config = {
-      draggable: !mobileMode, // Disable dragging in mobile mode
-      position: "start",
-      onDragStart: onDragStart,
-      onDrop: onDrop,
-      onMouseoverSquare: onMouseoverSquare,
-      onMouseoutSquare: onMouseoutSquare,
-      onSnapEnd: onSnapEnd,
-      pieceTheme: (piece) => pieceImages[piece],
-      snapbackSpeed: 300,
-      snapSpeed: 100,
-      boardSize: "100%",
-    }
+    // Only initialize if the chessRef element exists and we don't already have a board
+    if (chessRef.current && !boardRef.current) {
+      const config = {
+        draggable: !mobileMode, // Disable dragging in mobile mode
+        position: "start",
+        onDragStart: onDragStart,
+        onDrop: onDrop,
+        onMouseoverSquare: onMouseoverSquare,
+        onMouseoutSquare: onMouseoutSquare,
+        onSnapEnd: onSnapEnd,
+        pieceTheme: (piece) => pieceImages[piece],
+        snapbackSpeed: 300,
+        snapSpeed: 100,
+        boardSize: "100%",
+      }
 
-    // Initialize Chessboard.js
-    boardRef.current = Chessboard(chessRef.current, config)
-    updateStatus()
+      // Initialize Chessboard.js
+      try {
+        boardRef.current = Chessboard(chessRef.current, config)
+        setBoardInitialized(true)
+        updateStatus()
+      } catch (error) {
+        console.error("Error initializing chessboard:", error)
+      }
+    }
 
     // Responsive board size
     const handleResize = () => {
-      if (boardRef.current) {
-        boardRef.current.resize()
+      if (boardRef.current && typeof boardRef.current.resize === 'function') {
+        try {
+          boardRef.current.resize()
+        } catch (error) {
+          console.error("Error resizing board:", error)
+        }
       }
     }
 
@@ -380,255 +417,256 @@ const ChessboardComponent = () => {
 
     // Cleanup function to destroy the chessboard instance
     return () => {
-      if (boardRef.current) {
-        boardRef.current.destroy()
-      }
       window.removeEventListener("resize", handleResize)
+      
+      // Only destroy if we have a board
+      if (boardRef.current && typeof boardRef.current.destroy === 'function') {
+        try {
+          boardRef.current.destroy()
+          boardRef.current = null
+          setBoardInitialized(false)
+        } catch (error) {
+          console.error("Error destroying chessboard:", error)
+        }
+      }
     }
-  }, [mobileMode, visualHints, difficulty, theme, soundEnabled])
+  }, [activeTab, mobileMode, visualHints, difficulty, theme, soundEnabled])
 
+  // Handle mobile mode touch events
   useEffect(() => {
-    let squares // Declare squares outside the conditional block
-    let handleMobileSquareClick // Declare handleMobileSquareClick outside the conditional block
+    // Only set up mobile mode if we're on the game tab and the board is initialized
+    if (activeTab !== "game" || !mobileMode || !boardInitialized) return
+    
+    let squares = []
+    let listeners = []
 
-    if (mobileMode) {
-      handleMobileSquareClick = (event) => {
-        event.preventDefault()
+    const handleMobileSquareClick = (event) => {
+      event.preventDefault()
 
-        // Find the clicked square from the event target's class list
-        const squareEl = event.currentTarget
-        const squareClass = [...squareEl.classList].find((cls) => cls.startsWith("square-") && cls !== "square-55d63")
+      // Find the clicked square from the event target's class list
+      const squareEl = event.currentTarget
+      const squareClass = [...squareEl.classList].find((cls) => cls.startsWith("square-") && cls !== "square-55d63")
 
-        if (!squareClass) return
+      if (!squareClass) return
 
-        const clickedSquare = squareClass.replace("square-", "")
-        const game = gameRef.current
+      const clickedSquare = squareClass.replace("square-", "")
+      const game = gameRef.current
 
-        // If game is over, do nothing
-        if (game.isGameOver()) return
+      // If game is over, do nothing
+      if (game.isGameOver()) return
 
-        // Clear previous highlights
-        removeHighlights()
+      // Clear previous highlights
+      removeHighlights()
 
-        // If we already have a selected square, try to make a move
-        if (selectedSquare) {
-          // Check if the clicked square is a valid destination
-          if (possibleMoves.some((move) => move.to === clickedSquare)) {
-            try {
-              // Make the move
-              const move = game.move({
-                from: selectedSquare,
-                to: clickedSquare,
-                promotion: "q", // Always promote to queen
-              })
+      // If we already have a selected square, try to make a move
+      if (selectedSquare) {
+        // Check if the clicked square is a valid destination
+        if (possibleMoves.some((move) => move.to === clickedSquare)) {
+          try {
+            // Make the move
+            const move = game.move({
+              from: selectedSquare,
+              to: clickedSquare,
+              promotion: "q", // Always promote to queen
+            })
 
-              // Update the board display
+            // Update the board display
+            if (boardRef.current) {
               boardRef.current.position(game.fen())
-
-              // Play sound based on move type
-              move.captured ? playSound(captureSound) : playSound(moveSound)
-
-              // Highlight the move
-              highlightLastMove(selectedSquare, clickedSquare)
-
-              // Update moves list
-              setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
-
-              // Check status after the move - use a local variable instead of calling updateStatus directly
-              const moveColor = game.turn() === "w" ? "White" : "Black"
-
-              if (game.isCheckmate()) {
-                const winner = moveColor === "White" ? "Computer" : "You"
-                setIsGameOver(true)
-                setGameOverMessage(`${winner} wins by checkmate!`)
-                playSound(checkmateSound)
-
-                // Trigger celebration if player wins
-                if (winner === "You") {
-                  triggerWinCelebration()
-                }
-              } else if (game.isStalemate()) {
-                setIsGameOver(true)
-                setGameOverMessage("It's a draw! Stalemate.")
-              } else if (game.isThreefoldRepetition()) {
-                setIsGameOver(true)
-                setGameOverMessage("It's a draw! Threefold repetition.")
-              } else if (game.isInsufficientMaterial()) {
-                setIsGameOver(true)
-                setGameOverMessage("It's a draw! Insufficient material.")
-              } else if (game.isDraw()) {
-                setIsGameOver(true)
-                setGameOverMessage("It's a draw!")
-              } else {
-                setCurrentStatus(`${moveColor === "White" ? "Your" : "Computer's"} move`)
-                if (game.inCheck()) {
-                  setCurrentStatus(`${moveColor === "White" ? "You are" : "Computer is"} in check!`)
-                  playSound(checkSound)
-                }
-              }
-
-              // Clear selection
-              setSelectedSquare(null)
-              setPossibleMoves([])
-
-              // Make computer move after a delay
-              if (!game.isGameOver() && game.turn() === "b") {
-                setTimeout(() => {
-                  makeAiMoveForMobile()
-                }, 500)
-              }
-            } catch (error) {
-              console.error("Invalid move:", error)
             }
-          } else {
-            // If clicked on a different piece of the same color, select that piece instead
-            const piece = game.get(clickedSquare)
-            if (piece && piece.color === game.turn()) {
-              selectNewSquare(clickedSquare)
-            } else {
-              // If clicked on an invalid square, clear selection
-              setSelectedSquare(null)
-              setPossibleMoves([])
+
+            // Play sound based on move type
+            move.captured ? playSound(captureSound) : playSound(moveSound)
+
+            // Highlight the move
+            highlightLastMove(selectedSquare, clickedSquare)
+
+            // Update moves list
+            setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
+
+            // Check status after the move
+            updateStatus()
+
+            // Clear selection
+            setSelectedSquare(null)
+            setPossibleMoves([])
+
+            // Make computer move after a delay
+            if (!game.isGameOver() && game.turn() === "b") {
+              setTimeout(() => {
+                makeAiMoveForMobile()
+              }, 500)
             }
+          } catch (error) {
+            console.error("Invalid move:", error)
           }
         } else {
-          // If no square is selected yet, select this one if it has a piece of the correct color
+          // If clicked on a different piece of the same color, select that piece instead
           const piece = game.get(clickedSquare)
           if (piece && piece.color === game.turn()) {
             selectNewSquare(clickedSquare)
+          } else {
+            // If clicked on an invalid square, clear selection
+            setSelectedSquare(null)
+            setPossibleMoves([])
           }
         }
+      } else {
+        // If no square is selected yet, select this one if it has a piece of the correct color
+        const piece = game.get(clickedSquare)
+        if (piece && piece.color === game.turn()) {
+          selectNewSquare(clickedSquare)
+        }
       }
+    }
 
-      const selectNewSquare = (square) => {
-        const game = gameRef.current
-        const moves = game.moves({
-          square: square,
-          verbose: true,
-        })
+    const selectNewSquare = (square) => {
+      const game = gameRef.current
+      const moves = game.moves({
+        square: square,
+        verbose: true,
+      })
 
-        if (moves.length === 0) return
+      if (moves.length === 0) return
 
-        setSelectedSquare(square)
-        setPossibleMoves(moves)
+      setSelectedSquare(square)
+      setPossibleMoves(moves)
 
-        // Highlight the selected square
-        highlightSquare(square)
+      // Highlight the selected square
+      highlightSquare(square)
 
-        // Highlight possible destinations
-        moves.forEach((move) => {
-          highlightSquare(move.to, "possible")
-        })
-      }
+      // Highlight possible destinations
+      moves.forEach((move) => {
+        highlightSquare(move.to, "possible")
+      })
+    }
 
-      const makeAiMoveForMobile = () => {
-        const game = gameRef.current
-        if (game.isGameOver()) return
+    const makeAiMoveForMobile = () => {
+      const game = gameRef.current
+      if (game.isGameOver()) return
 
-        const possibleMoves = game.moves({ verbose: true })
-        if (possibleMoves.length === 0) return
+      const possibleMoves = game.moves({ verbose: true })
+      if (possibleMoves.length === 0) return
 
-        let move
+      let move
 
-        // Different difficulty levels
-        if (difficulty === "easy") {
-          // Random move selection
-          const randomIdx = Math.floor(Math.random() * possibleMoves.length)
-          move = possibleMoves[randomIdx]
-        } else if (difficulty === "medium") {
-          // Prioritize captures and checks
-          const captureMoves = possibleMoves.filter((m) => m.captured)
-          const checkMoves = possibleMoves.filter((m) => m.san.includes("+"))
+      // Different difficulty levels
+      if (difficulty === "easy") {
+        // Random move selection
+        const randomIdx = Math.floor(Math.random() * possibleMoves.length)
+        move = possibleMoves[randomIdx]
+      } else if (difficulty === "medium") {
+        // Prioritize captures and checks
+        const captureMoves = possibleMoves.filter((m) => m.captured)
+        const checkMoves = possibleMoves.filter((m) => m.san.includes("+"))
 
-          if (checkMoves.length > 0) {
-            move = checkMoves[Math.floor(Math.random() * checkMoves.length)]
-          } else if (captureMoves.length > 0) {
-            move = captureMoves[Math.floor(Math.random() * captureMoves.length)]
-          } else {
-            move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
-          }
+        if (checkMoves.length > 0) {
+          move = checkMoves[Math.floor(Math.random() * checkMoves.length)]
+        } else if (captureMoves.length > 0) {
+          move = captureMoves[Math.floor(Math.random() * captureMoves.length)]
         } else {
-          // Hard - use a simple piece value evaluation
-          const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
-          let bestScore = Number.NEGATIVE_INFINITY
-          let bestMoves = []
+          move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+        }
+      } else {
+        // Hard - use a simple piece value evaluation
+        const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 }
+        let bestScore = Number.NEGATIVE_INFINITY
+        let bestMoves = []
 
-          for (const move of possibleMoves) {
-            let score = 0
-            // If capturing, add value of captured piece
-            if (move.captured) {
-              score += pieceValues[move.captured]
-            }
-            // If checking, add bonus
-            if (move.san.includes("+")) {
-              score += 1
-            }
-            // If promotion, add value of promoted piece
-            if (move.promotion) {
-              score += pieceValues[move.promotion] - pieceValues.p
-            }
-
-            if (score > bestScore) {
-              bestScore = score
-              bestMoves = [move]
-            } else if (score === bestScore) {
-              bestMoves.push(move)
-            }
+        for (const move of possibleMoves) {
+          let score = 0
+          // If capturing, add value of captured piece
+          if (move.captured) {
+            score += pieceValues[move.captured]
+          }
+          // If checking, add bonus
+          if (move.san.includes("+")) {
+            score += 1
+          }
+          // If promotion, add value of promoted piece
+          if (move.promotion) {
+            score += pieceValues[move.promotion] - pieceValues.p
           }
 
-          // If no good moves found, choose randomly
-          if (bestMoves.length === 0) {
-            move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
-          } else {
-            move = bestMoves[Math.floor(Math.random() * bestMoves.length)]
+          if (score > bestScore) {
+            bestScore = score
+            bestMoves = [move]
+          } else if (score === bestScore) {
+            bestMoves.push(move)
           }
         }
-        try {
-          const result = game.move({
-            from: move.from,
-            to: move.to,
-            promotion: move.promotion || "q",
-          })
 
-          boardRef.current.position(game.fen())
-
-          // Play sound based on move type
-          result.captured ? playSound(captureSound) : playSound(moveSound)
-
-          // Highlight the AI's move
-          highlightLastMove(move.from, move.to)
-
-          // Update moves
-          setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
-
-          updateStatus() // Check if game is over
-        } catch (error) {
-          console.error("Error making AI move:", error)
+        // If no good moves found, choose randomly
+        if (bestMoves.length === 0) {
+          move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+        } else {
+          move = bestMoves[Math.floor(Math.random() * bestMoves.length)]
         }
       }
+      try {
+        const result = game.move({
+          from: move.from,
+          to: move.to,
+          promotion: move.promotion || "q",
+        })
 
-      // Add touch event listeners to the squares
-      squares = document.querySelectorAll(".square-55d63")
+        if (boardRef.current) {
+          boardRef.current.position(game.fen())
+        }
+
+        // Play sound based on move type
+        result.captured ? playSound(captureSound) : playSound(moveSound)
+
+        // Highlight the AI's move
+        highlightLastMove(move.from, move.to)
+
+        // Update moves
+        setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
+
+        updateStatus() // Check if game is over
+      } catch (error) {
+        console.error("Error making AI move:", error)
+      }
+    }
+
+    // Clean up previous listeners
+    listeners.forEach(({ element, listener }) => {
+      if (element) {
+        element.removeEventListener("touchend", listener)
+        element.removeEventListener("touchstart", (e) => e.preventDefault())
+      }
+    })
+    listeners = []
+
+    // Add touch event listeners to the squares
+    squares = document.querySelectorAll(".square-55d63")
+    if (squares && squares.length > 0) {
       squares.forEach((square) => {
-        square.addEventListener("touchend", handleMobileSquareClick)
-        // Prevent default touch behavior to avoid scrolling/zooming
+        // Create a unique listener for each square
+        const listener = (e) => handleMobileSquareClick(e)
+        square.addEventListener("touchend", listener)
         square.addEventListener("touchstart", (e) => e.preventDefault())
+        
+        // Store the element and its listener for cleanup
+        listeners.push({ element: square, listener })
       })
     }
 
     // Clean up listeners when component unmounts or mobileMode changes
     return () => {
-      if (mobileMode && squares) {
-        squares.forEach((square) => {
-          square.removeEventListener("touchend", handleMobileSquareClick)
-          square.removeEventListener("touchstart", (e) => e.preventDefault())
-        })
-      }
+      listeners.forEach(({ element, listener }) => {
+        if (element) {
+          element.removeEventListener("touchend", listener)
+          element.removeEventListener("touchstart", (e) => e.preventDefault())
+        }
+      })
     }
-  }, [mobileMode, selectedSquare, possibleMoves, visualHints, difficulty, theme, soundEnabled])
+  }, [activeTab, mobileMode, selectedSquare, possibleMoves, visualHints, difficulty, theme, soundEnabled, boardInitialized])
 
   // Apply theme colors to the board
   useEffect(() => {
+    if (!boardInitialized) return
+    
     const applyTheme = () => {
       const currentTheme = themes[theme]
       const styleSheet = document.createElement("style")
@@ -654,13 +692,167 @@ const ChessboardComponent = () => {
     }
 
     applyTheme()
-  }, [theme])
+    
+    return () => {
+      // Clean up theme stylesheet
+      const existingStyle = document.getElementById("chess-theme")
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+    }
+  }, [theme, boardInitialized])
+
+  // Reinitialize board when switching back to game tab
+  useEffect(() => {
+    if (activeTab === "game" && !boardRef.current && chessRef.current) {
+      // Reinitialize the board
+      const config = {
+        draggable: !mobileMode,
+        position: gameRef.current.fen(),
+        onDragStart: (source, piece, position, orientation) => {
+          // Do not pick up pieces if the game is over
+          if (gameRef.current.isGameOver()) return false
+
+          // Only pick up pieces for the side to move
+          if ((gameRef.current.turn() === "w" && piece.search(/^b/) !== -1) || 
+              (gameRef.current.turn() === "b" && piece.search(/^w/) !== -1)) {
+            return false
+          }
+
+          // Show possible moves when piece is picked up
+          if (visualHints) {
+            removeHighlights()
+            highlightSquare(source)
+
+            const moves = gameRef.current.moves({
+              square: source,
+              verbose: true,
+            })
+
+            for (let i = 0; i < moves.length; i++) {
+              highlightSquare(moves[i].to, "possible")
+            }
+          }
+          
+          return true
+        },
+        onDrop: (source, target) => {
+          removeHighlights()
+
+          try {
+            const move = gameRef.current.move({ from: source, to: target, promotion: "q" })
+
+            if (!move) return "snapback"
+
+            // Play sound based on move type
+            move.captured ? playSound(captureSound) : playSound(moveSound)
+
+            // Highlight the move
+            highlightLastMove(source, target)
+
+            setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
+
+            updateStatus() // Check game status
+
+            if (!gameRef.current.isGameOver() && gameRef.current.turn() === "b") {
+              setTimeout(() => {
+                // Make AI move
+                const possibleMoves = gameRef.current.moves({ verbose: true })
+                if (possibleMoves.length === 0) return
+
+                let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+                
+                try {
+                  const result = gameRef.current.move({
+                    from: move.from,
+                    to: move.to,
+                    promotion: move.promotion || "q",
+                  })
+
+                  if (boardRef.current) {
+                    boardRef.current.position(gameRef.current.fen())
+                  }
+
+                  // Play sound based on move type
+                  result.captured ? playSound(captureSound) : playSound(moveSound)
+
+                  // Highlight the AI's move
+                  highlightLastMove(move.from, move.to)
+
+                  // Update moves
+                  setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
+
+                  updateStatus() // Check if game is over
+                } catch (error) {
+                  console.error("Error making AI move:", error)
+                }
+              }, 500) // AI moves after a delay
+            }
+          } catch (error) {
+            return "snapback"
+          }
+        },
+        onMouseoverSquare: (square, piece) => {
+          if (!visualHints) return
+
+          // Get list of possible moves for this square
+          const moves = gameRef.current.moves({
+            square: square,
+            verbose: true,
+          })
+
+          // Exit if there are no moves available for this square
+          if (moves.length === 0) return
+
+          // Highlight the square they moused over
+          highlightSquare(square)
+
+          // Highlight the possible squares for this piece
+          for (let i = 0; i < moves.length; i++) {
+            highlightSquare(moves[i].to, "possible")
+          }
+        },
+        onMouseoutSquare: (square, piece) => {
+          if (!visualHints) return
+
+          // Don't remove highlights if we're showing the last move
+          if (lastMove) {
+            removeHighlights()
+            highlightSquare(lastMove.from, "last-move")
+            highlightSquare(lastMove.to, "last-move")
+          } else {
+            removeHighlights()
+          }
+        },
+        onSnapEnd: () => {
+          if (boardRef.current) {
+            boardRef.current.position(gameRef.current.fen())
+          }
+        },
+        pieceTheme: (piece) => pieceImages[piece],
+        snapbackSpeed: 300,
+        snapSpeed: 100,
+      }
+
+      try {
+        boardRef.current = Chessboard(chessRef.current, config)
+        setBoardInitialized(true)
+        updateStatus()
+      } catch (error) {
+        console.error("Error reinitializing chessboard:", error)
+      }
+    }
+  }, [activeTab, mobileMode, visualHints])
 
   const handleRestart = () => {
     setIsGameOver(false)
     setGameOverMessage("")
     gameRef.current.reset() // Reset the chess game state
-    boardRef.current.position("start") // Reset the board position
+    
+    if (boardRef.current) {
+      boardRef.current.position("start") // Reset the board position
+    }
+    
     setMoves([])
     setCurrentStatus("Your move")
     setSelectedSquare(null)
@@ -713,8 +905,6 @@ const ChessboardComponent = () => {
       </div>
     </div>
   )
-
-  // Also, define the updateStatus function outside of useEffect to avoid recreating it on every render:
 
   const updateStatus = () => {
     const game = gameRef.current
@@ -863,7 +1053,11 @@ const ChessboardComponent = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSoundEnabled(!soundEnabled)}
-                        className="bg-gradient-to-r from-purple-600 to-purple-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                        className={`px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2 ${
+                          soundEnabled 
+                            ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white" 
+                            : "bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300"
+                        }`}
                       >
                         {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
                         {soundEnabled ? "Sound On" : "Sound Off"}
@@ -965,15 +1159,20 @@ const ChessboardComponent = () => {
                             <h3 className="text-lg font-bold text-yellow-400">Mobile Mode</h3>
                             <p className="text-blue-300 text-sm">Tap to select and move pieces</p>
                           </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={mobileMode}
-                              onChange={handleCheckboxChange}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
+                          <div className="flex flex-col items-end">
+                            <label className="relative inline-flex items-center cursor-pointer mb-1">
+                              <input
+                                type="checkbox"
+                                checked={mobileMode}
+                                onChange={handleCheckboxChange}
+                                className="sr-only peer"
+                              />
+                              <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                            <span className="text-sm font-medium text-yellow-400">
+                              {mobileMode ? "Enabled" : "Disabled"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1033,15 +1232,20 @@ const ChessboardComponent = () => {
                         <h3 className="text-xl font-bold text-yellow-400">Visual Hints</h3>
                         <p className="text-blue-300 text-sm">Show possible moves and highlights</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={visualHints}
-                          onChange={() => setVisualHints(!visualHints)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
+                      <div className="flex flex-col items-end">
+                        <label className="relative inline-flex items-center cursor-pointer mb-1">
+                          <input
+                            type="checkbox"
+                            checked={visualHints}
+                            onChange={() => setVisualHints(!visualHints)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-sm font-medium text-yellow-400">
+                          {visualHints ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -1051,15 +1255,20 @@ const ChessboardComponent = () => {
                         <h3 className="text-xl font-bold text-yellow-400">Sound Effects</h3>
                         <p className="text-blue-300 text-sm">Enable or disable game sounds</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={soundEnabled}
-                          onChange={() => setSoundEnabled(!soundEnabled)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
+                      <div className="flex flex-col items-end">
+                        <label className="relative inline-flex items-center cursor-pointer mb-1">
+                          <input
+                            type="checkbox"
+                            checked={soundEnabled}
+                            onChange={() => setSoundEnabled(!soundEnabled)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-sm font-medium text-yellow-400">
+                          {soundEnabled ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
