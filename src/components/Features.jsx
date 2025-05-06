@@ -191,49 +191,6 @@ export default function FeaturesSection() {
           </div>
         </div>
       </div>
-
-      
-
-      {/* Game UI CSS */}
-      <style jsx global>{`
-        .game-panel {
-          position: relative;
-          box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
-        }
-        
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        
-        .rotate-x-60 {
-          transform: rotateX(60deg);
-        }
-        
-        .pixelated {
-          letter-spacing: 2px;
-          text-shadow: 
-            2px 2px 0 rgba(0,0,0,0.5),
-            4px 4px 0 rgba(0,0,0,0.25);
-        }
-
-        .feature-card {
-          position: relative;
-          overflow: hidden;
-        }
-
-        .feature-card:hover {
-          box-shadow: 0 0 15px rgba(234, 179, 8, 0.3);
-        }
-
-        /* Button press effect */
-        button:active:not(:disabled) {
-          transform: translateY(2px);
-        }
-      `}</style>
     </div>
   )
 }

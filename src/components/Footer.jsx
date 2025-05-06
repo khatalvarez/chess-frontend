@@ -226,12 +226,3 @@ return (
 </footer>
 )
 }
-
-{/* Add the game-panel styling */}
-<style jsx global>{`
-  .game-panel {
-    position: relative;
-    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
-  }
-`}
-</style> 

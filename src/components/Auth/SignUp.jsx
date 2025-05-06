@@ -1,11 +1,14 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeOff, CheckCircle, User, Mail, Lock, ChevronRight } from "lucide-react"
 import { BASE_URL } from "../../url"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import axios from "axios"
+
+const LoadingSpinner = () => (
+  <div className="w-5 h-5 border-t-2 border-blue-900 border-solid rounded-full animate-spin" aria-label="Loading"></div>
+);
 
 const SignUp = () => {
   const navigate = useNavigate()
@@ -22,6 +25,49 @@ const SignUp = () => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState({})
 
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const res = await axios.get(`${BASE_URL}/profile`, {
+          withCredentials: true,
+        })
+        if (res.data) {
+          navigate("/modeselector")
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.debug("User not authenticated:", error.message)
+        }
+      }
+    }
+    
+    checkAuthStatus()
+  }, [navigate])
+
+  useEffect(() => {
+    document.title = "Chess Master Registration | Create Your Chess Account";
+    
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = "description";
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content = "Join Chess Master today. Create your player account to access personalized chess training, compete in matches, and track your progress as you improve your chess skills.";
+    
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.rel = "canonical";
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.href = window.location.origin + "/signup";
+    
+    return () => {
+      document.title = "Chess Master | Online Chess Training & Games";
+    };
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData({
@@ -29,7 +75,6 @@ const SignUp = () => {
       [name]: value,
     })
 
-    // Clear error when user types
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -105,45 +150,45 @@ const SignUp = () => {
       }
 
       setIsSuccess(true)
-      toast.success("Account created successfully!")
+      toast.success("Account created successfully! Redirecting to login...")
 
       setTimeout(() => {
         navigate("/login")
       }, 1500)
     } catch (error) {
-      console.error("Error during signup:", error)
-      toast.error(error.message || "Registration failed")
+      const errorMessage = error.message || "Registration failed. Please try again."
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Error during signup:", error)
+      }
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Chess pieces array for decoration
   const chessPieces = ["♟", "♞", "♝", "♜", "♛", "♚"]
 
   return (
-    <div className="relative w-screen overflow-x-hidden bg-gray-950 font-mono">
-      {/* Chess board background with perspective */}
-      <div className="fixed inset-0 z-0 perspective-1000">
+    <div className="relative w-screen bg-gray-950 font-mono overflow-hidden">
+      <div className="fixed inset-0 z-0">
         <div 
-          className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
+          className="absolute inset-0"
           style={{
             backgroundImage: `linear-gradient(to right, transparent 0%, transparent 12.5%, #222 12.5%, #222 25%, 
-                             transparent 25%, transparent 37.5%, #222 37.5%, #222 50%,
-                             transparent 50%, transparent 62.5%, #222 62.5%, #222 75%,
-                             transparent 75%, transparent 87.5%, #222 87.5%, #222 100%)`,
+                            transparent 25%, transparent 37.5%, #222 37.5%, #222 50%,
+                            transparent 50%, transparent 62.5%, #222 62.5%, #222 75%,
+                            transparent 75%, transparent 87.5%, #222 87.5%, #222 100%)`,
             backgroundSize: '200px 100px',
             opacity: 0.15
           }}
+          aria-hidden="true"
         ></div>
       </div>
 
-      {/* Game UI Container */}
-      <div className="relative z-10 pt-16 min-h-screen flex flex-col">
-        {/* Game Header Banner */}
-        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
+      <div className="relative z-10 flex flex-col">
+        <header className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
+            <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 drop-shadow-md">
               CHESS MASTER
             </h1>
             <div className="h-1 w-32 mx-auto bg-yellow-500 mb-4"></div>
@@ -151,25 +196,23 @@ const SignUp = () => {
               Create a new player account
             </p>
           </div>
-        </div>
+        </header>
 
-        {/* Main Content Area - Game Panel Style */}
-        <div className="flex-grow px-4 py-16">
+        <main className="flex-grow px-4 sm:px-8 py-8 sm:py-16 text-center">
           <div className="max-w-md mx-auto">
-            {/* Signup Form */}
-            <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
+            <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg">
               <div className="bg-blue-800 -mt-8 -mx-6 mb-8 py-2 px-4 border-b-2 border-yellow-500">
                 <h2 className="text-2xl font-bold text-yellow-400 uppercase">New Player Registration</h2>
               </div>
 
-              <form className="space-y-5" onSubmit={onSubmitHandler}>
+              <form className="space-y-5" onSubmit={onSubmitHandler} aria-label="Registration form">
                 <div>
                   <label htmlFor="username" className="block text-lg font-medium text-yellow-400 mb-2">
                     Username
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-blue-400" />
+                      <User className="h-5 w-5 text-blue-400" aria-hidden="true" />
                     </div>
                     <input
                       type="text"
@@ -182,9 +225,12 @@ const SignUp = () => {
                       value={formData.name}
                       onChange={handleChange}
                       required
+                      autoComplete="username"
+                      aria-required="true"
+                      autoFocus
                     />
                   </div>
-                  {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-400" role="alert">{errors.name}</p>}
                 </div>
 
                 <div>
@@ -193,7 +239,7 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-blue-400" />
+                      <Mail className="h-5 w-5 text-blue-400" aria-hidden="true" />
                     </div>
                     <input
                       type="email"
@@ -206,9 +252,11 @@ const SignUp = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      autoComplete="email"
+                      aria-required="true"
                     />
                   </div>
-                  {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
+                  {errors.email && <p className="mt-1 text-sm text-red-400" role="alert">{errors.email}</p>}
                 </div>
 
                 <div>
@@ -217,7 +265,7 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-blue-400" />
+                      <Lock className="h-5 w-5 text-blue-400" aria-hidden="true" />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
@@ -230,16 +278,19 @@ const SignUp = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
+                      autoComplete="new-password"
+                      aria-required="true"
                     />
                     <button
                       type="button"
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-400 hover:text-yellow-400"
                       onClick={() => togglePasswordVisibility("password")}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
-                  {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
+                  {errors.password && <p className="mt-1 text-sm text-red-400" role="alert">{errors.password}</p>}
                 </div>
 
                 <div>
@@ -248,7 +299,7 @@ const SignUp = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-blue-400" />
+                      <Lock className="h-5 w-5 text-blue-400" aria-hidden="true" />
                     </div>
                     <input
                       type={showConfirmPassword ? "text" : "password"}
@@ -261,16 +312,19 @@ const SignUp = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
+                      autoComplete="new-password"
+                      aria-required="true"
                     />
                     <button
                       type="button"
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-400 hover:text-yellow-400"
                       onClick={() => togglePasswordVisibility("confirmPassword")}
+                      aria-label={showConfirmPassword ? "Hide password confirmation" : "Show password confirmation"}
                     >
                       {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
-                  {errors.confirmPassword && <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="mt-1 text-sm text-red-400" role="alert">{errors.confirmPassword}</p>}
                 </div>
 
                 <div className="pt-4">
@@ -278,18 +332,19 @@ const SignUp = () => {
                     type="submit"
                     className="w-full px-8 py-4 bg-yellow-500 text-blue-900 text-xl font-bold uppercase rounded-lg hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-700 transform hover:scale-105 transition-transform flex justify-center items-center"
                     disabled={isLoading || isSuccess}
+                    aria-busy={isLoading}
                   >
                     {isLoading && (
-                      <div className="mr-2">
-                        <div className="w-5 h-5 border-t-2 border-blue-900 border-solid rounded-full animate-spin"></div>
-                      </div>
+                      <span className="mr-2">
+                        <LoadingSpinner />
+                      </span>
                     )}
                     {isSuccess && (
-                      <CheckCircle className="w-5 h-5 text-blue-900 mr-2" />
+                      <CheckCircle className="w-5 h-5 text-blue-900 mr-2" aria-hidden="true" />
                     )}
                     <span>{isLoading ? "SETTING UP PLAYER..." : isSuccess ? "PLAYER CREATED!" : "JOIN THE GAME"}</span>
                     {!isLoading && !isSuccess && (
-                      <ChevronRight className="ml-2 h-5 w-5" />
+                      <ChevronRight className="ml-2 h-5 w-5" aria-hidden="true" />
                     )}
                   </button>
                 </div>
@@ -307,48 +362,29 @@ const SignUp = () => {
                 </p>
               </div>
 
-              {/* Chess pieces decoration */}
-              <div className="flex justify-center mt-6 space-x-4">
+              <div className="flex justify-center mt-6 space-x-4" aria-hidden="true">
                 {chessPieces.map((piece, index) => (
                   <div key={index} className="text-4xl text-white">{piece}</div>
                 ))}
               </div>
             </div>
           </div>
-        </div>
+          <script type="application/ld+json" dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "name": "Chess Master - Player Registration",
+              "description": "Create your Chess Master account to start your chess journey, track progress, and join competitions.",
+              "mainEntity": {
+                "@type": "WebApplication",
+                "name": "Chess Master",
+                "applicationCategory": "GameApplication",
+                "operatingSystem": "Web"
+              }
+            })
+          }} />
+        </main>
       </div>
-
-      {/* Game UI CSS */}
-      <style jsx global>{`
-        .game-panel {
-          position: relative;
-          box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
-        }
-        
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        
-        .rotate-x-60 {
-          transform: rotateX(60deg);
-        }
-        
-        .pixelated {
-          letter-spacing: 2px;
-          text-shadow: 
-            2px 2px 0 rgba(0,0,0,0.5),
-            4px 4px 0 rgba(0,0,0,0.25);
-        }
-
-        /* Button press effect */
-        button:active:not(:disabled) {
-          transform: translateY(2px);
-        }
-      `}</style>
     </div>
   )
 }

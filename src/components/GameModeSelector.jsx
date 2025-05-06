@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Sparkles, ChevronRight, Users, Globe, Shield, Award, Sword } from "lucide-react"
 
@@ -45,17 +45,39 @@ export default function GameModeSelector() {
   const [selectedMode, setSelectedMode] = useState(null)
   const [activeEffect, setActiveEffect] = useState(null)
   const [hoveredMode, setHoveredMode] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    // Scroll to top when component mounts
     window.scrollTo(0, 0)
+    
+    document.title = "Chess Master Game Modes | Choose Your Chess Experience"
+    
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = "description"
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Select from various chess game modes including global multiplayer, AI opponents, tactical puzzles, and local multiplayer to enhance your chess skills and experience."
+    
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = "canonical"
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = window.location.origin + "/modeselector"
+    
+    return () => {
+      document.title = "Chess Master | Online Chess Training & Games"
+    }
   }, [])
 
   const handleModeSelect = (path, index) => {
     setSelectedMode(index)
     setActiveEffect(index)
+    setIsLoading(true)
     
-    // Navigation with stylish delay
     setTimeout(() => {
       navigate(path)
     }, 700)
@@ -64,24 +86,27 @@ export default function GameModeSelector() {
   const getColorClasses = (color) => {
     switch(color) {
       case 'blue':
-        return "border-blue-700 from-blue-800 to-blue-900";
+        return "border-blue-700 from-blue-800 to-blue-900"
       case 'indigo':
-        return "border-indigo-700 from-indigo-800 to-indigo-900";
+        return "border-indigo-700 from-indigo-800 to-indigo-900"
       case 'red':
-        return "border-red-700 from-red-800 to-red-900";
+        return "border-red-700 from-red-800 to-red-900"
       case 'yellow':
-        return "border-yellow-700 from-yellow-800 to-yellow-900";
+        return "border-yellow-700 from-yellow-800 to-yellow-900"
       case 'green':
-        return "border-green-700 from-green-800 to-green-900";
+        return "border-green-700 from-green-800 to-green-900"
       default:
-        return "border-blue-700 from-blue-800 to-blue-900";
+        return "border-blue-700 from-blue-800 to-blue-900"
     }
   }
 
+  const LoadingSpinner = () => (
+    <div className="w-5 h-5 border-t-2 border-blue-900 border-solid rounded-full animate-spin" aria-label="Loading"></div>
+  )
+
   return (
     <div className="relative w-screen overflow-x-hidden bg-gray-950 font-mono">
-      {/* Chess board background with perspective */}
-      <div className="fixed inset-0 z-0 perspective-1000">
+      <div className="fixed inset-0 z-0 perspective-1000" aria-hidden="true">
         <div 
           className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
           style={{
@@ -95,10 +120,8 @@ export default function GameModeSelector() {
         ></div>
       </div>
 
-      {/* Game UI Container */}
       <div className="relative z-10 pt-16 flex flex-col">
-        {/* Game Header Banner */}
-        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
+        <header className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
               CHESS MASTER
@@ -108,10 +131,9 @@ export default function GameModeSelector() {
               Choose Your Chess Experience
             </p>
           </div>
-        </div>
+        </header>
 
-        {/* Main Content Area - Game Panel Style */}
-        <div className="flex-grow px-4 py-20">
+        <main className="flex-grow px-4 py-20">
           <div className="max-w-6xl mx-auto">
             <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel mb-8">
               <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
@@ -126,9 +148,17 @@ export default function GameModeSelector() {
                     onClick={() => handleModeSelect(mode.path, index)}
                     onMouseEnter={() => setHoveredMode(index)}
                     onMouseLeave={() => setHoveredMode(null)}
+                    role="button"
+                    aria-label={`Select ${mode.title} game mode`}
+                    tabIndex={0}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleModeSelect(mode.path, index)
+                      }
+                    }}
                   >
                     <div className={`bg-gradient-to-b ${getColorClasses(mode.color)} px-4 py-3 flex items-center`}>
-                      <div className="bg-gray-900 p-2 rounded-full border-2 border-yellow-500 mr-3">
+                      <div className="bg-gray-900 p-2 rounded-full border-2 border-yellow-500 mr-3" aria-hidden="true">
                         {mode.icon}
                       </div>
                       <h3 className="text-xl font-bold text-yellow-400">{mode.title}</h3>
@@ -138,17 +168,25 @@ export default function GameModeSelector() {
                       <p className="text-blue-100 mb-4">{mode.description}</p>
                       
                       <div className={`flex justify-center ${activeEffect === index ? 'animate-pulse' : ''}`}>
-                        <button className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-blue-900 font-bold py-2 px-6 rounded-lg border-2 border-yellow-700 transition-transform transform hover:scale-105 flex items-center">
-                          PLAY NOW
-                          <ChevronRight className="ml-1 w-5 h-5" />
-                        </button>
+                        <span className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-blue-900 font-bold py-2 px-6 rounded-lg border-2 border-yellow-700 transition-transform transform hover:scale-105 flex items-center">
+                          {selectedMode === index && isLoading ? (
+                            <>
+                              <LoadingSpinner />
+                              <span className="ml-2">PREPARING...</span>
+                            </>
+                          ) : (
+                            <>
+                              PLAY NOW
+                              <ChevronRight className="ml-1 w-5 h-5" aria-hidden="true" />
+                            </>
+                          )}
+                        </span>
                       </div>
                       
-                      {/* Show sparkles on hover */}
                       {hoveredMode === index && (
                         <>
-                          <Sparkles className="absolute top-3 right-3 text-yellow-400 w-4 h-4" />
-                          <Sparkles className="absolute bottom-3 left-3 text-yellow-400 w-4 h-4" />
+                          <Sparkles className="absolute top-3 right-3 text-yellow-400 w-4 h-4" aria-hidden="true" />
+                          <Sparkles className="absolute bottom-3 left-3 text-yellow-400 w-4 h-4" aria-hidden="true" />
                         </>
                       )}
                     </div>
@@ -157,8 +195,7 @@ export default function GameModeSelector() {
               </div>
             </div>
             
-            {/* Chess pieces decoration */}
-            <div className="flex justify-center mb-8 space-x-6">
+            <div className="flex justify-center mb-8 space-x-6" aria-hidden="true">
               <div className="text-4xl text-white">♟</div>
               <div className="text-4xl text-white">♞</div>
               <div className="text-4xl text-white">♝</div>
@@ -167,11 +204,11 @@ export default function GameModeSelector() {
               <div className="text-4xl text-white">♚</div>
             </div>
 
-            {/* Enhanced Back Button with animations */}
             <div className="text-center mb-8">
               <button
                 onClick={() => navigate("/profile")}
                 className="inline-block px-8 py-4 bg-gradient-to-b from-gray-700 to-gray-800 text-white rounded-lg border-2 border-blue-700 text-lg font-bold uppercase hover:bg-gray-700 transition duration-300 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                aria-label="Go back to profile"
               >
                 <span className="flex items-center">
                   <svg
@@ -180,6 +217,7 @@ export default function GameModeSelector() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -193,49 +231,31 @@ export default function GameModeSelector() {
               </button>
             </div>
           </div>
-        </div>
+          
+          <script type="application/ld+json" dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              "name": "Chess Master",
+              "applicationCategory": "GameApplication",
+              "operatingSystem": "Web",
+              "description": "An online chess platform for training, playing, and improving chess skills",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "potentialAction": {
+                "@type": "ViewAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://chessmaster.example.com/modeselector"
+                }
+              }
+            })
+          }} />
+        </main>
       </div>
-
-      {/* Game UI CSS */}
-      <style jsx global>{`
-        .game-panel {
-          position: relative;
-          box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
-        }
-        
-        .game-selector-card {
-          position: relative;
-          transition: all 0.3s ease;
-        }
-        
-        .game-selector-card:hover {
-          transform: translateY(-5px);
-        }
-        
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        
-        .rotate-x-60 {
-          transform: rotateX(60deg);
-        }
-        
-        .pixelated {
-          letter-spacing: 2px;
-          text-shadow: 
-            2px 2px 0 rgba(0,0,0,0.5),
-            4px 4px 0 rgba(0,0,0,0.25);
-        }
-
-        /* Button press effect */
-        button:active:not(:disabled) {
-          transform: translateY(2px);
-        }
-      `}</style>
     </div>
   )
 }

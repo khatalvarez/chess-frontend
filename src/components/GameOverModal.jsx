@@ -1,9 +1,7 @@
-"use client"
-
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Trophy, X, RotateCcw, Home, Sparkles, ChevronRight, Clock, Award, Shield, Sword } from "lucide-react"
+import { Trophy, X, RotateCcw, Home, Shield, Sword, ChevronRight, Clock } from "lucide-react"
 import { Link } from "react-router-dom"
 
 const GameOverModal = ({
@@ -18,41 +16,141 @@ const GameOverModal = ({
   onDeclinePlayAgain,
 }) => {
   useEffect(() => {
-    if (isOpen && message.toLowerCase().includes("win")) {
-      // Trigger confetti celebration for wins
-      const duration = 3 * 1000
-      const animationEnd = Date.now() + duration
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
-
-      function randomInRange(min, max) {
-        return Math.random() * (max - min) + min
+    if (isOpen) {
+      const previousTitle = document.title
+      
+      if (message.toLowerCase().includes("win")) {
+        document.title = "Victory! | Chess Master Game Results"
+      } else if (message.toLowerCase().includes("draw")) {
+        document.title = "Draw Game | Chess Master Game Results"
+      } else {
+        document.title = "Game Over | Chess Master Game Results"
       }
+      
+      let gameResultSchema = document.querySelector('#game-result-schema')
+      if (!gameResultSchema) {
+        gameResultSchema = document.createElement('script')
+        gameResultSchema.id = 'game-result-schema'
+        gameResultSchema.type = 'application/ld+json'
+        document.head.appendChild(gameResultSchema)
+      }
+      
+      const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "Game",
+        "name": "Chess Master Online Game",
+        "description": "An online chess game with multiple play modes",
+        "gameItem": {
+          "@type": "Thing",
+          "name": "Chess Game Result",
+          "description": message
+        }
+      }
+      
+      gameResultSchema.textContent = JSON.stringify(schemaData)
+      
+      if (message.toLowerCase().includes("win")) {
+        const duration = 3 * 1000
+        const animationEnd = Date.now() + duration
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
 
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now()
-
-        if (timeLeft <= 0) {
-          return clearInterval(interval)
+        function randomInRange(min, max) {
+          return Math.random() * (max - min) + min
         }
 
-        const particleCount = 50 * (timeLeft / duration)
+        const interval = setInterval(() => {
+          const timeLeft = animationEnd - Date.now()
 
-        // Since particles fall down, start a bit higher than random
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-          colors: ["#FFD700", "#FFC107", "#FFEB3B"],
-        })
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-          colors: ["#4CAF50", "#8BC34A", "#CDDC39"],
-        })
-      }, 250)
+          if (timeLeft <= 0) {
+            return clearInterval(interval)
+          }
+
+          const particleCount = 50 * (timeLeft / duration)
+
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+            colors: ["#FFD700", "#FFC107", "#FFEB3B"],
+          })
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+            colors: ["#4CAF50", "#8BC34A", "#CDDC39"],
+          })
+        }, 250)
+      }
+      
+      return () => {
+        document.title = previousTitle
+      }
     }
   }, [isOpen, message])
+
+  const getResultTheme = () => {
+    if (message.toLowerCase().includes("win")) {
+      return {
+        borderColor: "border-yellow-500",
+        bgColor: "bg-blue-900",
+        textColor: "text-yellow-400",
+        icon: <Trophy className="w-12 h-12 text-yellow-400" aria-hidden="true" />
+      }
+    } else if (message.toLowerCase().includes("draw")) {
+      return {
+        borderColor: "border-blue-600",
+        bgColor: "bg-blue-900",
+        textColor: "text-blue-300",
+        icon: (
+          <motion.div
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            aria-hidden="true"
+          >
+            <Shield className="w-12 h-12 text-blue-300" />
+          </motion.div>
+        )
+      }
+    } else {
+      return {
+        borderColor: "border-red-500",
+        bgColor: "bg-blue-900",
+        textColor: "text-red-400",
+        icon: (
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+            aria-hidden="true"
+          >
+            <Sword className="w-12 h-12 text-red-400" />
+          </motion.div>
+        )
+      }
+    }
+  }
+
+  const getResultMessage = () => {
+    if (message.toLowerCase().includes("win")) {
+      return "Congratulations on your victory! Your strategy and skill have paid off."
+    } else if (message.toLowerCase().includes("draw")) {
+      return "A balanced match! Both players showed great skill and determination."
+    } else {
+      return "Don't worry, every loss is a learning opportunity. Try again!"
+    }
+  }
+
+  const resultTheme = getResultTheme()
+  const resultMessage = getResultMessage()
+
+  // Safety check for onPlayAgain function
+  const handlePlayAgain = (e) => {
+    e.preventDefault()
+    if (typeof onPlayAgain === 'function') {
+      onPlayAgain()
+    } else {
+      console.error("onPlayAgain is not a function")
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -63,100 +161,53 @@ const GameOverModal = ({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 font-mono"
           style={{ backdropFilter: "blur(8px)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="game-over-title"
         >
-          {/* Chess board background with perspective - copied from About page */}
-          <div className="absolute inset-0 z-0 perspective-1000">
-            <div 
-              className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
-              style={{
-                backgroundImage: `linear-gradient(to right, transparent 0%, transparent 12.5%, #222 12.5%, #222 25%, 
-                                transparent 25%, transparent 37.5%, #222 37.5%, #222 50%,
-                                transparent 50%, transparent 62.5%, #222 62.5%, #222 75%,
-                                transparent 75%, transparent 87.5%, #222 87.5%, #222 100%)`,
-                backgroundSize: '200px 100px',
-                opacity: 0.15
-              }}
-            ></div>
-          </div>
-
-          <div className="absolute inset-0 bg-black opacity-70" onClick={onRestart} />
+          <div className="absolute inset-0 z-0 bg-black opacity-70" onClick={onRestart} />
 
           <motion.div
             initial={{ scale: 0.8, y: 20, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.8, y: 20, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative max-w-md w-full mx-4 game-panel bg-gray-900 border-2 border-blue-700 rounded-lg shadow-lg overflow-hidden"
+            className="relative max-w-md w-full mx-4 bg-gray-900 border-2 border-blue-700 rounded-lg shadow-lg overflow-hidden"
           >
-            {/* Game Panel Header - similar to About page panels */}
             <div className="bg-blue-800 py-3 px-4 border-b-2 border-yellow-500 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-yellow-400 uppercase pixelated">
+              <h2 id="game-over-title" className="text-2xl font-bold text-yellow-400 uppercase">
                 Game Over
               </h2>
               <button
                 onClick={onRestart}
                 className="text-gray-300 hover:text-white transition-colors duration-200"
+                aria-label="Close game over modal"
               >
-                <X size={24} />
+                <X size={24} aria-hidden="true" />
               </button>
             </div>
 
             <div className="p-6">
               <div className="flex flex-col items-center text-center">
-                {/* Trophy icon with border styling like About page */}
                 <div className="relative mb-6">
                   <div
-                    className={`w-24 h-24 rounded-full border-4 ${
-                      message.toLowerCase().includes("win")
-                        ? "border-yellow-500 bg-blue-900"
-                        : message.toLowerCase().includes("draw")
-                          ? "border-blue-600 bg-blue-900"
-                          : "border-red-500 bg-blue-900"
-                    } p-2 flex items-center justify-center`}
+                    className={`w-24 h-24 rounded-full border-4 ${resultTheme.borderColor} ${resultTheme.bgColor} p-2 flex items-center justify-center`}
+                    aria-hidden="true"
                   >
-                    {message.toLowerCase().includes("win") ? (
-                      <Trophy className="w-12 h-12 text-yellow-400" />
-                    ) : message.toLowerCase().includes("draw") ? (
-                      <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                      >
-                        <Shield className="w-12 h-12 text-blue-300" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
-                      >
-                        <Sword className="w-12 h-12 text-red-400" />
-                      </motion.div>
-                    )}
+                    {resultTheme.icon}
                   </div>
                 </div>
 
-                <h2
-                  className={`text-3xl font-bold mb-4 uppercase tracking-wider pixelated ${
-                    message.toLowerCase().includes("win")
-                      ? "text-yellow-400"
-                      : message.toLowerCase().includes("draw")
-                        ? "text-blue-300"
-                        : "text-red-400"
-                  }`}
-                >
+                <h2 className={`text-3xl font-bold mb-4 uppercase tracking-wider ${resultTheme.textColor}`}>
                   {message}
                 </h2>
 
                 <div className="bg-gray-800 border-2 border-blue-600 p-4 mb-6 w-full">
                   <p className="text-blue-100">
-                    {message.toLowerCase().includes("win")
-                      ? "Congratulations on your victory! Your strategy and skill have paid off."
-                      : message.toLowerCase().includes("draw")
-                        ? "A balanced match! Both players showed great skill and determination."
-                        : "Don't worry, every loss is a learning opportunity. Try again!"}
+                    {resultMessage}
                   </p>
                 </div>
 
-                {/* Multiplayer Play Again Section */}
                 {opponentPlayAgainRequested ? (
                   <div className="w-full mb-6">
                     <div className="bg-gray-800 border-2 border-yellow-600 p-4">
@@ -167,17 +218,19 @@ const GameOverModal = ({
                         <button
                           onClick={onAcceptPlayAgain}
                           className="flex-1 py-2 px-4 bg-blue-700 hover:bg-blue-600 border-2 border-yellow-500 rounded-lg text-yellow-400 font-bold flex items-center justify-center group"
+                          aria-label="Accept rematch"
                         >
                           <span>Accept</span>
-                          <ChevronRight className="ml-1 h-4 w-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
+                          <ChevronRight className="ml-1 h-4 w-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" aria-hidden="true" />
                         </button>
 
                         <button
                           onClick={onDeclinePlayAgain}
                           className="flex-1 py-2 px-4 bg-red-700 hover:bg-red-600 border-2 border-red-500 rounded-lg text-white font-bold flex items-center justify-center group"
+                          aria-label="Decline rematch"
                         >
                           <span>Decline</span>
-                          <X className="ml-1 h-4 w-4" />
+                          <X className="ml-1 h-4 w-4" aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -187,7 +240,7 @@ const GameOverModal = ({
                     <div className="bg-gray-800 border-2 border-blue-600 p-4">
                       <h3 className="text-xl font-bold text-blue-300 uppercase mb-2">Waiting for Response</h3>
                       <div className="flex items-center justify-center gap-2">
-                        <Clock className="text-blue-400 animate-pulse" size={18} />
+                        <Clock className="text-blue-400 animate-pulse" size={18} aria-hidden="true" />
                         <p className="text-blue-100">
                           Request expires in <span className="text-yellow-400 font-bold">{playAgainCountdown}</span>{" "}
                           seconds
@@ -198,26 +251,32 @@ const GameOverModal = ({
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                     <button
-                      onClick={onPlayAgain}
+                      onClick={handlePlayAgain}
                       className="py-3 px-4 bg-blue-800 hover:bg-blue-700 border-2 border-yellow-500 rounded-lg text-yellow-400 font-bold flex items-center justify-center"
+                      aria-label="Play another game"
+                      type="button"
                     >
-                      <RotateCcw className="mr-2" size={18} />
+                      <RotateCcw className="mr-2" size={18} aria-hidden="true" />
                       <span>Play Again</span>
                     </button>
 
-                    <Link to="/modeselector" className="w-full">
+                    <Link 
+                      to="/modeselector" 
+                      className="w-full"
+                      aria-label="Return to game mode selection"
+                    >
                       <button
                         className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 border-2 border-blue-600 rounded-lg text-blue-100 font-bold flex items-center justify-center"
+                        type="button"
                       >
-                        <Home className="mr-2" size={18} />
+                        <Home className="mr-2" size={18} aria-hidden="true" />
                         <span>Game Modes</span>
                       </button>
                     </Link>
                   </div>
                 )}
 
-                {/* Chess pieces decoration - like About page */}
-                <div className="flex justify-center mt-8 space-x-4">
+                <div className="flex justify-center mt-8 space-x-4" aria-hidden="true">
                   <div className="text-4xl text-white">♟</div>
                   <div className="text-4xl text-white">♞</div>
                   <div className="text-4xl text-white">♝</div>
@@ -226,43 +285,10 @@ const GameOverModal = ({
                   <div className="text-4xl text-white">♚</div>
                 </div>
 
-                {/* Status message at bottom */}
                 <p className="text-blue-300 text-sm mt-6">Your game results have been recorded in your profile.</p>
               </div>
             </div>
           </motion.div>
-
-          {/* Game UI CSS - copied from About page */}
-          <style jsx global>{`
-            .game-panel {
-              position: relative;
-              box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
-            }
-            
-            .perspective-1000 {
-              perspective: 1000px;
-            }
-            
-            .transform-style-3d {
-              transform-style: preserve-3d;
-            }
-            
-            .rotate-x-60 {
-              transform: rotateX(60deg);
-            }
-            
-            .pixelated {
-              letter-spacing: 2px;
-              text-shadow: 
-                2px 2px 0 rgba(0,0,0,0.5),
-                4px 4px 0 rgba(0,0,0,0.25);
-            }
-
-            /* Button press effect */
-            button:active:not(:disabled) {
-              transform: translateY(2px);
-            }
-          `}</style>
         </motion.div>
       )}
     </AnimatePresence>

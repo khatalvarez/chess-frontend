@@ -1,14 +1,19 @@
-"use client"
-
 import { useState, useEffect, lazy, Suspense } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { ChevronRight, Crown, Trophy, User, Cpu, Puzzle, Users, Globe, Sparkles, ArrowRight } from "lucide-react"
+import { 
+  ChevronRight, Crown, Trophy, User, 
+  Cpu, Puzzle, Users, Globe, Sparkles, ArrowRight 
+} from "lucide-react"
 import ChessMasterLogo from "./ChessMasterLogo"
 
 const PieceArray = lazy(() => import("./PieceArray"))
+const LoadingSpinner = () => (
+  <div className="w-5 h-5 border-t-2 border-blue-400 border-solid rounded-full animate-spin" aria-label="Loading"></div>
+)
 
 export default function Home() {
+  const navigate = useNavigate()
   const authStatus = useSelector((state) => state.auth.status)
   const userData = useSelector((state) => state.auth.userData)
   const [showPieceArray, setShowPieceArray] = useState(false)
@@ -16,8 +21,8 @@ export default function Home() {
   const [parallaxItems, setParallaxItems] = useState([])
   const [isHovering, setIsHovering] = useState({ login: false, signup: false, continue: false })
   const [typedText, setTypedText] = useState("")
+  const [isPageLoaded, setIsPageLoaded] = useState(false)
 
-  // Game modes data
   const gameModes = [
     {
       title: "Play vs AI",
@@ -25,6 +30,7 @@ export default function Home() {
       description: "Challenge our advanced chess AI with adjustable difficulty levels.",
       path: "/against-stockfish",
       color: "bg-blue-700",
+      ariaLabel: "Play against AI"
     },
     {
       title: "Online Matches",
@@ -32,6 +38,7 @@ export default function Home() {
       description: "Challenge players worldwide in real-time matches with leaderboards.",
       path: "/global-multiplayer",
       color: "bg-purple-700",
+      ariaLabel: "Play online matches"
     },
     {
       title: "Tactical Puzzles",
@@ -39,6 +46,7 @@ export default function Home() {
       description: "Improve your skills with our curated collection of chess puzzles.",
       path: "/puzzle",
       color: "bg-emerald-700",
+      ariaLabel: "Solve tactical puzzles"
     },
     {
       title: "Local Multiplayer",
@@ -46,33 +54,44 @@ export default function Home() {
       description: "Play face-to-face with friends on the same device.",
       path: "/local-multiplayer",
       color: "bg-amber-700",
+      ariaLabel: "Play local multiplayer"
     },
   ]
 
   useEffect(() => {
-    // SEO optimization
     document.title = "Chess Master | The Ultimate Chess Experience"
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc) {
-      metaDesc.setAttribute(
-        "content",
-        "Experience the ultimate chess journey with Chess Master. Challenge friends, solve puzzles, play against AI, and improve your skills.",
-      )
+    
+    let metaDesc = document.querySelector('meta[name="description"]')
+    if (!metaDesc) {
+      metaDesc = document.createElement('meta')
+      metaDesc.name = "description"
+      document.head.appendChild(metaDesc)
     }
+    metaDesc.setAttribute(
+      "content",
+      "Experience the ultimate chess journey with Chess Master. Challenge friends, solve puzzles, play against AI, and improve your skills."
+    )
+    
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = "canonical"
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = window.location.origin + "/"
 
-    // Add structured data for SEO
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      name: "Chess Master",
-      applicationCategory: "GameApplication",
-      operatingSystem: "Web",
-      offers: {
+      "name": "Chess Master",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web",
+      "offers": {
         "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
+        "price": "0",
+        "priceCurrency": "USD",
       },
-      description: "A comprehensive chess platform for players of all skill levels.",
+      "description": "A comprehensive chess platform for players of all skill levels.",
     }
 
     let scriptTag = document.querySelector("#structured-data")
@@ -84,18 +103,27 @@ export default function Home() {
     }
     scriptTag.textContent = JSON.stringify(structuredData)
 
-    // Device performance detection
-    const isMobile = window.innerWidth < 768
-    const isLowMemory = navigator.deviceMemory && navigator.deviceMemory < 4
-
-    if (isMobile || isLowMemory) {
-      setDevicePerformance("low")
+    const detectPerformance = () => {
+      const isMobile = window.innerWidth < 768
+      const isLowMemory = navigator.deviceMemory && navigator.deviceMemory < 4
+      setDevicePerformance(isMobile || isLowMemory ? "low" : "high")
     }
 
-    // Generate chess pieces for background - optimized for performance
+    detectPerformance()
+    setIsPageLoaded(true)
+
+    const animationTimer = setTimeout(() => {
+      setShowPieceArray(true)
+    }, 300)
+
+    return () => clearTimeout(animationTimer)
+  }, [])
+
+  useEffect(() => {
+    if (!isPageLoaded) return
+
     const generateParallaxItems = () => {
       const pieces = ["♟︎", "♞", "♝", "♜", "♛", "♚", "♔", "♕", "♖", "♗", "♘", "♙"]
-      // Reduce number of pieces for better performance
       const count = devicePerformance === "low" ? 6 : window.innerWidth < 768 ? 8 : 15
       return Array.from({ length: count }, (_, i) => ({
         id: i,
@@ -110,18 +138,15 @@ export default function Home() {
     }
 
     setParallaxItems(generateParallaxItems())
+  }, [devicePerformance, isPageLoaded])
 
-    // Trigger animations after component mounts
-    setTimeout(() => {
-      setShowPieceArray(true)
-    }, 300)
-  }, [devicePerformance])
-
-  // Text typing animation
   useEffect(() => {
+    if (!isPageLoaded) return
+
     const fullText = "CHESS MASTER"
     let index = 0
     let currentText = ""
+    
     const interval = setInterval(() => {
       if (index < fullText.length) {
         currentText += fullText[index]
@@ -131,14 +156,12 @@ export default function Home() {
         clearInterval(interval)
       }
     }, 85)
+    
     return () => clearInterval(interval)
-  }, [])
-
-  const navigate = useNavigate()
+  }, [isPageLoaded])
 
   return (
     <div className="relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono">
-      {/* Chess board background with perspective */}
       <div className="fixed inset-0 z-0 perspective-1000">
         <div
           className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
@@ -150,12 +173,12 @@ export default function Home() {
             backgroundSize: "200px 100px",
             opacity: 0.15,
           }}
+          aria-hidden="true"
         ></div>
       </div>
 
-      {/* Animated chess piece background - optimized for performance */}
-      {devicePerformance === "high" && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {devicePerformance === "high" && isPageLoaded && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
           {parallaxItems.map((item) => (
             <div
               key={item.id}
@@ -167,7 +190,6 @@ export default function Home() {
                 opacity: item.opacity,
                 transform: `rotate(${item.rotation}deg)`,
               }}
-              aria-hidden="true"
             >
               {item.piece}
             </div>
@@ -175,13 +197,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Game UI Container */}
       <div className="relative z-10 py-16 min-h-screen flex flex-col">
-        {/* Hero Section with Enhanced Visual Appeal */}
-        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-6 md:py-10">
+        <header className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-6 md:py-10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="relative">
-              {/* Animated sparkles around the title */}
               <div className="absolute -top-4 -left-4 animate-pulse">
                 <Sparkles className="h-8 w-8 text-yellow-300" />
               </div>
@@ -190,7 +209,7 @@ export default function Home() {
               </div>
 
               <h1 className="text-4xl md:text-6xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
-                {typedText}
+                {typedText || "CHESS MASTER"}
               </h1>
             </div>
 
@@ -201,7 +220,6 @@ export default function Home() {
               device.
             </p>
 
-            {/* Hero CTA Buttons */}
             <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">     
               <button
                 onClick={() => navigate(authStatus ? "/modeselector" : "/signup")}
@@ -210,6 +228,7 @@ export default function Home() {
                           hover:scale-105 shadow-glow flex items-center justify-center"
                 onMouseEnter={() => setIsHovering({ ...isHovering, signup: true })}
                 onMouseLeave={() => setIsHovering({ ...isHovering, signup: false })}
+                aria-label={authStatus ? "Play now" : "Start playing"}
               >
                 <Trophy className="mr-2" size={18} />
                 {authStatus ? "PLAY NOW" : "START PLAYING"}
@@ -224,6 +243,7 @@ export default function Home() {
                             hover:scale-105 shadow-glow flex items-center justify-center"
                   onMouseEnter={() => setIsHovering({ ...isHovering, login: true })}
                   onMouseLeave={() => setIsHovering({ ...isHovering, login: false })}
+                  aria-label="Login to your account"
                 >
                   <User className="mr-2" size={18} />
                   LOGIN
@@ -232,22 +252,23 @@ export default function Home() {
               )}
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Main Content Area */}
-        <div className="flex-grow px-4 py-8">
+        <main className="flex-grow px-4 py-8">
           <div className="max-w-6xl mx-auto">
-            {/* Logo and Welcome */}
-            <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel mb-12">
+            <section className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel mb-12">
               <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
                 <h2 className="text-2xl font-bold text-yellow-400 uppercase">Welcome to Chess Master</h2>
               </div>
 
               <ChessMasterLogo variant="home" />
 
-              {/* Featured piece array */}
               {showPieceArray && (
-                <Suspense fallback={<div className="h-16 flex justify-center" aria-label="Loading piece array..." />}>
+                <Suspense fallback={
+                  <div className="h-16 flex justify-center items-center" aria-label="Loading piece array...">
+                    <LoadingSpinner />
+                  </div>
+                }>
                   <div className="flex justify-center mb-6">
                     <PieceArray />
                   </div>
@@ -261,10 +282,9 @@ export default function Home() {
                     : "Join the Chess Master community and begin your journey to chess mastery."}
                 </p>
               </div>
-            </div>
+            </section>
 
-            {/* Game Modes Grid */}
-            <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel mb-12">
+            <section className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel mb-12">
               <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
                 <h2 className="text-2xl font-bold text-yellow-400 uppercase">Game Modes</h2>
               </div>
@@ -275,6 +295,15 @@ export default function Home() {
                     key={index}
                     className="bg-gray-800 border-2 border-blue-600 rounded-lg overflow-hidden hover:border-yellow-500 transition-colors duration-300 cursor-pointer"
                     onClick={() => navigate(mode.path)}
+                    role="button"
+                    aria-label={mode.ariaLabel}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(mode.path)
+                      }
+                    }}
                   >
                     <div className={`${mode.color} py-2 px-4 flex items-center`}>
                       <div className="bg-gray-900 p-2 rounded-full mr-3">{mode.icon}</div>
@@ -283,7 +312,10 @@ export default function Home() {
                     <div className="p-4">
                       <p className="text-blue-100 mb-4">{mode.description}</p>
                       <div className="flex justify-end">
-                        <button className="flex items-center text-yellow-400 hover:text-yellow-300 transition-colors">
+                        <button 
+                          className="flex items-center text-yellow-400 hover:text-yellow-300 transition-colors"
+                          aria-label={`Play ${mode.title} now`}
+                        >
                           Play Now <ArrowRight className="ml-1 h-4 w-4" />
                         </button>
                       </div>
@@ -291,9 +323,8 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Login/Signup Buttons */}
             {!authStatus && (
               <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
                 <button
@@ -303,6 +334,7 @@ export default function Home() {
                             hover:scale-105 shadow-glow flex items-center justify-center"
                   onMouseEnter={() => setIsHovering({ ...isHovering, login: true })}
                   onMouseLeave={() => setIsHovering({ ...isHovering, login: false })}
+                  aria-label="Login to your account"
                 >
                   <User className="mr-2" size={18} />
                   LOGIN TO YOUR ACCOUNT
@@ -316,6 +348,7 @@ export default function Home() {
                             hover:scale-105 shadow-glow flex items-center justify-center"
                   onMouseEnter={() => setIsHovering({ ...isHovering, signup: true })}
                   onMouseLeave={() => setIsHovering({ ...isHovering, signup: false })}
+                  aria-label="Create new account"
                 >
                   <Trophy className="mr-2" size={18} />
                   CREATE NEW ACCOUNT
@@ -324,7 +357,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* Back Button - For Logged In Users */}
             {authStatus && (
               <div className="mt-8 text-center">
                 <button
@@ -340,10 +372,9 @@ export default function Home() {
               </div>
             )}
           </div>
-        </div>
+        </main>
 
-        {/* Call to Action - Game Button Style */}
-        <div className="w-full bg-gradient-to-b from-gray-900 to-gray-950 border-t-4 border-blue-800 py-12 px-4">
+        <footer className="w-full bg-gradient-to-b from-gray-900 to-gray-950 border-t-4 border-blue-800 py-12 px-4">
           <div className="max-w-3xl mx-auto">
             <div className="bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg text-center">
               <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Ready for the Challenge?</h2>
@@ -359,6 +390,7 @@ export default function Home() {
                     className="px-8 py-4 bg-yellow-500 text-blue-900 text-xl font-bold uppercase rounded-lg 
                               hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-700 
                               transform hover:scale-105 transition-transform flex items-center"
+                    aria-label="Continue playing"
                   >
                     <Crown className="mr-2" size={20} />
                     CONTINUE PLAYING
@@ -369,6 +401,7 @@ export default function Home() {
                     className="px-8 py-4 bg-yellow-500 text-blue-900 text-xl font-bold uppercase rounded-lg 
                               hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-700 
                               transform hover:scale-105 transition-transform flex items-center"
+                    aria-label="Join now"
                   >
                     <Trophy className="mr-2" size={20} />
                     JOIN NOW
@@ -376,107 +409,24 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Feature highlights */}
-              <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4 text-blue-100">
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-4 text-blue-100" aria-label="Feature highlights">
                 <div className="flex items-center justify-center">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500 mr-2"></div>
+                  <div className="h-2 w-2 rounded-full bg-yellow-500 mr-2" aria-hidden="true"></div>
                   <span>Free to Play</span>
                 </div>
                 <div className="flex items-center justify-center">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500 mr-2"></div>
+                  <div className="h-2 w-2 rounded-full bg-yellow-500 mr-2" aria-hidden="true"></div>
                   <span>Global Leaderboards</span>
                 </div>
                 <div className="flex items-center justify-center">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500 mr-2"></div>
+                  <div className="h-2 w-2 rounded-full bg-yellow-500 mr-2" aria-hidden="true"></div>
                   <span>Advanced AI</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </footer>
       </div>
-
-      {/* Game UI CSS */}
-      <style jsx global>{`
-        .game-panel {
-          position: relative;
-          box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
-        }
-        
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        
-        .rotate-x-60 {
-          transform: rotateX(60deg);
-        }
-        
-        .pixelated {
-          letter-spacing: 2px;
-          text-shadow: 
-            2px 2px 0 rgba(0,0,0,0.5),
-            4px 4px 0 rgba(0,0,0,0.25);
-        }
-
-        /* Button press effect */
-        button:active:not(:disabled) {
-          transform: translateY(2px);
-        }
-        
-        /* Shadow effects */
-        .shadow-glow {
-          box-shadow: 0 0 15px rgba(30, 64, 175, 0.3);
-        }
-        
-        /* Float animations */
-        .float-animation-1 {
-          animation: float-1 12s infinite ease-in-out;
-        }
-        
-        .float-animation-2 {
-          animation: float-2 16s infinite ease-in-out;
-        }
-        
-        .float-animation-3 {
-          animation: float-3 20s infinite ease-in-out;
-        }
-        
-        .float-animation-4 {
-          animation: float-4 24s infinite ease-in-out;
-        }
-        
-        @keyframes float-1 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(5px, 8px) rotate(90deg); }
-          50% { transform: translate(10px, 0) rotate(180deg); }
-          75% { transform: translate(5px, -8px) rotate(-90deg); }
-        }
-        
-        @keyframes float-2 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(7px, 10px) rotate(90deg); }
-          50% { transform: translate(14px, 0) rotate(180deg); }
-          75% { transform: translate(7px, -10px) rotate(-90deg); }
-        }
-        
-        @keyframes float-3 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(9px, 12px) rotate(90deg); }
-          50% { transform: translate(18px, 0) rotate(180deg); }
-          75% { transform: translate(9px, -12px) rotate(-90deg); }
-        }
-        
-        @keyframes float-4 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(11px, 14px) rotate(90deg); }
-          50% { transform: translate(22px, 0) rotate(180deg); }
-          75% { transform: translate(11px, -14px) rotate(-90deg); }
-        }
-      `}</style>
     </div>
   )
 }

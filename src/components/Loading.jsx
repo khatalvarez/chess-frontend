@@ -183,32 +183,6 @@ const LoadingScreen = () => {
           </motion.div>
         </div>
       </div>
-
-      {/* Game UI CSS */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-  .perspective-1000 {
-    perspective: 1000px;
-  }
-  
-  .transform-style-3d {
-    transform-style: preserve-3d;
-  }
-  
-  .rotate-x-60 {
-    transform: rotateX(60deg);
-  }
-  
-  .pixelated {
-    letter-spacing: 2px;
-    text-shadow: 
-      2px 2px 0 rgba(0,0,0,0.5),
-      4px 4px 0 rgba(0,0,0,0.25);
-  }
-  `,
-        }}
-      />
     </div>
   )
 }

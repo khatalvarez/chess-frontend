@@ -56,15 +56,16 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
 }
 
-/* Chessboard pattern */
 .chessboard-pattern {
   background-color: #f0f0f0;
   background-image: linear-gradient(45deg, #4169e1 25%, transparent 25%),
@@ -74,12 +75,13 @@ button:focus-visible {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-/* Animations */
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-20px);
   }
@@ -94,10 +96,12 @@ button:focus-visible {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
@@ -111,6 +115,7 @@ button:focus-visible {
   0% {
     transform: translateX(-100%) rotate(15deg);
   }
+
   100% {
     transform: translateX(100%) rotate(15deg);
   }
@@ -149,3 +154,147 @@ button:focus-visible {
   transform: translateY(-5px);
 }
 
+.game-panel {
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5), 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.rotate-x-60 {
+  transform: rotateX(60deg);
+}
+
+.pixelated {
+  letter-spacing: 2px;
+  text-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.5),
+    4px 4px 0 rgba(0, 0, 0, 0.25);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+@media (max-width: 640px) {
+  .square-55d63 {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.square-55d63 {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shadow-glow {
+  box-shadow: 0 0 15px rgba(30, 64, 175, 0.3);
+}
+
+.float-animation-1 {
+  animation: float-1 12s infinite ease-in-out;
+}
+
+.float-animation-2 {
+  animation: float-2 16s infinite ease-in-out;
+}
+
+.float-animation-3 {
+  animation: float-3 20s infinite ease-in-out;
+}
+
+.float-animation-4 {
+  animation: float-4 24s infinite ease-in-out;
+}
+
+@keyframes float-1 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(5px, 8px) rotate(90deg);
+  }
+
+  50% {
+    transform: translate(10px, 0) rotate(180deg);
+  }
+
+  75% {
+    transform: translate(5px, -8px) rotate(-90deg);
+  }
+}
+
+@keyframes float-2 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(7px, 10px) rotate(90deg);
+  }
+
+  50% {
+    transform: translate(14px, 0) rotate(180deg);
+  }
+
+  75% {
+    transform: translate(7px, -10px) rotate(-90deg);
+  }
+}
+
+@keyframes float-3 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(9px, 12px) rotate(90deg);
+  }
+
+  50% {
+    transform: translate(18px, 0) rotate(180deg);
+  }
+
+  75% {
+    transform: translate(9px, -12px) rotate(-90deg);
+  }
+}
+
+@keyframes float-4 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(11px, 14px) rotate(90deg);
+  }
+
+  50% {
+    transform: translate(22px, 0) rotate(180deg);
+  }
+
+  75% {
+    transform: translate(11px, -14px) rotate(-90deg);
+  }
+}
