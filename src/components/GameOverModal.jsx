@@ -172,7 +172,7 @@ const GameOverModal = ({
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.8, y: 20, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative max-w-md w-full mx-4 bg-gray-900 border-2 border-blue-700 rounded-lg shadow-lg overflow-hidden"
+            className="relative max-w-md w-full py-16 mx-4 bg-gray-900 border-2 border-blue-700 rounded-lg shadow-lg overflow-hidden"
           >
             <div className="bg-blue-800 py-3 px-4 border-b-2 border-yellow-500 flex justify-between items-center">
               <h2 id="game-over-title" className="text-2xl font-bold text-yellow-400 uppercase">

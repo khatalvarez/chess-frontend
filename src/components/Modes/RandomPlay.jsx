@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import Chessboard from "chessboardjs"
 import { Howl } from "howler"
-import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle } from 'lucide-react'
+import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle } from "lucide-react"
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
 import checkSoundFile from "../../assets/sounds/check.mp3"
@@ -13,6 +13,19 @@ import pieceImages from "../pieceImages"
 import GameOverModal from "../GameOverModal"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
+import HelpModal from "./HelpModal"
+
+// Add these styles for better mobile responsiveness
+const styles = {
+  container: `relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono`,
+  chessboardContainer: `relative backdrop-blur-sm bg-black/30 p-2 sm:p-4 rounded-lg border-2 border-blue-600`,
+  chessboard: `w-full max-width-none mx-auto`,
+  mobileInfo: `mt-4 p-3 bg-black/50 text-white text-center rounded-lg border border-blue-600 text-sm`,
+  gamePanel: `h-full flex flex-col`,
+  movesList: `bg-black/30 rounded-lg p-2 max-h-[200px] sm:max-h-[300px] overflow-y-auto border-2 border-blue-600`,
+  controlsContainer: `mt-4 flex flex-wrap justify-center gap-2 sm:gap-3`,
+  controlButton: `text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 rounded-md font-semibold shadow-md flex items-center gap-1 sm:gap-2`,
+}
 
 const moveSound = new Howl({ src: [moveSoundFile] })
 const captureSound = new Howl({ src: [captureSoundFile] })
@@ -79,34 +92,6 @@ const ChessboardComponent = () => {
     },
   }
 
-  // Check if device is mobile on component mount
-  useEffect(() => {
-    const checkMobile = () => {
-      const isMobile = window.innerWidth < 768
-      setMobileMode(isMobile)
-
-      // Apply body styles for mobile
-      if (isMobile) {
-        document.body.style.overflow = "hidden"
-        document.documentElement.style.overflow = "hidden"
-        document.body.style.position = "fixed"
-        document.body.style.touchAction = "none"
-      }
-    }
-
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-
-    return () => {
-      window.removeEventListener("resize", checkMobile)
-      // Reset body styles
-      document.body.style.overflow = "auto"
-      document.documentElement.style.overflow = "auto"
-      document.body.style.position = "static"
-      document.body.style.touchAction = "auto"
-    }
-  }, [])
-
   const handleCheckboxChange = () => {
     setMobileMode((prev) => {
       const newMode = !prev
@@ -131,7 +116,7 @@ const ChessboardComponent = () => {
     try {
       const squares = document.querySelectorAll(".square-55d63")
       if (!squares || squares.length === 0) return
-      
+
       squares.forEach((square) => {
         square.classList.remove("highlight-square", "possible-move", "last-move")
         square.style.background = ""
@@ -192,7 +177,7 @@ const ChessboardComponent = () => {
   useEffect(() => {
     // Only initialize if we're on the game tab
     if (activeTab !== "game") return
-    
+
     const game = gameRef.current
 
     const onDragStart = (source, piece, position, orientation) => {
@@ -218,7 +203,7 @@ const ChessboardComponent = () => {
           highlightSquare(moves[i].to, "possible")
         }
       }
-      
+
       return true
     }
 
@@ -404,7 +389,7 @@ const ChessboardComponent = () => {
 
     // Responsive board size
     const handleResize = () => {
-      if (boardRef.current && typeof boardRef.current.resize === 'function') {
+      if (boardRef.current && typeof boardRef.current.resize === "function") {
         try {
           boardRef.current.resize()
         } catch (error) {
@@ -418,9 +403,9 @@ const ChessboardComponent = () => {
     // Cleanup function to destroy the chessboard instance
     return () => {
       window.removeEventListener("resize", handleResize)
-      
+
       // Only destroy if we have a board
-      if (boardRef.current && typeof boardRef.current.destroy === 'function') {
+      if (boardRef.current && typeof boardRef.current.destroy === "function") {
         try {
           boardRef.current.destroy()
           boardRef.current = null
@@ -432,11 +417,39 @@ const ChessboardComponent = () => {
     }
   }, [activeTab, mobileMode, visualHints, difficulty, theme, soundEnabled])
 
+  // Add this effect to handle board resizing
+  useEffect(() => {
+    const resizeBoard = () => {
+      if (boardRef.current && boardInitialized) {
+        const container = chessRef.current
+        if (container) {
+          // Make the board responsive based on container width
+          const containerWidth = container.clientWidth
+          const optimalSize = Math.min(containerWidth, 600)
+
+          // Apply the size to the board
+          boardRef.current.resize()
+        }
+      }
+    }
+
+    // Initial resize
+    resizeBoard()
+
+    // Add event listener for window resize
+    window.addEventListener("resize", resizeBoard)
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", resizeBoard)
+    }
+  }, [boardInitialized])
+
   // Handle mobile mode touch events
   useEffect(() => {
     // Only set up mobile mode if we're on the game tab and the board is initialized
     if (activeTab !== "game" || !mobileMode || !boardInitialized) return
-    
+
     let squares = []
     let listeners = []
 
@@ -646,7 +659,7 @@ const ChessboardComponent = () => {
         const listener = (e) => handleMobileSquareClick(e)
         square.addEventListener("touchend", listener)
         square.addEventListener("touchstart", (e) => e.preventDefault())
-        
+
         // Store the element and its listener for cleanup
         listeners.push({ element: square, listener })
       })
@@ -661,12 +674,22 @@ const ChessboardComponent = () => {
         }
       })
     }
-  }, [activeTab, mobileMode, selectedSquare, possibleMoves, visualHints, difficulty, theme, soundEnabled, boardInitialized])
+  }, [
+    activeTab,
+    mobileMode,
+    selectedSquare,
+    possibleMoves,
+    visualHints,
+    difficulty,
+    theme,
+    soundEnabled,
+    boardInitialized,
+  ])
 
   // Apply theme colors to the board
   useEffect(() => {
     if (!boardInitialized) return
-    
+
     const applyTheme = () => {
       const currentTheme = themes[theme]
       const styleSheet = document.createElement("style")
@@ -678,6 +701,32 @@ const ChessboardComponent = () => {
         .highlight-square { background-color: ${currentTheme.highlight} !important; }
         .possible-move { background-color: ${currentTheme.possible} !important; }
         .last-move { box-shadow: inset 0 0 0 4px ${currentTheme.accent} !important; }
+        
+        /* Mobile responsiveness fixes */
+        .square-55d63 {
+          width: 12.5% !important;
+          height: 0 !important;
+          padding-bottom: 12.5% !important;
+          position: relative !important;
+        }
+        
+        .piece-417db {
+          width: 100% !important;
+          height: auto !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          margin: auto !important;
+        }
+        
+        /* Responsive grid layout */
+        @media (max-width: 640px) {
+          .square-55d63 {
+            width: 12.5% !important;
+          }
+        }
       `
 
       styleSheet.textContent = css
@@ -692,7 +741,7 @@ const ChessboardComponent = () => {
     }
 
     applyTheme()
-    
+
     return () => {
       // Clean up theme stylesheet
       const existingStyle = document.getElementById("chess-theme")
@@ -714,8 +763,10 @@ const ChessboardComponent = () => {
           if (gameRef.current.isGameOver()) return false
 
           // Only pick up pieces for the side to move
-          if ((gameRef.current.turn() === "w" && piece.search(/^b/) !== -1) || 
-              (gameRef.current.turn() === "b" && piece.search(/^w/) !== -1)) {
+          if (
+            (gameRef.current.turn() === "w" && piece.search(/^b/) !== -1) ||
+            (gameRef.current.turn() === "b" && piece.search(/^w/) !== -1)
+          ) {
             return false
           }
 
@@ -733,7 +784,7 @@ const ChessboardComponent = () => {
               highlightSquare(moves[i].to, "possible")
             }
           }
-          
+
           return true
         },
         onDrop: (source, target) => {
@@ -760,8 +811,8 @@ const ChessboardComponent = () => {
                 const possibleMoves = gameRef.current.moves({ verbose: true })
                 if (possibleMoves.length === 0) return
 
-                let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
-                
+                const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
+
                 try {
                   const result = gameRef.current.move({
                     from: move.from,
@@ -848,11 +899,11 @@ const ChessboardComponent = () => {
     setIsGameOver(false)
     setGameOverMessage("")
     gameRef.current.reset() // Reset the chess game state
-    
+
     if (boardRef.current) {
       boardRef.current.position("start") // Reset the board position
     }
-    
+
     setMoves([])
     setCurrentStatus("Your move")
     setSelectedSquare(null)
@@ -860,51 +911,6 @@ const ChessboardComponent = () => {
     removeHighlights()
     setLastMove(null)
   }
-
-  // Help modal content
-  const HelpModal = () => (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center ${showHelpModal ? "block" : "hidden"}`}>
-      <div className="absolute inset-0 bg-black/70" onClick={() => setShowHelpModal(false)}></div>
-      <div className="relative bg-gray-900 border-2 border-blue-700 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="bg-blue-800 -mt-6 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-          <h2 className="text-2xl font-bold text-yellow-400 uppercase">How to Play</h2>
-        </div>
-
-        <div className="space-y-4 text-blue-100">
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Mobile Mode</h3>
-            <p>Tap a piece to select it, then tap a highlighted square to move. Perfect for touchscreens.</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Desktop Mode</h3>
-            <p>Drag and drop pieces to make moves. Hover over pieces to see possible moves.</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Difficulty Levels</h3>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Easy: Computer makes random moves</li>
-              <li>Medium: Computer prioritizes captures and checks</li>
-              <li>Hard: Computer evaluates positions more deeply</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Visual Hints</h3>
-            <p>Toggle to show or hide move suggestions and highlights.</p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowHelpModal(false)}
-          className="mt-6 w-full bg-yellow-500 text-blue-900 font-bold py-2 rounded-md hover:bg-yellow-400"
-        >
-          Got it!
-        </button>
-      </div>
-    </div>
-  )
 
   const updateStatus = () => {
     const game = gameRef.current
@@ -942,7 +948,7 @@ const ChessboardComponent = () => {
   }
 
   return (
-    <div className="relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono">
+    <div className={styles.container}>
       {/* Chess board background with perspective */}
       <div className="fixed inset-0 z-0 perspective-1000">
         <div
@@ -959,9 +965,9 @@ const ChessboardComponent = () => {
       </div>
 
       {/* Game UI Container */}
-      <div className="relative z-10 py-8 md:py-16 min-h-screen flex flex-col">
+      <div className="relative z-10 py-16 min-h-screen flex flex-col">
         {/* Game Header Banner */}
-        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
+        <div className="w-screen bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
               CHESS MASTER
@@ -971,33 +977,34 @@ const ChessboardComponent = () => {
           </div>
         </div>
 
-        {/* Game Menu Tabs */}
-        <nav className="bg-gray-900 border-b-2 border-blue-800 shadow-md">
-          <div className="max-w-6xl mx-auto px-4 py-2 flex justify-center overflow-x-auto">
-            {["game", "settings", "help"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 mx-2 text-lg font-bold uppercase transition-all ${
-                  activeTab === tab
-                    ? "bg-blue-800 text-yellow-400 border-2 border-yellow-500 shadow-yellow-400/20 shadow-md"
-                    : "text-blue-300 hover:bg-blue-900 border-2 border-transparent"
-                }`}
-              >
-                {tab === "game" && "Game"}
-                {tab === "settings" && "Settings"}
-                {tab === "help" && "Help"}
-              </button>
-            ))}
-          </div>
-        </nav>
+        {!mobileMode && (
+  <nav className="bg-gray-900 border-b-2 border-blue-800 shadow-md">
+    <div className="max-w-6xl mx-auto px-4 py-2 flex justify-center overflow-x-auto">
+      {["game", "settings", "help"].map((tab) => (
+        <button
+          key={tab}
+          onClick={() => setActiveTab(tab)}
+          className={`px-6 py-3 mx-2 text-lg font-bold uppercase transition-all ${
+            activeTab === tab
+              ? "bg-blue-800 text-yellow-400 border-2 border-yellow-500 shadow-yellow-400/20 shadow-md"
+              : "text-blue-300 hover:bg-blue-900 border-2 border-transparent"
+          }`}
+        >
+          {tab === "game" && "Game"}
+          {tab === "settings" && "Settings"}
+          {tab === "help" && "Help"}
+        </button>
+      ))}
+    </div>
+  </nav>
+)}
 
         {/* Main Content Area - Game Panel Style */}
         <div className="flex-grow px-4 py-8">
           <div className="max-w-6xl mx-auto">
             {/* Game Tab Content */}
             {activeTab === "game" && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                 {/* Chess board container with stylish border */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -1005,13 +1012,22 @@ const ChessboardComponent = () => {
                   transition={{ duration: 0.5 }}
                   className="w-full"
                 >
-                  <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
+                  <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-4 sm:p-6 shadow-lg game-panel">
                     <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
                       <h2 className="text-2xl font-bold text-yellow-400 uppercase">Chess Board</h2>
                     </div>
 
-                    <div className="relative backdrop-blur-sm bg-black/30 p-4 rounded-lg border-2 border-blue-600">
-                      <div ref={chessRef} style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}></div>
+                    <div className={styles.chessboardContainer}>
+                      <div
+                        ref={chessRef}
+                        className={styles.chessboard}
+                        style={{
+                          width: "100%",
+                          maxWidth: "min(100%, 600px)",
+                          margin: "0 auto",
+                          touchAction: mobileMode ? "manipulation" : "auto",
+                        }}
+                      ></div>
                     </div>
 
                     {/* Status display */}
@@ -1032,20 +1048,20 @@ const ChessboardComponent = () => {
 
                     {/* Help text for mobile mode */}
                     {mobileMode && (
-                      <div className="mt-4 p-3 bg-black/50 text-white text-center rounded-lg border border-blue-600">
+                      <div className={styles.mobileInfo}>
                         {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
                       </div>
                     )}
 
                     {/* Quick controls */}
-                    <div className="mt-4 flex flex-wrap justify-center gap-3">
+                    <div className={styles.controlsContainer}>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleRestart}
-                        className="bg-gradient-to-r from-red-600 to-red-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                        className={`${styles.controlButton} bg-gradient-to-r from-red-600 to-red-400 text-white`}
                       >
-                        <RotateCcw size={18} />
+                        <RotateCcw size={16} />
                         Restart
                       </motion.button>
 
@@ -1053,13 +1069,13 @@ const ChessboardComponent = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSoundEnabled(!soundEnabled)}
-                        className={`px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2 ${
-                          soundEnabled 
-                            ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white" 
+                        className={`${styles.controlButton} ${
+                          soundEnabled
+                            ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white"
                             : "bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300"
                         }`}
                       >
-                        {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                        {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                         {soundEnabled ? "Sound On" : "Sound Off"}
                       </motion.button>
 
@@ -1067,10 +1083,10 @@ const ChessboardComponent = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setShowHelpModal(true)}
-                        className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                        className={`${styles.controlButton} bg-gradient-to-r from-blue-600 to-blue-400 text-white`}
                       >
-                        <HelpCircle size={18} />
-                        How to Play
+                        <HelpCircle size={16} />
+                        Help
                       </motion.button>
                     </div>
                   </div>
@@ -1090,7 +1106,7 @@ const ChessboardComponent = () => {
 
                     <div className="space-y-6">
                       {/* Game stats */}
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4">
                         <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
                           <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
                             <Shield size={24} className="text-yellow-400" />
@@ -1125,22 +1141,22 @@ const ChessboardComponent = () => {
                         </div>
 
                         {showMovesList && (
-                          <div className="bg-black/30 rounded-lg p-2 max-h-[300px] overflow-y-auto border-2 border-blue-600">
+                          <div className={styles.movesList}>
                             {moves.length > 0 ? (
-                              <table className="w-full border-collapse">
+                              <table className="w-full border-collapse text-xs sm:text-sm">
                                 <thead>
                                   <tr className="text-white border-b border-white/20">
-                                    <th className="p-2 text-left">#</th>
-                                    <th className="p-2 text-left">From</th>
-                                    <th className="p-2 text-left">To</th>
+                                    <th className="p-1 sm:p-2 text-left">#</th>
+                                    <th className="p-1 sm:p-2 text-left">From</th>
+                                    <th className="p-1 sm:p-2 text-left">To</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {moves.map((move, index) => (
                                     <tr key={index} className={`text-white ${index % 2 === 0 ? "bg-white/5" : ""}`}>
-                                      <td className="p-2">{index + 1}</td>
-                                      <td className="p-2">{move.from}</td>
-                                      <td className="p-2">{move.to}</td>
+                                      <td className="p-1 sm:p-2">{index + 1}</td>
+                                      <td className="p-1 sm:p-2">{move.from}</td>
+                                      <td className="p-1 sm:p-2">{move.to}</td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -1380,8 +1396,7 @@ const ChessboardComponent = () => {
         </div>
       </div>
 
-      {/* Help Modal */}
-      <HelpModal />
+      <HelpModal showHelpModal={showHelpModal} setShowHelpModal={setShowHelpModal} />
 
       {/* Game Over Modal */}
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />

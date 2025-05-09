@@ -7,7 +7,7 @@ import axios from "axios"
 import { Howl } from "howler"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle } from 'lucide-react'
+import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle } from "lucide-react"
 import pieceImages from "../pieceImages"
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
@@ -15,6 +15,19 @@ import checkSoundFile from "../../assets/sounds/check.mp3"
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3"
 import { BASE_URL } from "../../url"
 import GameOverModal from "../GameOverModal"
+import HelpModal from "./HelpModal"
+
+// Add these styles for better mobile responsiveness
+const styles = {
+  container: `relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono`,
+  chessboardContainer: `relative backdrop-blur-sm bg-black/30 p-2 sm:p-4 rounded-lg border-2 border-blue-600`,
+  chessboard: `w-full max-width-none mx-auto`,
+  mobileInfo: `mt-4 p-3 bg-black/50 text-white text-center rounded-lg border border-blue-600 text-sm`,
+  gamePanel: `h-full flex flex-col`,
+  movesList: `bg-black/30 rounded-lg p-2 max-h-[200px] sm:max-h-[300px] overflow-y-auto border-2 border-blue-600`,
+  controlsContainer: `mt-4 flex flex-wrap justify-center gap-2 sm:gap-3`,
+  controlButton: `text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 rounded-md font-semibold shadow-md flex items-center gap-1 sm:gap-2`,
+}
 
 const moveSound = new Howl({ src: [moveSoundFile] })
 const captureSound = new Howl({ src: [captureSoundFile] })
@@ -67,44 +80,50 @@ const AgainstStockfish = () => {
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [boardInitialized, setBoardInitialized] = useState(false)
 
-  // Themed board colors
-  const themes = {
-    classic: {
-      light: "#f0d9b5",
-      dark: "#b58863",
-      highlight: "#aed581",
-      possible: "#90caf9",
-      accent: "#ff9800",
-    },
-    forest: {
-      light: "#e8f5e9",
-      dark: "#388e3c",
-      highlight: "#c5e1a5",
-      possible: "#81c784",
-      accent: "#ffeb3b",
-    },
-    ocean: {
-      light: "#e3f2fd",
-      dark: "#1976d2",
-      highlight: "#bbdefb",
-      possible: "#64b5f6",
-      accent: "#ff5722",
-    },
-    night: {
-      light: "#ffffff",
-      dark: "#212121",
-      highlight: "#636363",
-      possible: "#757575",
-      accent: "#f44336",
-    },
-    royal: {
-      light: "#f3e5f5",
-      dark: "#6a1b9a",
-      highlight: "#ce93d8",
-      possible: "#9575cd",
-      accent: "#ffc107",
-    },
-  }
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    document.title = "Chess Master: Play Against Stockfish | Improve Your Chess Skills Online"
+
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement("meta")
+      metaDescription.name = "description"
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content =
+      "Challenge the Stockfish chess engine and improve your skills. Adjust difficulty levels and track your progress in this interactive chess game."
+
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement("link")
+      canonicalLink.rel = "canonical"
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = window.location.origin + "/stockfish"
+
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Game",
+      name: "Chess Master - Play Against Stockfish",
+      description:
+        "Challenge the Stockfish chess engine and improve your skills. Adjust difficulty levels and track your progress in this interactive chess game.",
+      genre: "Board Game",
+      gamePlatform: "Web Browser",
+      applicationCategory: "GameApplication",
+    }
+
+    let scriptTag = document.querySelector('script[type="application/ld+json"]')
+    if (!scriptTag) {
+      scriptTag = document.createElement("script")
+      scriptTag.type = "application/ld+json"
+      document.head.appendChild(scriptTag)
+    }
+    scriptTag.textContent = JSON.stringify(structuredData)
+
+    return () => {
+      document.title = "Chess Master | Online Chess Training & Games"
+    }
+  }, [])
 
   const handleCheckboxChange = () => {
     setMobileMode((prev) => {
@@ -125,7 +144,6 @@ const AgainstStockfish = () => {
     })
   }
 
-  // Utility functions for highlighting moves
   const removeHighlights = () => {
     const squares = document.querySelectorAll(".square-55d63")
     squares.forEach((square) => {
@@ -156,7 +174,6 @@ const AgainstStockfish = () => {
     setLastMove({ from, to })
   }
 
-  // Celebration effect when player wins
   const triggerWinCelebration = () => {
     confetti({
       particleCount: 100,
@@ -166,7 +183,6 @@ const AgainstStockfish = () => {
     })
   }
 
-  // Play sound with check for sound enabled
   const playSound = (sound) => {
     if (soundEnabled) {
       sound.play()
@@ -189,7 +205,6 @@ const AgainstStockfish = () => {
         return false
       }
 
-      // Show possible moves when piece is picked up
       if (visualHints) {
         removeHighlights()
         highlightSquare(source)
@@ -218,10 +233,8 @@ const AgainstStockfish = () => {
 
       setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
 
-      // Highlight the move
       highlightLastMove(source, target)
 
-      // Play sound based on move type
       if (move.captured) {
         playSound(captureSound)
       } else {
@@ -251,10 +264,8 @@ const AgainstStockfish = () => {
               setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
               boardRef.current.position(game.fen())
 
-              // Highlight the AI's move
               highlightLastMove(bestMove.slice(0, 2), bestMove.slice(2, 4))
 
-              // Play sound based on move type
               if (move.captured) {
                 playSound(captureSound)
               } else {
@@ -280,10 +291,8 @@ const AgainstStockfish = () => {
 
       if (moves.length === 0) return
 
-      // Highlight the square they moused over
       highlightSquare(square)
 
-      // Highlight the possible squares for this piece
       for (let i = 0; i < moves.length; i++) {
         highlightSquare(moves[i].to, "possible")
       }
@@ -292,7 +301,6 @@ const AgainstStockfish = () => {
     const onMouseoutSquare = (square, piece) => {
       if (!visualHints) return
 
-      // Don't remove highlights if we're showing the last move
       if (lastMove) {
         removeHighlights()
         highlightSquare(lastMove.from, "last-move")
@@ -317,15 +325,12 @@ const AgainstStockfish = () => {
       pieceTheme: (piece) => pieceImages[piece],
       snapbackSpeed: 300,
       snapSpeed: 100,
-      boardSize: "100%",
     }
 
-    // Initialize Chessboard.js
     boardRef.current = Chessboard(chessRef.current, config)
     setBoardInitialized(true)
     updateStatus()
 
-    // Responsive board size
     const handleResize = () => {
       if (boardRef.current) {
         boardRef.current.resize()
@@ -343,6 +348,33 @@ const AgainstStockfish = () => {
   }, [mobileMode, visualHints, promotionPiece, theme, soundEnabled])
 
   useEffect(() => {
+    const resizeBoard = () => {
+      if (boardRef.current && boardInitialized) {
+        const container = chessRef.current
+        if (container) {
+          // Make the board responsive based on container width
+          const containerWidth = container.clientWidth
+          const optimalSize = Math.min(containerWidth, 600)
+
+          // Apply the size to the board
+          boardRef.current.resize()
+        }
+      }
+    }
+
+    // Initial resize
+    resizeBoard()
+
+    // Add event listener for window resize
+    window.addEventListener("resize", resizeBoard)
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", resizeBoard)
+    }
+  }, [boardInitialized])
+
+  useEffect(() => {
     if (!mobileMode) {
       return
     }
@@ -350,7 +382,6 @@ const AgainstStockfish = () => {
     const handleMobileSquareClick = (event) => {
       event.preventDefault()
 
-      // Find the clicked square from the event target's class list
       const squareEl = event.currentTarget
       const squareClass = [...squareEl.classList].find((cls) => cls.startsWith("square-") && cls !== "square-55d63")
 
@@ -359,44 +390,32 @@ const AgainstStockfish = () => {
       const clickedSquare = squareClass.replace("square-", "")
       const game = gameRef.current
 
-      // If game is over, do nothing
       if (game.isGameOver()) return
 
-      // Clear previous highlights
       removeHighlights()
 
-      // If we already have a selected square, try to make a move
       if (selectedSquare) {
-        // Check if the clicked square is a valid destination
         if (possibleMoves.some((move) => move.to === clickedSquare)) {
           try {
-            // Make the move
             const move = game.move({
               from: selectedSquare,
               to: clickedSquare,
-              promotion: promotionPiece, // Use the selected promotion piece
+              promotion: promotionPiece,
             })
 
-            // Update the board display
             boardRef.current.position(game.fen())
 
-            // Play sound based on move type
             move.captured ? playSound(captureSound) : playSound(moveSound)
 
-            // Highlight the move
             highlightLastMove(selectedSquare, clickedSquare)
 
-            // Update moves list
             setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
 
-            // Clear selection
             setSelectedSquare(null)
             setPossibleMoves([])
 
-            // Check status after the move
             updateStatus()
 
-            // Make computer move after a delay
             if (!game.isGameOver() && game.turn() === "b") {
               setTimeout(async () => {
                 try {
@@ -416,10 +435,8 @@ const AgainstStockfish = () => {
                       setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
                       boardRef.current.position(game.fen())
 
-                      // Highlight the AI's move
                       highlightLastMove(bestMove.slice(0, 2), bestMove.slice(2, 4))
 
-                      // Play sound based on move type
                       move.captured ? playSound(captureSound) : playSound(moveSound)
 
                       updateStatus()
@@ -434,18 +451,15 @@ const AgainstStockfish = () => {
             console.error("Invalid move:", error)
           }
         } else {
-          // If clicked on a different piece of the same color, select that piece instead
           const piece = game.get(clickedSquare)
           if (piece && piece.color === game.turn()) {
             selectNewSquare(clickedSquare)
           } else {
-            // If clicked on an invalid square, clear selection
             setSelectedSquare(null)
             setPossibleMoves([])
           }
         }
       } else {
-        // If no square is selected yet, select this one if it has a piece of the correct color
         const piece = game.get(clickedSquare)
         if (piece && piece.color === game.turn()) {
           selectNewSquare(clickedSquare)
@@ -465,24 +479,19 @@ const AgainstStockfish = () => {
       setSelectedSquare(square)
       setPossibleMoves(moves)
 
-      // Highlight the selected square
       highlightSquare(square)
 
-      // Highlight possible destinations
       moves.forEach((move) => {
         highlightSquare(move.to, "possible")
       })
     }
 
-    // Add touch event listeners to the squares
     const squares = document.querySelectorAll(".square-55d63")
     squares.forEach((square) => {
       square.addEventListener("touchend", handleMobileSquareClick)
-      // Prevent default touch behavior to avoid scrolling/zooming
       square.addEventListener("touchstart", (e) => e.preventDefault())
     })
 
-    // Clean up listeners when component unmounts or mobileMode changes
     return () => {
       squares.forEach((square) => {
         square.removeEventListener("touchend", handleMobileSquareClick)
@@ -491,10 +500,46 @@ const AgainstStockfish = () => {
     }
   }, [mobileMode, selectedSquare, possibleMoves, visualHints, promotionPiece, theme, soundEnabled])
 
-  // Apply theme colors to the board
   useEffect(() => {
     const applyTheme = () => {
-      const currentTheme = themes[theme]
+      const currentTheme = {
+        classic: {
+          light: "#f0d9b5",
+          dark: "#b58863",
+          highlight: "#aed581",
+          possible: "#90caf9",
+          accent: "#ff9800",
+        },
+        forest: {
+          light: "#e8f5e9",
+          dark: "#388e3c",
+          highlight: "#c5e1a5",
+          possible: "#81c784",
+          accent: "#ffeb3b",
+        },
+        ocean: {
+          light: "#e3f2fd",
+          dark: "#1976d2",
+          highlight: "#bbdefb",
+          possible: "#64b5f6",
+          accent: "#ff5722",
+        },
+        night: {
+          light: "#ffffff",
+          dark: "#212121",
+          highlight: "#636363",
+          possible: "#757575",
+          accent: "#f44336",
+        },
+        royal: {
+          light: "#f3e5f5",
+          dark: "#6a1b9a",
+          highlight: "#ce93d8",
+          possible: "#9575cd",
+          accent: "#ffc107",
+        },
+      }[theme]
+
       const styleSheet = document.createElement("style")
       styleSheet.id = "chess-theme"
 
@@ -504,11 +549,36 @@ const AgainstStockfish = () => {
         .highlight-square { background-color: ${currentTheme.highlight} !important; }
         .possible-move { background-color: ${currentTheme.possible} !important; }
         .last-move { box-shadow: inset 0 0 0 4px ${currentTheme.accent} !important; }
+        
+        /* Mobile responsiveness fixes */
+        .square-55d63 {
+          width: 12.5% !important;
+          height: 0 !important;
+          padding-bottom: 12.5% !important;
+          position: relative !important;
+        }
+        
+        .piece-417db {
+          width: 100% !important;
+          height: auto !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          margin: auto !important;
+        }
+        
+        /* Responsive grid layout */
+        @media (max-width: 640px) {
+          .square-55d63 {
+            width: 12.5% !important;
+          }
+        }
       `
 
       styleSheet.textContent = css
 
-      // Remove existing theme stylesheet if it exists
       const existingStyle = document.getElementById("chess-theme")
       if (existingStyle) {
         existingStyle.remove()
@@ -523,8 +593,8 @@ const AgainstStockfish = () => {
   const handleRestart = () => {
     setIsGameOver(false)
     setGameOverMessage("")
-    gameRef.current.reset() // Reset the chess game state
-    boardRef.current.position("start") // Reset the board position
+    gameRef.current.reset()
+    boardRef.current.position("start")
     setMoves([])
     setCurrentStatus("Your move")
     setSelectedSquare(null)
@@ -532,47 +602,6 @@ const AgainstStockfish = () => {
     removeHighlights()
     setLastMove(null)
   }
-
-  // Help modal content
-  const HelpModal = () => (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center ${showHelpModal ? "block" : "hidden"}`}>
-      <div className="absolute inset-0 bg-black/70" onClick={() => setShowHelpModal(false)}></div>
-      <div className="relative bg-gray-900 border-2 border-blue-700 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="bg-blue-800 -mt-6 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-          <h2 className="text-2xl font-bold text-yellow-400 uppercase">How to Play</h2>
-        </div>
-
-        <div className="space-y-4 text-blue-100">
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Mobile Mode</h3>
-            <p>Tap a piece to select it, then tap a highlighted square to move. Perfect for touchscreens.</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Desktop Mode</h3>
-            <p>Drag and drop pieces to make moves. Hover over pieces to see possible moves.</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Stockfish Engine</h3>
-            <p>You're playing against the powerful Stockfish chess engine, one of the strongest in the world.</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Visual Hints</h3>
-            <p>Toggle to show or hide move suggestions and highlights.</p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowHelpModal(false)}
-          className="mt-6 w-full bg-yellow-500 text-blue-900 font-bold py-2 rounded-md hover:bg-yellow-400"
-        >
-          Got it!
-        </button>
-      </div>
-    </div>
-  )
 
   const updateStatus = debounce(() => {
     const game = gameRef.current
@@ -584,7 +613,6 @@ const AgainstStockfish = () => {
       setGameOverMessage(`${winner} wins by checkmate!`)
       playSound(checkmateSound)
 
-      // Trigger celebration if player wins
       if (winner === "You") {
         triggerWinCelebration()
       }
@@ -610,8 +638,7 @@ const AgainstStockfish = () => {
   }, 100)
 
   return (
-    <div className="relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono">
-      {/* Chess board background with perspective */}
+    <div className={styles.container}>
       <div className="fixed inset-0 z-0 perspective-1000">
         <div
           className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
@@ -626,9 +653,7 @@ const AgainstStockfish = () => {
         ></div>
       </div>
 
-      {/* Game UI Container */}
-      <div className="relative z-10 py-8 md:py-16 min-h-screen flex flex-col">
-        {/* Game Header Banner */}
+      <div className="relative z-10 py-16 min-h-screen flex flex-col">
         <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
@@ -639,27 +664,33 @@ const AgainstStockfish = () => {
           </div>
         </div>
 
-        {/* Main Content Area - Game Panel Style */}
         <div className="flex-grow px-4 py-8">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Chess board container with stylish border */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="w-full"
               >
-                <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
+                <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-4 sm:p-6 shadow-lg game-panel">
                   <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
                     <h2 className="text-2xl font-bold text-yellow-400 uppercase">Chess Board</h2>
                   </div>
 
-                  <div className="relative backdrop-blur-sm bg-black/30 p-4 rounded-lg border-2 border-blue-600">
-                    <div ref={chessRef} style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}></div>
+                  <div className={styles.chessboardContainer}>
+                    <div
+                      ref={chessRef}
+                      className={styles.chessboard}
+                      style={{
+                        width: "100%",
+                        maxWidth: "min(100%, 600px)",
+                        margin: "0 auto",
+                        touchAction: mobileMode ? "manipulation" : "auto",
+                      }}
+                    ></div>
                   </div>
 
-                  {/* Status display */}
                   <div className="mt-4">
                     <motion.div
                       initial={{ scale: 0.95 }}
@@ -675,22 +706,20 @@ const AgainstStockfish = () => {
                     </motion.div>
                   </div>
 
-                  {/* Help text for mobile mode */}
                   {mobileMode && (
-                    <div className="mt-4 p-3 bg-black/50 text-white text-center rounded-lg border border-blue-600">
+                    <div className={styles.mobileInfo}>
                       {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
                     </div>
                   )}
 
-                  {/* Quick controls */}
-                  <div className="mt-4 flex flex-wrap justify-center gap-3">
+                  <div className={styles.controlsContainer}>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleRestart}
-                      className="bg-gradient-to-r from-red-600 to-red-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                      className={`${styles.controlButton} bg-gradient-to-r from-red-600 to-red-400 text-white`}
                     >
-                      <RotateCcw size={18} />
+                      <RotateCcw size={16} />
                       Restart
                     </motion.button>
 
@@ -698,13 +727,13 @@ const AgainstStockfish = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={`px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2 ${
-                        soundEnabled 
-                          ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white" 
+                      className={`${styles.controlButton} ${
+                        soundEnabled
+                          ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white"
                           : "bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300"
                       }`}
                     >
-                      {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                      {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                       {soundEnabled ? "Sound On" : "Sound Off"}
                     </motion.button>
 
@@ -712,16 +741,15 @@ const AgainstStockfish = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setShowHelpModal(true)}
-                      className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                      className={`${styles.controlButton} bg-gradient-to-r from-blue-600 to-blue-400 text-white`}
                     >
-                      <HelpCircle size={18} />
-                      How to Play
+                      <HelpCircle size={16} />
+                      Help
                     </motion.button>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Game info and controls */}
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -734,7 +762,6 @@ const AgainstStockfish = () => {
                   </div>
 
                   <div className="space-y-6">
-                    {/* Game stats */}
                     <div className="grid grid-cols-1 gap-4">
                       <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
                         <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
@@ -757,7 +784,6 @@ const AgainstStockfish = () => {
                       </div>
                     </div>
 
-                    {/* Move history */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-xl font-semibold text-yellow-400">Move History</h3>
@@ -770,22 +796,22 @@ const AgainstStockfish = () => {
                       </div>
 
                       {showMovesList && (
-                        <div className="bg-black/30 rounded-lg p-2 max-h-[300px] overflow-y-auto border-2 border-blue-600">
+                        <div className={styles.movesList}>
                           {moves.length > 0 ? (
-                            <table className="w-full border-collapse">
+                            <table className="w-full border-collapse text-xs sm:text-sm">
                               <thead>
                                 <tr className="text-white border-b border-white/20">
-                                  <th className="p-2 text-left">#</th>
-                                  <th className="p-2 text-left">From</th>
-                                  <th className="p-2 text-left">To</th>
+                                  <th className="p-1 sm:p-2 text-left">#</th>
+                                  <th className="p-1 sm:p-2 text-left">From</th>
+                                  <th className="p-1 sm:p-2 text-left">To</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {moves.map((move, index) => (
                                   <tr key={index} className={`text-white ${index % 2 === 0 ? "bg-white/5" : ""}`}>
-                                    <td className="p-2">{index + 1}</td>
-                                    <td className="p-2">{move.from}</td>
-                                    <td className="p-2">{move.to}</td>
+                                    <td className="p-1 sm:p-2">{index + 1}</td>
+                                    <td className="p-1 sm:p-2">{move.from}</td>
+                                    <td className="p-1 sm:p-2">{move.to}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -797,7 +823,6 @@ const AgainstStockfish = () => {
                       )}
                     </div>
 
-                    {/* Mobile mode toggle */}
                     <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
                       <div className="flex items-center justify-between">
                         <div>
@@ -820,8 +845,6 @@ const AgainstStockfish = () => {
                         </div>
                       </div>
                     </div>
-
-                    {/* Board theme */}
                     <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
                       <h3 className="text-xl font-bold text-yellow-400 mb-3">Board Theme</h3>
                       <p className="text-blue-300 text-sm mb-4">Choose your preferred board style</p>
@@ -838,7 +861,6 @@ const AgainstStockfish = () => {
                       </select>
                     </div>
 
-                    {/* Visual hints toggle */}
                     <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
                       <div className="flex items-center justify-between">
                         <div>
@@ -868,7 +890,6 @@ const AgainstStockfish = () => {
           </div>
         </div>
 
-        {/* Call to Action - Game Button Style */}
         <div className="w-full bg-gray-900 border-t-4 border-blue-800 py-8 px-4 mt-8">
           <div className="max-w-3xl mx-auto text-center">
             <div className="bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg">
@@ -891,10 +912,8 @@ const AgainstStockfish = () => {
         </div>
       </div>
 
-      {/* Help Modal */}
-      <HelpModal />
+      <HelpModal showHelpModal={showHelpModal} setShowHelpModal={setShowHelpModal} />
 
-      {/* Game Over Modal */}
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
     </div>
   )

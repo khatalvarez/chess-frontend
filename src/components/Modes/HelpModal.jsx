@@ -1,14 +1,11 @@
-"use client"
-
 import { motion } from "framer-motion"
 
-
-const HelpModal = ({ isOpen, onClose }) => {
-  if (!isOpen) return null
+const HelpModal = ({ showHelpModal, setShowHelpModal }) => {
+  if (!showHelpModal) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/70" onClick={() => setShowHelpModal(false)}></div>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -46,7 +43,7 @@ const HelpModal = ({ isOpen, onClose }) => {
         </div>
 
         <button
-          onClick={onClose}
+          onClick={() => setShowHelpModal(false)}
           className="mt-6 w-full bg-yellow-500 text-blue-900 font-bold py-2 rounded-md hover:bg-yellow-400"
         >
           Got it!

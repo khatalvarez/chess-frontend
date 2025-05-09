@@ -33,10 +33,10 @@ export default function Home() {
       ariaLabel: "Play against AI"
     },
     {
-      title: "Online Matches",
-      icon: <Globe className="h-6 w-6" />,
-      description: "Challenge players worldwide in real-time matches with leaderboards.",
-      path: "/global-multiplayer",
+      title: "Random Chess",
+      icon: <Sparkles className="h-6 w-6" />,
+      description: "Experience chess with a twist! Randomize pieces and rules for a unique game.",
+      path: "/random-play",
       color: "bg-purple-700",
       ariaLabel: "Play online matches"
     },
@@ -120,6 +120,7 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     if (!isPageLoaded) return
 
     const generateParallaxItems = () => {
