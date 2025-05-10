@@ -5,9 +5,30 @@ import { Chess } from "chess.js"
 import Chessboard from "chessboardjs"
 import axios from "axios"
 import { Howl } from "howler"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle } from "lucide-react"
+import {
+  Award,
+  Shield,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+  HelpCircle,
+  Smartphone,
+  Monitor,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Palette,
+  Clock,
+  History,
+  Menu,
+  X,
+  Brain,
+  Sword,
+} from "lucide-react"
 import pieceImages from "../pieceImages"
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
@@ -16,18 +37,6 @@ import checkmateSoundFile from "../../assets/sounds/checkmate.mp3"
 import { BASE_URL } from "../../url"
 import GameOverModal from "../GameOverModal"
 import HelpModal from "./HelpModal"
-
-// Add these styles for better mobile responsiveness
-const styles = {
-  container: `relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono`,
-  chessboardContainer: `relative backdrop-blur-sm bg-black/30 p-2 sm:p-4 rounded-lg border-2 border-blue-600`,
-  chessboard: `w-full max-width-none mx-auto`,
-  mobileInfo: `mt-4 p-3 bg-black/50 text-white text-center rounded-lg border border-blue-600 text-sm`,
-  gamePanel: `h-full flex flex-col`,
-  movesList: `bg-black/30 rounded-lg p-2 max-h-[200px] sm:max-h-[300px] overflow-y-auto border-2 border-blue-600`,
-  controlsContainer: `mt-4 flex flex-wrap justify-center gap-2 sm:gap-3`,
-  controlButton: `text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2 rounded-md font-semibold shadow-md flex items-center gap-1 sm:gap-2`,
-}
 
 const moveSound = new Howl({ src: [moveSoundFile] })
 const captureSound = new Howl({ src: [captureSoundFile] })
@@ -71,7 +80,7 @@ const AgainstStockfish = () => {
   const [gameOverMessage, setGameOverMessage] = useState("")
   const [mobileMode, setMobileMode] = useState(false)
   const [visualHints, setVisualHints] = useState(true)
-  const [theme, setTheme] = useState("forest")
+  const [theme, setTheme] = useState("ocean")
   const [showMovesList, setShowMovesList] = useState(false)
   const [lastMove, setLastMove] = useState(null)
   const [selectedSquare, setSelectedSquare] = useState(null)
@@ -79,6 +88,16 @@ const AgainstStockfish = () => {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [boardInitialized, setBoardInitialized] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [difficulty, setDifficulty] = useState("medium")
+  const [showSettings, setShowSettings] = useState(false)
+
+  // Auto-detect mobile devices
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768 ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    setMobileMode(isMobile)
+  }, [])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -125,7 +144,7 @@ const AgainstStockfish = () => {
     }
   }, [])
 
-  const handleCheckboxChange = () => {
+  const handleMobileModeToggle = () => {
     setMobileMode((prev) => {
       const newMode = !prev
 
@@ -637,8 +656,18 @@ const AgainstStockfish = () => {
     }
   }, 100)
 
+  const getDifficultyColor = (level) => {
+    switch (level) {
+      case "easy": return "text-green-400";
+      case "medium": return "text-yellow-400";
+      case "hard": return "text-red-400";
+      default: return "text-yellow-400";
+    }
+  }
+
   return (
-    <div className={styles.container}>
+    <div className="relative w-screen min-h-screen bg-gray-950 font-mono overflow-x-hidden">
+      {/* Background effect */}
       <div className="fixed inset-0 z-0 perspective-1000">
         <div
           className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
@@ -653,205 +682,263 @@ const AgainstStockfish = () => {
         ></div>
       </div>
 
-      <div className="relative z-10 py-16 min-h-screen flex flex-col">
-        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
-              STOCKFISH CHALLENGE
-            </h1>
-            <div className="h-1 w-32 mx-auto bg-yellow-500 mb-4"></div>
-            <p className="text-lg text-blue-100">Test your skills against the powerful Stockfish engine!</p>
-          </div>
+      {/* Header */}
+      <header className="relative z-10 w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4 mt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <h1 className="text-3xl md:text-5xl font-bold text-yellow-400 drop-shadow-md">
+            STOCKFISH CHALLENGE
+          </h1>
+
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden bg-yellow-500 p-2 rounded-lg border border-yellow-600 flex items-center justify-center shadow-lg"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            aria-label="Chess options"
+          >
+            {showMobileMenu ?
+              <Settings size={20} className="text-blue-900 mr-1" /> :
+              <Settings size={20} className="text-blue-900 mr-1" />}
+            <span className="text-blue-900 font-bold">Settings</span>
+          </button>
         </div>
+      </header>
 
-        <div className="flex-grow px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="w-full"
-              >
-                <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-4 sm:p-6 shadow-lg game-panel">
-                  <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-                    <h2 className="text-2xl font-bold text-yellow-400 uppercase">Chess Board</h2>
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="relative z-20 bg-gray-900 border-b-2 border-blue-700 md:hidden"
+          >
+            <div className="p-4 space-y-3">
+              {/* Game mode toggle */}
+              <div className="bg-blue-900/50 rounded-lg p-3 border border-blue-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {mobileMode ?
+                      <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                      <Monitor className="h-5 w-5 text-blue-300 mr-2" />
+                    }
+                    <span className="font-bold text-white">
+                      {mobileMode ? "Mobile Mode" : "Desktop Mode"}
+                    </span>
                   </div>
-
-                  <div className={styles.chessboardContainer}>
-                    <div
-                      ref={chessRef}
-                      className={styles.chessboard}
-                      style={{
-                        width: "100%",
-                        maxWidth: "min(100%, 600px)",
-                        margin: "0 auto",
-                        touchAction: mobileMode ? "manipulation" : "auto",
-                      }}
-                    ></div>
-                  </div>
-
-                  <div className="mt-4">
-                    <motion.div
-                      initial={{ scale: 0.95 }}
-                      animate={{ scale: 1 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 260,
-                        damping: 20,
-                      }}
-                      className="rounded-lg text-center p-3 bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white border border-white/30 shadow-lg"
-                    >
-                      <p className="text-xl font-semibold">{currentStatus || "Your move"}</p>
-                    </motion.div>
-                  </div>
-
-                  {mobileMode && (
-                    <div className={styles.mobileInfo}>
-                      {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
-                    </div>
-                  )}
-
-                  <div className={styles.controlsContainer}>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleRestart}
-                      className={`${styles.controlButton} bg-gradient-to-r from-red-600 to-red-400 text-white`}
-                    >
-                      <RotateCcw size={16} />
-                      Restart
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSoundEnabled(!soundEnabled)}
-                      className={`${styles.controlButton} ${
-                        soundEnabled
-                          ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white"
-                          : "bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300"
-                      }`}
-                    >
-                      {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                      {soundEnabled ? "Sound On" : "Sound Off"}
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setShowHelpModal(true)}
-                      className={`${styles.controlButton} bg-gradient-to-r from-blue-600 to-blue-400 text-white`}
-                    >
-                      <HelpCircle size={16} />
-                      Help
-                    </motion.button>
-                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={mobileMode}
+                      onChange={handleMobileModeToggle}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
-              </motion.div>
+                <p className="text-xs text-blue-200 mt-1">
+                  {mobileMode ? "Tap to select and move pieces" : "Drag and drop pieces to move"}
+                </p>
+              </div>
 
+              {/* Quick settings */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
+                >
+                  {soundEnabled ?
+                    <Volume2 className="h-5 w-5 text-blue-300 mr-1" /> :
+                    <VolumeX className="h-5 w-5 text-gray-400 mr-1" />
+                  }
+                  <span className="text-sm text-white">Sound</span>
+                </button>
+
+                <button
+                  onClick={() => setVisualHints(!visualHints)}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
+                >
+                  {visualHints ?
+                    <Eye className="h-5 w-5 text-blue-300 mr-1" /> :
+                    <EyeOff className="h-5 w-5 text-gray-400 mr-1" />
+                  }
+                  <span className="text-sm text-white">Hints</span>
+                </button>
+
+                <button
+                  onClick={() => setShowHelpModal(true)}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
+                >
+                  <HelpCircle className="h-5 w-5 text-blue-300 mr-1" />
+                  <span className="text-sm text-white">Help</span>
+                </button>
+
+                <button
+                  onClick={handleRestart}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
+                >
+                  <RotateCcw className="h-5 w-5 text-blue-300 mr-1" />
+                  <span className="text-sm text-white">Restart</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main content */}
+      <main className="relative z-10 py-6 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Game status banner */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6 bg-gradient-to-r from-blue-900 to-indigo-900 rounded-lg p-3 border-2 border-blue-700 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="bg-blue-800 p-2 rounded-full mr-3">
+                  <Clock className="h-5 w-5 text-yellow-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Game Status</h2>
+                  <p className="text-yellow-300 font-semibold">{currentStatus || "Your move"}</p>
+                </div>
+              </div>
+
+              {/* Desktop controls */}
+              <div className="hidden md:flex items-center space-x-3">
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg border border-blue-600 text-white flex items-center"
+                >
+                  <Settings className="h-5 w-5 mr-1" />
+                  <span>Settings</span>
+                </button>
+
+                <button
+                  onClick={handleRestart}
+                  className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg border border-blue-600 text-white flex items-center"
+                >
+                  <RotateCcw className="h-5 w-5 mr-1" />
+                  <span>Restart</span>
+                </button>
+
+                <button
+                  onClick={() => setShowHelpModal(true)}
+                  className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg border border-blue-600 text-white flex items-center"
+                >
+                  <HelpCircle className="h-5 w-5 mr-1" />
+                  <span>Help</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Settings panel (desktop) */}
+          <AnimatePresence>
+            {showSettings && (
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="w-full"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 bg-gray-900 rounded-lg border-2 border-blue-700 overflow-hidden shadow-lg"
               >
-                <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel h-full">
-                  <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-                    <h2 className="text-2xl font-bold text-yellow-400 uppercase">Game Info</h2>
+                <div className="bg-blue-800 py-2 px-4 border-b border-blue-700 flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-yellow-400">Game Settings</h3>
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    className="text-white hover:text-gray-300"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Game mode */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Game Mode</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {mobileMode ?
+                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                          <Monitor className="h-5 w-5 text-blue-300 mr-2" />
+                        }
+                        <span className="text-white">
+                          {mobileMode ? "Mobile Mode" : "Desktop Mode"}
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={mobileMode}
+                          onChange={handleMobileModeToggle}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
-                        <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
-                          <Shield size={24} className="text-yellow-400" />
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-yellow-400">Stockfish Engine</div>
-                          <div className="text-blue-200">One of the strongest chess engines in the world</div>
-                        </div>
+                  {/* Visual hints */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Visual Hints</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {visualHints ?
+                          <Eye className="h-5 w-5 text-cyan-300 mr-2" /> :
+                          <EyeOff className="h-5 w-5 text-gray-400 mr-2" />
+                        }
+                        <span className="text-white">
+                          {visualHints ? "Enabled" : "Disabled"}
+                        </span>
                       </div>
-
-                      <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
-                        <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
-                          <Award size={24} className="text-yellow-400" />
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-yellow-400">Moves</div>
-                          <div className="text-blue-200">{moves.length}</div>
-                        </div>
-                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visualHints}
+                          onChange={() => setVisualHints(!visualHints)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
                     </div>
+                  </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-yellow-400">Move History</h3>
-                        <button
-                          onClick={() => setShowMovesList(!showMovesList)}
-                          className="text-white bg-blue-600/80 px-3 py-1 rounded-md text-sm border border-blue-400"
-                        >
-                          {showMovesList ? "Hide" : "Show"}
-                        </button>
+                  {/* Sound */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Sound Effects</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {soundEnabled ?
+                          <Volume2 className="h-5 w-5 text-purple-300 mr-2" /> :
+                          <VolumeX className="h-5 w-5 text-gray-400 mr-2" />
+                        }
+                        <span className="text-white">
+                          {soundEnabled ? "Enabled" : "Disabled"}
+                        </span>
                       </div>
-
-                      {showMovesList && (
-                        <div className={styles.movesList}>
-                          {moves.length > 0 ? (
-                            <table className="w-full border-collapse text-xs sm:text-sm">
-                              <thead>
-                                <tr className="text-white border-b border-white/20">
-                                  <th className="p-1 sm:p-2 text-left">#</th>
-                                  <th className="p-1 sm:p-2 text-left">From</th>
-                                  <th className="p-1 sm:p-2 text-left">To</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {moves.map((move, index) => (
-                                  <tr key={index} className={`text-white ${index % 2 === 0 ? "bg-white/5" : ""}`}>
-                                    <td className="p-1 sm:p-2">{index + 1}</td>
-                                    <td className="p-1 sm:p-2">{move.from}</td>
-                                    <td className="p-1 sm:p-2">{move.to}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : (
-                            <div className="text-center py-4 text-blue-300">No moves yet</div>
-                          )}
-                        </div>
-                      )}
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={soundEnabled}
+                          onChange={() => setSoundEnabled(!soundEnabled)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
                     </div>
+                  </div>
 
-                    <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-yellow-400">Mobile Mode</h3>
-                          <p className="text-blue-300 text-sm">Tap to select and move pieces</p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <label className="relative inline-flex items-center cursor-pointer mb-1">
-                            <input
-                              type="checkbox"
-                              checked={mobileMode}
-                              onChange={handleCheckboxChange}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                          <span className="text-sm font-medium text-yellow-400">
-                            {mobileMode ? "Enabled" : "Disabled"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                      <h3 className="text-xl font-bold text-yellow-400 mb-3">Board Theme</h3>
-                      <p className="text-blue-300 text-sm mb-4">Choose your preferred board style</p>
+                  {/* Board theme */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Board Theme</h4>
+                    <div className="flex items-center">
+                      <Palette className="h-5 w-5 text-pink-300 mr-2" />
                       <select
                         value={theme}
                         onChange={(e) => setTheme(e.target.value)}
-                        className="w-full bg-gray-800 text-blue-100 p-3 rounded-md border-2 border-blue-500 focus:border-yellow-500 focus:outline-none"
+                        className="w-full bg-gray-700 text-white p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
                       >
                         <option value="classic">Classic</option>
                         <option value="forest">Forest</option>
@@ -860,60 +947,337 @@ const AgainstStockfish = () => {
                         <option value="royal">Royal</option>
                       </select>
                     </div>
+                  </div>
 
-                    <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-yellow-400">Visual Hints</h3>
-                          <p className="text-blue-300 text-sm">Show possible moves and highlights</p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <label className="relative inline-flex items-center cursor-pointer mb-1">
-                            <input
-                              type="checkbox"
-                              checked={visualHints}
-                              onChange={() => setVisualHints(!visualHints)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                          </label>
-                          <span className="text-sm font-medium text-yellow-400">
-                            {visualHints ? "Enabled" : "Disabled"}
-                          </span>
-                        </div>
+                  {/* Difficulty */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Difficulty</h4>
+                    <div className="flex items-center">
+                      <Brain className="h-5 w-5 text-purple-300 mr-2" />
+                      <select
+                        value={difficulty}
+                        onChange={(e) => setDifficulty(e.target.value)}
+                        className="w-full bg-gray-700 text-white p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
+                      >
+                        <option value="easy" className="text-green-400">Easy</option>
+                        <option value="medium" className="text-yellow-400">Medium</option>
+                        <option value="hard" className="text-red-400">Hard</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Move history toggle */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Move History</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <History className="h-5 w-5 text-blue-300 mr-2" />
+                        <span className="text-white">
+                          {showMovesList ? "Visible" : "Hidden"}
+                        </span>
                       </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showMovesList}
+                          onChange={() => setShowMovesList(!showMovesList)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
                     </div>
                   </div>
                 </div>
               </motion.div>
-            </div>
+            )}
+          </AnimatePresence>
+
+          {/* Game layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* Chess board section - takes 3/5 of the space on large screens */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="lg:col-span-3"
+            >
+              <div className="bg-gradient-to-b from-gray-900 to-gray-950 rounded-lg border-2 border-blue-700 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-900 to-blue-800 py-3 px-4 border-b border-blue-700 flex justify-between items-center">
+                  <div className="flex items-center">
+                    <Shield className="h-6 w-6 text-yellow-400 mr-2" />
+                    <h2 className="text-xl font-bold text-yellow-400">Chess Board</h2>
+                  </div>
+                  <div className="flex items-center">
+                    <span className={`text-sm font-medium ${getDifficultyColor(difficulty)} mr-2`}>
+                      {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+                    </span>
+                    <div className="bg-blue-800 p-1 rounded-full">
+                      <Brain className={`h-4 w-4 ${getDifficultyColor(difficulty)}`} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4">
+                  {/* Chess board container */}
+                  <div className="backdrop-blur-sm bg-black/30 p-2 sm:p-4 rounded-lg border-2 border-blue-600 shadow-inner">
+                    <div
+                      ref={chessRef}
+                      style={{
+                        width: "100%",
+                        maxWidth: "min(100%, 600px)",
+                        margin: "0 auto",
+                        touchAction: mobileMode ? "manipulation" : "auto",
+                      }}
+                    ></div>
+
+                    {/* Mobile mode indicator */}
+                    {mobileMode && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 p-3 bg-gradient-to-r from-blue-900/80 to-indigo-900/80 text-white text-center rounded-lg border border-blue-600 shadow-md"
+                      >
+                        <div className="flex items-center justify-center">
+                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" />
+                          <p className="font-medium">
+                            {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Quick controls for mobile */}
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleRestart}
+                        className="bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center"
+                      >
+                        <RotateCcw size={16} className="mr-1" />
+                        Restart
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSoundEnabled(!soundEnabled)}
+                        className={`${soundEnabled
+                            ? "bg-gradient-to-r from-purple-600 to-purple-500"
+                            : "bg-gradient-to-r from-gray-700 to-gray-600"
+                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
+                      >
+                        {soundEnabled ? <Volume2 size={16} className="mr-1" /> : <VolumeX size={16} className="mr-1" />}
+                        {soundEnabled ? "Sound On" : "Sound Off"}
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setVisualHints(!visualHints)}
+                        className={`${visualHints
+                            ? "bg-gradient-to-r from-cyan-600 to-cyan-500"
+                            : "bg-gradient-to-r from-gray-700 to-gray-600"
+                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
+                      >
+                        {visualHints ? <Eye size={16} className="mr-1" /> : <EyeOff size={16} className="mr-1" />}
+                        {visualHints ? "Hints On" : "Hints Off"}
+                      </motion.button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Game info section - takes 2/5 of the space on large screens */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="lg:col-span-2"
+            >
+              <div className="bg-gradient-to-b from-gray-900 to-gray-950 rounded-lg border-2 border-blue-700 shadow-lg h-full">
+                <div className="bg-gradient-to-r from-blue-900 to-blue-800 py-3 px-4 border-b border-blue-700">
+                  <h2 className="text-xl font-bold text-yellow-400">Game Info</h2>
+                </div>
+
+                <div className="p-4 space-y-4">
+                  {/* Game stats */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-gradient-to-br from-blue-900/80 to-indigo-900/80 rounded-lg p-3 border border-blue-600 flex items-center"
+                    >
+                      <div className="mr-3 bg-blue-800 p-2 rounded-full border border-yellow-500">
+                        <Shield size={20} className="text-yellow-400" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-blue-300">Opponent</div>
+                        <div className="text-lg font-bold text-white">Stockfish Engine</div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-gradient-to-br from-blue-900/80 to-indigo-900/80 rounded-lg p-3 border border-blue-600 flex items-center"
+                    >
+                      <div className="mr-3 bg-blue-800 p-2 rounded-full border border-yellow-500">
+                        <Award size={20} className="text-yellow-400" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-blue-300">Moves</div>
+                        <div className="text-lg font-bold text-white">{moves.length}</div>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Move history */}
+                  <div className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-lg border border-blue-600 overflow-hidden">
+                    <div className="bg-blue-900/80 py-2 px-3 border-b border-blue-700 flex justify-between items-center">
+                      <div className="flex items-center">
+                        <History className="h-5 w-5 text-yellow-400 mr-2" />
+                        <h3 className="text-lg font-semibold text-yellow-400">Move History</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowMovesList(!showMovesList)}
+                        className="text-white bg-blue-800 hover:bg-blue-700 px-2 py-1 rounded text-sm border border-blue-600 flex items-center"
+                      >
+                        {showMovesList ? (
+                          <>
+                            <ChevronUp className="h-4 w-4 mr-1" />
+                            Hide
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4 mr-1" />
+                            Show
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <AnimatePresence>
+                      {showMovesList && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="max-h-[200px] sm:max-h-[300px] overflow-y-auto"
+                        >
+                          {moves.length > 0 ? (
+                            <table className="w-full border-collapse text-sm">
+                              <thead>
+                                <tr className="bg-blue-900/50 text-white border-b border-blue-700">
+                                  <th className="p-2 text-left">#</th>
+                                  <th className="p-2 text-left">From</th>
+                                  <th className="p-2 text-left">To</th>
+                                  <th className="p-2 text-left">Player</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {moves.map((move, index) => (
+                                  <tr
+                                    key={index}
+                                    className={`text-white ${index % 2 === 0 ? "bg-blue-900/20" : "bg-blue-900/10"
+                                      } hover:bg-blue-800/30`}
+                                  >
+                                    <td className="p-2">{index + 1}</td>
+                                    <td className="p-2 font-mono">{move.from}</td>
+                                    <td className="p-2 font-mono">{move.to}</td>
+                                    <td className="p-2">{index % 2 === 0 ? "You" : "Computer"}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div className="text-center py-4 text-blue-300">No moves yet</div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Game settings for desktop */}
+                  <div className="hidden md:block">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Board theme */}
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-lg p-3 border border-blue-600"
+                      >
+                        <h3 className="text-lg font-semibold text-blue-300 mb-2 flex items-center">
+                          <Palette className="h-5 w-5 mr-2" />
+                          Board Theme
+                        </h3>
+                        <select
+                          value={theme}
+                          onChange={(e) => setTheme(e.target.value)}
+                          className="w-full bg-gray-800 text-blue-100 p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
+                        >
+                          <option value="classic">Classic</option>
+                          <option value="forest">Forest</option>
+                          <option value="ocean">Ocean</option>
+                          <option value="night">Night</option>
+                          <option value="royal">Royal</option>
+                        </select>
+                      </motion.div>
+
+                      {/* Difficulty */}
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-lg p-3 border border-blue-600"
+                      >
+                        <h3 className="text-lg font-semibold text-blue-300 mb-2 flex items-center">
+                          <Brain className="h-5 w-5 mr-2" />
+                          Difficulty
+                        </h3>
+                        <select
+                          value={difficulty}
+                          onChange={(e) => setDifficulty(e.target.value)}
+                          className="w-full bg-gray-800 text-blue-100 p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
+                        >
+                          <option value="easy" className="text-green-400">Easy</option>
+                          <option value="medium" className="text-yellow-400">Medium</option>
+                          <option value="hard" className="text-red-400">Hard</option>
+                        </select>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
+
+          {/* Call to action */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-8 bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg text-center"
+          >
+            <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Challenge Stockfish!</h2>
+
+            <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+              Test your skills against one of the strongest chess engines in the world. Adjust the difficulty,
+              customize your board, and improve your game with every match.
+            </p>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleRestart}
+              className="px-8 py-4 bg-gradient-to-r from-yellow-500 to-yellow-400 text-blue-900 text-xl font-bold uppercase rounded-lg hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-600"
+            >
+              START NEW GAME
+            </motion.button>
+          </motion.div>
         </div>
+      </main>
 
-        <div className="w-full bg-gray-900 border-t-4 border-blue-800 py-8 px-4 mt-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg">
-              <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Challenge Stockfish!</h2>
-
-              <p className="text-blue-100 mb-6">
-                Test your skills against one of the strongest chess engines in the world.
-              </p>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleRestart}
-                className="px-8 py-4 bg-yellow-500 text-blue-900 text-xl font-bold uppercase rounded-lg hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-700"
-              >
-                START NEW GAME
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* Help Modal */}
       <HelpModal showHelpModal={showHelpModal} setShowHelpModal={setShowHelpModal} />
 
+      {/* Game Over Modal */}
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
     </div>
   )

@@ -142,16 +142,6 @@ const GameOverModal = ({
   const resultTheme = getResultTheme()
   const resultMessage = getResultMessage()
 
-  // Safety check for onPlayAgain function
-  const handlePlayAgain = (e) => {
-    e.preventDefault()
-    if (typeof onPlayAgain === 'function') {
-      onPlayAgain()
-    } else {
-      console.error("onPlayAgain is not a function")
-    }
-  }
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -251,7 +241,7 @@ const GameOverModal = ({
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                     <button
-                      onClick={handlePlayAgain}
+                      onClick={onPlayAgain}
                       className="py-3 px-4 bg-blue-800 hover:bg-blue-700 border-2 border-yellow-500 rounded-lg text-yellow-400 font-bold flex items-center justify-center"
                       aria-label="Play another game"
                       type="button"
