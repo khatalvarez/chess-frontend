@@ -92,7 +92,6 @@ const AgainstStockfish = () => {
   const [difficulty, setDifficulty] = useState("medium")
   const [showSettings, setShowSettings] = useState(false)
 
-  // Auto-detect mobile devices
   useEffect(() => {
     const isMobile = window.innerWidth < 768 ||
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -685,20 +684,20 @@ const AgainstStockfish = () => {
       {/* Header */}
       <header className="relative z-10 w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4 mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-3xl md:text-5xl font-bold text-yellow-400 drop-shadow-md">
+          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">
             STOCKFISH CHALLENGE
           </h1>
 
           {/* Mobile menu button */}
           <button
-            className="md:hidden bg-yellow-500 p-2 rounded-lg border border-yellow-600 flex items-center justify-center shadow-lg"
+            className="md:hidden bg-blue-800 p-2 rounded-lg border border-blue-600 flex items-center justify-center shadow-lg"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             aria-label="Chess options"
           >
             {showMobileMenu ?
-              <Settings size={20} className="text-blue-900 mr-1" /> :
-              <Settings size={20} className="text-blue-900 mr-1" />}
-            <span className="text-blue-900 font-bold">Settings</span>
+              <Settings size={20} className="text-white mr-1" /> :
+              <Settings size={20} className="text-white mr-1" />}
+            <span className="text-white font-bold">Settings</span>
           </button>
         </div>
       </header>
