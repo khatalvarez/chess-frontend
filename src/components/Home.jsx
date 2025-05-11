@@ -45,7 +45,7 @@ export default function Home() {
       icon: <Puzzle className="h-6 w-6" />,
       description: "Improve your skills with our curated collection of chess puzzles.",
       path: "/puzzle",
-      color: "bg-emerald-700",
+      color: "bg-green-700",
       ariaLabel: "Solve tactical puzzles"
     },
     {
@@ -53,7 +53,7 @@ export default function Home() {
       icon: <Users className="h-6 w-6" />,
       description: "Play face-to-face with friends on the same device.",
       path: "/local-multiplayer",
-      color: "bg-amber-700",
+      color: "bg-yellow-700",
       ariaLabel: "Play local multiplayer"
     },
   ]

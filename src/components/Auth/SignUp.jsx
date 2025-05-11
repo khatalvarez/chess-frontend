@@ -26,6 +26,7 @@ const SignUp = () => {
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
+    window.scrollTo(0, 0)
     const checkAuthStatus = async () => {
       try {
         const res = await axios.get(`${BASE_URL}/profile`, {
@@ -186,7 +187,7 @@ const SignUp = () => {
       </div>
 
       <div className="relative z-10 flex flex-col">
-        <header className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
+        <header className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4 mt-16">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 drop-shadow-md">
               CHESS MASTER

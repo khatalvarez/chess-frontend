@@ -4,59 +4,21 @@ import { useEffect, useRef, useState } from "react"
 import { Chess } from "chess.js"
 import Chessboard from "chessboardjs"
 import { Howl } from "howler"
-import { Activity, Network, RotateCcw, Volume2, VolumeX, HelpCircle } from 'lucide-react'
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
+import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle, Smartphone, Monitor, Settings, ChevronDown, ChevronUp, Eye, EyeOff, Palette, Clock, History, Menu, X, Users } from 'lucide-react'
+import pieceImages from "../pieceImages"
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
 import checkSoundFile from "../../assets/sounds/check.mp3"
 import checkmateSoundFile from "../../assets/sounds/checkmate.mp3"
-import pieceImages from "../pieceImages"
 import GameOverModal from "../GameOverModal"
+import HelpModal from "./HelpModal"
 
 const moveSound = new Howl({ src: [moveSoundFile] })
 const captureSound = new Howl({ src: [captureSoundFile] })
 const checkSound = new Howl({ src: [checkSoundFile] })
 const checkmateSound = new Howl({ src: [checkmateSoundFile] })
-
-// Themed board colors
-const themes = {
-  classic: {
-    light: "#f0d9b5",
-    dark: "#b58863",
-    highlight: "#aed581",
-    possible: "#90caf9",
-    accent: "#ff9800",
-  },
-  forest: {
-    light: "#e8f5e9",
-    dark: "#388e3c",
-    highlight: "#c5e1a5",
-    possible: "#81c784",
-    accent: "#ffeb3b",
-  },
-  ocean: {
-    light: "#e3f2fd",
-    dark: "#1976d2",
-    highlight: "#bbdefb",
-    possible: "#64b5f6",
-    accent: "#ff5722",
-  },
-  night: {
-    light: "#ffffff",
-    dark: "#212121",
-    highlight: "#636363",
-    possible: "#757575",
-    accent: "#f44336",
-  },
-  royal: {
-    light: "#f3e5f5",
-    dark: "#6a1b9a",
-    highlight: "#ce93d8",
-    possible: "#9575cd",
-    accent: "#ffc107",
-  },
-}
 
 const debounce = (func, delay) => {
   let timeoutId
@@ -68,90 +30,79 @@ const debounce = (func, delay) => {
   }
 }
 
-const LocalMultiplayer = () => {
+const LocalPlayer = () => {
   const chessRef = useRef(null)
   const boardRef = useRef(null)
   const [currentStatus, setCurrentStatus] = useState(null)
   const [moves, setMoves] = useState([])
   const gameRef = useRef(new Chess())
-  const [mobileMode, setMobileMode] = useState(false)
   const [promotionPiece, setPromotionPiece] = useState("q")
   const [isGameOver, setIsGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState("")
+  const [mobileMode, setMobileMode] = useState(false)
+  const [visualHints, setVisualHints] = useState(true)
+  const [theme, setTheme] = useState("ocean")
+  const [showMovesList, setShowMovesList] = useState(false)
+  const [lastMove, setLastMove] = useState(null)
   const [selectedSquare, setSelectedSquare] = useState(null)
   const [possibleMoves, setPossibleMoves] = useState([])
-  const [theme, setTheme] = useState("royal")
-  const [visualHints, setVisualHints] = useState(true)
-  const [lastMove, setLastMove] = useState(null)
-  const [showMovesList, setShowMovesList] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [showHelpModal, setShowHelpModal] = useState(false)
   const [boardInitialized, setBoardInitialized] = useState(false)
-  const [activeTab, setActiveTab] = useState("game")
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
-  // Play sound with check for sound enabled
-  const playSound = (sound) => {
-    if (soundEnabled) {
-      sound.play()
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768 ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    setMobileMode(isMobile)
+  }, [])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    document.title = "Chess Master: Local Multiplayer | Play Chess with Friends"
+
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement("meta")
+      metaDescription.name = "description"
+      document.head.appendChild(metaDescription)
     }
-  }
+    metaDescription.content =
+      "Play chess with a friend on the same device with our Local Multiplayer mode. Customize your board, adjust settings, and enjoy a face-to-face chess match."
 
-  // Utility functions for highlighting moves
-  const removeHighlights = () => {
-    try {
-      const squares = document.querySelectorAll(".square-55d63")
-      if (!squares || squares.length === 0) return
-
-      squares.forEach((square) => {
-        square.classList.remove("highlight-square", "possible-move", "last-move")
-        square.style.background = ""
-      })
-    } catch (error) {
-      console.error("Error removing highlights:", error)
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement("link")
+      canonicalLink.rel = "canonical"
+      document.head.appendChild(canonicalLink)
     }
-  }
+    canonicalLink.href = window.location.origin + "/local-multiplayer"
 
-  const highlightSquare = (square, type = "highlight") => {
-    try {
-      const squareEl = document.querySelector(`.square-${square}`)
-      if (squareEl) {
-        if (type === "highlight") {
-          squareEl.classList.add("highlight-square")
-        } else if (type === "possible") {
-          squareEl.classList.add("possible-move")
-        } else if (type === "last-move") {
-          squareEl.classList.add("last-move")
-        }
-      }
-    } catch (error) {
-      console.error("Error highlighting square:", error)
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Game",
+      name: "Chess Master - Local Multiplayer",
+      description: "Play chess with a friend on the same device with our Local Multiplayer mode.",
+      genre: "Board Game",
+      gamePlatform: "Web Browser",
+      applicationCategory: "GameApplication",
     }
-  }
 
-  const highlightLastMove = (from, to) => {
-    if (!visualHints) return
-
-    try {
-      removeHighlights()
-      highlightSquare(from, "last-move")
-      highlightSquare(to, "last-move")
-      setLastMove({ from, to })
-    } catch (error) {
-      console.error("Error highlighting last move:", error)
+    let scriptTag = document.querySelector('script[type="application/ld+json"]')
+    if (!scriptTag) {
+      scriptTag = document.createElement("script")
+      scriptTag.type = "application/ld+json"
+      document.head.appendChild(scriptTag)
     }
-  }
+    scriptTag.textContent = JSON.stringify(structuredData)
 
-  // Celebration effect when player wins
-  const triggerWinCelebration = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#ffb347", "#ffcc33", "#fff"],
-    })
-  }
+    return () => {
+      document.title = "Chess Master | Online Chess Training & Games"
+    }
+  }, [])
 
-  const handleCheckboxChange = () => {
+  const handleMobileModeToggle = () => {
     setMobileMode((prev) => {
       const newMode = !prev
 
@@ -170,232 +121,203 @@ const LocalMultiplayer = () => {
     })
   }
 
-  // Apply theme colors to the board
-  useEffect(() => {
-    if (!boardInitialized) return
+  const removeHighlights = () => {
+    const squares = document.querySelectorAll(".square-55d63")
+    squares.forEach((square) => {
+      square.classList.remove("highlight-square", "possible-move", "last-move")
+      square.style.background = ""
+    })
+  }
 
-    const applyTheme = () => {
-      const currentTheme = themes[theme]
-      const styleSheet = document.createElement("style")
-      styleSheet.id = "chess-theme"
-
-      const css = `
-        .white-1e1d7 { background-color: ${currentTheme.light} !important; }
-        .black-3c85d { background-color: ${currentTheme.dark} !important; }
-        .highlight-square { background-color: ${currentTheme.highlight} !important; }
-        .possible-move { background-color: ${currentTheme.possible} !important; }
-        .last-move { box-shadow: inset 0 0 0 4px ${currentTheme.accent} !important; }
-      `
-
-      styleSheet.textContent = css
-
-      // Remove existing theme stylesheet if it exists
-      const existingStyle = document.getElementById("chess-theme")
-      if (existingStyle) {
-        existingStyle.remove()
-      }
-
-      document.head.appendChild(styleSheet)
-    }
-
-    applyTheme()
-
-    return () => {
-      // Clean up theme stylesheet
-      const existingStyle = document.getElementById("chess-theme")
-      if (existingStyle) {
-        existingStyle.remove()
+  const highlightSquare = (square, type = "highlight") => {
+    const squareEl = document.querySelector(`.square-${square}`)
+    if (squareEl) {
+      if (type === "highlight") {
+        squareEl.classList.add("highlight-square")
+      } else if (type === "possible") {
+        squareEl.classList.add("possible-move")
+      } else if (type === "last-move") {
+        squareEl.classList.add("last-move")
       }
     }
-  }, [theme, boardInitialized])
+  }
+
+  const highlightLastMove = (from, to) => {
+    if (!visualHints) return
+
+    removeHighlights()
+    highlightSquare(from, "last-move")
+    highlightSquare(to, "last-move")
+    setLastMove({ from, to })
+  }
+
+  const triggerWinCelebration = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ["#ffb347", "#ffcc33", "#fff"],
+    })
+  }
+
+  const playSound = (sound) => {
+    if (soundEnabled) {
+      sound.play()
+    }
+  }
 
   useEffect(() => {
-    const game = gameRef.current;
+    const game = gameRef.current
 
     const onDragStart = (source, piece, position, orientation) => {
       if (game.isGameOver()) {
-        console.log("Start a new game from the menu");
-        return false;
+        return false
       }
 
       if ((game.turn() === "w" && piece.search(/^b/) !== -1) || (game.turn() === "b" && piece.search(/^w/) !== -1)) {
-        return false;
+        return false
       }
 
-      // Show possible moves when piece is picked up
       if (visualHints) {
-        removeHighlights();
-        highlightSquare(source);
+        removeHighlights()
+        highlightSquare(source)
 
         const moves = game.moves({
           square: source,
           verbose: true,
-        });
+        })
 
         for (let i = 0; i < moves.length; i++) {
-          highlightSquare(moves[i].to, "possible");
+          highlightSquare(moves[i].to, "possible")
         }
       }
+    }
 
-      return true;
-    };
+    const onDrop = (source, target) => {
+      removeHighlights()
 
-    const onDrop = async (source, target) => {
-      removeHighlights();
-
-      const move = game.move({
+      let move = game.move({
         from: source,
         to: target,
         promotion: promotionPiece,
-      });
+      })
 
-      if (move === null) return "snapback";
+      if (move === null) return "snapback"
 
-      setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }]);
-      updateStatus();
+      setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
 
-      // Highlight the move
-      highlightLastMove(source, target);
+      highlightLastMove(source, target)
 
-      // Play sound based on move type
       if (move.captured) {
-        playSound(captureSound);
+        playSound(captureSound)
       } else {
-        playSound(moveSound);
+        playSound(moveSound)
       }
-    };
+
+      updateStatus()
+    }
 
     const onMouseoverSquare = (square, piece) => {
-      if (!visualHints) return;
+      if (!visualHints) return
 
       const moves = game.moves({
         square: square,
         verbose: true,
-      });
+      })
 
-      if (moves.length === 0) return;
+      if (moves.length === 0) return
 
-      highlightSquare(square);
+      highlightSquare(square)
 
       for (let i = 0; i < moves.length; i++) {
-        highlightSquare(moves[i].to, "possible");
+        highlightSquare(moves[i].to, "possible")
       }
-    };
-
-    const onMouseoutSquare = (square, piece) => {
-      if (!visualHints) return;
-
-      // Don't remove highlights if we're showing the last move
-      if (lastMove) {
-        removeHighlights();
-        highlightSquare(lastMove.from, "last-move");
-        highlightSquare(lastMove.to, "last-move");
-      } else {
-        removeHighlights();
-      }
-    };
-
-    const onSnapEnd = () => {
-      if (boardRef.current) {
-        boardRef.current.position(game.fen());
-      }
-    };
-
-    const updateStatus = debounce(() => {
-      let status = "";
-      const moveColor = game.turn() === "w" ? "White" : "Black";
-
-      if (game.isCheckmate()) {
-        status = `${moveColor === "White" ? "Black" : "White"} wins!`;
-        setIsGameOver(true);
-        setGameOverMessage(status);
-        playSound(checkmateSound);
-
-        // Trigger celebration for the winner
-        if (moveColor === "White") {
-          triggerWinCelebration();
-        }
-      } else if (game.isStalemate()) {
-        status = "It's a draw! Stalemate.";
-        setIsGameOver(true);
-        setGameOverMessage(status);
-      } else if (game.isThreefoldRepetition()) {
-        status = "It's a draw! Threefold repetition.";
-        setIsGameOver(true);
-        setGameOverMessage(status);
-      } else if (game.isInsufficientMaterial()) {
-        status = "It's a draw! Insufficient material.";
-        setIsGameOver(true);
-        setGameOverMessage(status);
-      } else if (game.isDraw()) {
-        status = "It's a draw!";
-        setIsGameOver(true);
-        setGameOverMessage(status);
-      } else {
-        status = `${moveColor} to move`;
-        if (game.inCheck()) {
-          status += `, ${moveColor} is in check!`;
-          playSound(checkSound);
-        }
-      }
-      setCurrentStatus(status);
-    }, 100);
-
-    // Only initialize the board if it doesn't exist yet and we're on the game tab
-    if (!boardRef.current && chessRef.current) {
-      const config = {
-        draggable: !mobileMode,
-        position: "start",
-        onDragStart: onDragStart,
-        onDrop: onDrop,
-        onMouseoverSquare: onMouseoverSquare,
-        onMouseoutSquare: onMouseoutSquare,
-        onSnapEnd: onSnapEnd,
-        pieceTheme: (piece) => pieceImages[piece],
-        snapbackSpeed: 500,
-        snapSpeed: 100,
-      };
-
-      boardRef.current = Chessboard(chessRef.current, config);
-      setBoardInitialized(true);
-      updateStatus();
     }
 
-    // Handle window resize
-    const handleResize = () => {
-      if (boardRef.current && typeof boardRef.current.resize === "function") {
-        try {
-          boardRef.current.resize();
-        } catch (error) {
-          console.error("Error resizing board:", error);
-        }
-      }
-    };
+    const onMouseoutSquare = (square, piece) => {
+      if (!visualHints) return
 
-    window.addEventListener("resize", handleResize);
+      if (lastMove) {
+        removeHighlights()
+        highlightSquare(lastMove.from, "last-move")
+        highlightSquare(lastMove.to, "last-move")
+      } else {
+        removeHighlights()
+      }
+    }
+
+    const onSnapEnd = () => {
+      boardRef.current.position(game.fen())
+    }
+
+    const config = {
+      draggable: !mobileMode,
+      position: "start",
+      onDragStart: onDragStart,
+      onDrop: onDrop,
+      onMouseoverSquare: onMouseoverSquare,
+      onMouseoutSquare: onMouseoutSquare,
+      onSnapEnd: onSnapEnd,
+      pieceTheme: (piece) => pieceImages[piece],
+      snapbackSpeed: 300,
+      snapSpeed: 100,
+    }
+
+    boardRef.current = Chessboard(chessRef.current, config)
+    setBoardInitialized(true)
+    updateStatus()
+
+    const handleResize = () => {
+      if (boardRef.current) {
+        boardRef.current.resize()
+      }
+    }
+
+    window.addEventListener("resize", handleResize)
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      // Don't destroy the board when switching tabs
-      // Only destroy when unmounting the component
-      if (boardRef.current && !chessRef.current) {
-        boardRef.current.destroy();
-        boardRef.current = null;
+      if (boardRef.current) {
+        boardRef.current.destroy()
       }
-    };
-  }, [promotionPiece, visualHints, mobileMode, soundEnabled, activeTab]);
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [mobileMode, visualHints, promotionPiece, theme, soundEnabled])
 
-  // Handle mobile mode touch events
   useEffect(() => {
-    if (!mobileMode || !boardInitialized) return
+    const resizeBoard = () => {
+      if (boardRef.current && boardInitialized) {
+        const container = chessRef.current
+        if (container) {
+          // Make the board responsive based on container width
+          const containerWidth = container.clientWidth
+          const optimalSize = Math.min(containerWidth, 600)
 
-    let squares = []
-    let listeners = []
+          // Apply the size to the board
+          boardRef.current.resize()
+        }
+      }
+    }
+
+    // Initial resize
+    resizeBoard()
+
+    // Add event listener for window resize
+    window.addEventListener("resize", resizeBoard)
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", resizeBoard)
+    }
+  }, [boardInitialized])
+
+  useEffect(() => {
+    if (!mobileMode) {
+      return
+    }
 
     const handleMobileSquareClick = (event) => {
       event.preventDefault()
 
-      // Find the clicked square from the event target's class list
       const squareEl = event.currentTarget
       const squareClass = [...squareEl.classList].find((cls) => cls.startsWith("square-") && cls !== "square-55d63")
 
@@ -404,60 +326,44 @@ const LocalMultiplayer = () => {
       const clickedSquare = squareClass.replace("square-", "")
       const game = gameRef.current
 
-      // If game is over, do nothing
       if (game.isGameOver()) return
 
-      // Clear previous highlights
       removeHighlights()
 
-      // If we already have a selected square, try to make a move
       if (selectedSquare) {
-        // Check if the clicked square is a valid destination
         if (possibleMoves.some((move) => move.to === clickedSquare)) {
           try {
-            // Make the move
             const move = game.move({
               from: selectedSquare,
               to: clickedSquare,
-              promotion: promotionPiece, // Always promote to queen
+              promotion: promotionPiece,
             })
 
-            // Update the board display
-            if (boardRef.current) {
-              boardRef.current.position(game.fen())
-            }
+            boardRef.current.position(game.fen())
 
-            // Play sound based on move type
             move.captured ? playSound(captureSound) : playSound(moveSound)
 
-            // Highlight the move
             highlightLastMove(selectedSquare, clickedSquare)
 
-            // Update moves list
             setMoves((prevMoves) => [...prevMoves, { from: move.from, to: move.to }])
 
-            // Check status after the move
-            updateStatus()
-
-            // Clear selection
             setSelectedSquare(null)
             setPossibleMoves([])
+
+            updateStatus()
           } catch (error) {
             console.error("Invalid move:", error)
           }
         } else {
-          // If clicked on a different piece of the same color, select that piece instead
           const piece = game.get(clickedSquare)
           if (piece && piece.color === game.turn()) {
             selectNewSquare(clickedSquare)
           } else {
-            // If clicked on an invalid square, clear selection
             setSelectedSquare(null)
             setPossibleMoves([])
           }
         }
       } else {
-        // If no square is selected yet, select this one if it has a piece of the correct color
         const piece = game.get(clickedSquare)
         if (piece && piece.color === game.turn()) {
           selectNewSquare(clickedSquare)
@@ -477,114 +383,122 @@ const LocalMultiplayer = () => {
       setSelectedSquare(square)
       setPossibleMoves(moves)
 
-      // Highlight the selected square
       highlightSquare(square)
 
-      // Highlight possible destinations
       moves.forEach((move) => {
         highlightSquare(move.to, "possible")
       })
     }
 
-    const updateStatus = () => {
-      let status = ""
-      const moveColor = gameRef.current.turn() === "w" ? "White" : "Black"
-
-      if (gameRef.current.isCheckmate()) {
-        status = `${moveColor === "White" ? "Black" : "White"} wins!`
-        setIsGameOver(true)
-        setGameOverMessage(status)
-        playSound(checkmateSound)
-
-        // Trigger celebration for the winner
-        if (moveColor === "White") {
-          triggerWinCelebration()
-        }
-      } else if (gameRef.current.isStalemate()) {
-        status = "It's a draw! Stalemate."
-        setIsGameOver(true)
-        setGameOverMessage(status)
-      } else if (gameRef.current.isThreefoldRepetition()) {
-        status = "It's a draw! Threefold repetition."
-        setIsGameOver(true)
-        setGameOverMessage(status)
-      } else if (gameRef.current.isInsufficientMaterial()) {
-        status = "It's a draw! Insufficient material."
-        setIsGameOver(true)
-        setGameOverMessage(status)
-      } else if (gameRef.current.isDraw()) {
-        status = "It's a draw!"
-        setIsGameOver(true)
-        setGameOverMessage(status)
-      } else {
-        status = `${moveColor} to move`
-        if (gameRef.current.inCheck()) {
-          status += `, ${moveColor} is in check!`
-          playSound(checkSound)
-        }
-      }
-      setCurrentStatus(status)
-    }
-
-    // Clean up previous listeners
-    listeners.forEach(({ element, listener }) => {
-      if (element) {
-        element.removeEventListener("touchend", listener)
-        element.removeEventListener("touchstart", (e) => e.preventDefault())
-      }
+    const squares = document.querySelectorAll(".square-55d63")
+    squares.forEach((square) => {
+      square.addEventListener("touchend", handleMobileSquareClick)
+      square.addEventListener("touchstart", (e) => e.preventDefault())
     })
-    listeners = []
 
-    // Add touch event listeners to the squares
-    squares = document.querySelectorAll(".square-55d63")
-    if (squares && squares.length > 0) {
-      squares.forEach((square) => {
-        // Create a unique listener for each square
-        const listener = (e) => handleMobileSquareClick(e)
-        square.addEventListener("touchend", listener)
-        square.addEventListener("touchstart", (e) => e.preventDefault())
-
-        // Store the element and its listener for cleanup
-        listeners.push({ element: square, listener })
-      })
-    }
-
-    // Clean up listeners when component unmounts or mobileMode changes
     return () => {
-      listeners.forEach(({ element, listener }) => {
-        if (element) {
-          element.removeEventListener("touchend", listener)
-          element.removeEventListener("touchstart", (e) => e.preventDefault())
-        }
+      squares.forEach((square) => {
+        square.removeEventListener("touchend", handleMobileSquareClick)
+        square.removeEventListener("touchstart", (e) => e.preventDefault())
       })
     }
-  }, [mobileMode, selectedSquare, possibleMoves, boardInitialized, visualHints, soundEnabled, promotionPiece])
+  }, [mobileMode, selectedSquare, possibleMoves, visualHints, promotionPiece, theme, soundEnabled])
 
-  const toggleMovesList = () => {
-    setShowMovesList(!showMovesList)
-  }
+  useEffect(() => {
+    const applyTheme = () => {
+      const currentTheme = {
+        classic: {
+          light: "#f0d9b5",
+          dark: "#b58863",
+          highlight: "#aed581",
+          possible: "#90caf9",
+          accent: "#ff9800",
+        },
+        forest: {
+          light: "#e8f5e9",
+          dark: "#388e3c",
+          highlight: "#c5e1a5",
+          possible: "#81c784",
+          accent: "#ffeb3b",
+        },
+        ocean: {
+          light: "#e3f2fd",
+          dark: "#1976d2",
+          highlight: "#bbdefb",
+          possible: "#64b5f6",
+          accent: "#ff5722",
+        },
+        night: {
+          light: "#ffffff",
+          dark: "#212121",
+          highlight: "#636363",
+          possible: "#757575",
+          accent: "#f44336",
+        },
+        royal: {
+          light: "#f3e5f5",
+          dark: "#6a1b9a",
+          highlight: "#ce93d8",
+          possible: "#9575cd",
+          accent: "#ffc107",
+        },
+      }[theme]
 
-  const handlePromotionChange = (e) => {
-    setPromotionPiece(e.target.value)
-  }
+      const styleSheet = document.createElement("style")
+      styleSheet.id = "chess-theme"
 
-  const handleThemeChange = (e) => {
-    setTheme(e.target.value)
-  }
+      const css = `
+        .white-1e1d7 { background-color: ${currentTheme.light} !important; }
+        .black-3c85d { background-color: ${currentTheme.dark} !important; }
+        .highlight-square { background-color: ${currentTheme.highlight} !important; }
+        .possible-move { background-color: ${currentTheme.possible} !important; }
+        .last-move { box-shadow: inset 0 0 0 4px ${currentTheme.accent} !important; }
+        
+        /* Mobile responsiveness fixes */
+        .square-55d63 {
+          width: 12.5% !important;
+          height: 0 !important;
+          padding-bottom: 12.5% !important;
+          position: relative !important;
+        }
+        
+        .piece-417db {
+          width: 100% !important;
+          height: auto !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          margin: auto !important;
+        }
+        
+        /* Responsive grid layout */
+        @media (max-width: 640px) {
+          .square-55d63 {
+            width: 12.5% !important;
+          }
+        }
+      `
 
-  const toggleVisualHints = () => {
-    setVisualHints(!visualHints)
-  }
+      styleSheet.textContent = css
 
-  const toggleSound = () => {
-    setSoundEnabled(!soundEnabled)
-  }
+      const existingStyle = document.getElementById("chess-theme")
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+
+      document.head.appendChild(styleSheet)
+    }
+
+    applyTheme()
+  }, [theme])
 
   const handleRestart = () => {
     setIsGameOver(false)
     setGameOverMessage("")
-    gameRef.current.reset() // Reset the chess game state
-    boardRef.current.position("start") // Reset the board position
+    gameRef.current.reset()
+    boardRef.current.position("start")
     setMoves([])
     setCurrentStatus("White to move")
     setSelectedSquare(null)
@@ -593,50 +507,41 @@ const LocalMultiplayer = () => {
     setLastMove(null)
   }
 
-  // Help modal content
-  const HelpModal = () => (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center ${showHelpModal ? "block" : "hidden"}`}>
-      <div className="absolute inset-0 bg-black/70" onClick={() => setShowHelpModal(false)}></div>
-      <div className="relative bg-gray-900 border-2 border-blue-700 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="bg-blue-800 -mt-6 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-          <h2 className="text-2xl font-bold text-yellow-400 uppercase">How to Play</h2>
-        </div>
+  const updateStatus = debounce(() => {
+    const game = gameRef.current
+    const moveColor = game.turn() === "w" ? "White" : "Black"
 
-        <div className="space-y-4 text-blue-100">
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Mobile Mode</h3>
-            <p>Tap a piece to select it, then tap a highlighted square to move. Perfect for touchscreens.</p>
-          </div>
+    if (game.isCheckmate()) {
+      const winner = moveColor === "White" ? "Black" : "White"
+      setIsGameOver(true)
+      setGameOverMessage(`${winner} wins by checkmate!`)
+      playSound(checkmateSound)
 
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Desktop Mode</h3>
-            <p>Drag and drop pieces to make moves. Hover over pieces to see possible moves.</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Local Multiplayer</h3>
-            <p>Two players can play on the same device, taking turns. White moves first, then Black.</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-yellow-400 mb-1">Visual Hints</h3>
-            <p>Toggle to show or hide move suggestions and highlights.</p>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowHelpModal(false)}
-          className="mt-6 w-full bg-yellow-500 text-blue-900 font-bold py-2 rounded-md hover:bg-yellow-400"
-        >
-          Got it!
-        </button>
-      </div>
-    </div>
-  )
+      triggerWinCelebration()
+    } else if (game.isStalemate()) {
+      setIsGameOver(true)
+      setGameOverMessage("It's a draw! Stalemate.")
+    } else if (game.isThreefoldRepetition()) {
+      setIsGameOver(true)
+      setGameOverMessage("It's a draw! Threefold repetition.")
+    } else if (game.isInsufficientMaterial()) {
+      setIsGameOver(true)
+      setGameOverMessage("It's a draw! Insufficient material.")
+    } else if (game.isDraw()) {
+      setIsGameOver(true)
+      setGameOverMessage("It's a draw!")
+    } else {
+      setCurrentStatus(`${moveColor} to move`)
+      if (game.inCheck()) {
+        setCurrentStatus(`${moveColor} is in check!`)
+        playSound(checkSound)
+      }
+    }
+  }, 100)
 
   return (
-    <div className="relative w-screen min-h-screen overflow-x-hidden bg-gray-950 font-mono">
-      {/* Chess board background with perspective */}
+    <div className="relative w-screen min-h-screen bg-gray-950 font-mono overflow-x-hidden">
+      {/* Background effect */}
       <div className="fixed inset-0 z-0 perspective-1000">
         <div
           className="absolute inset-0 transform-style-3d rotate-x-60 scale-150"
@@ -651,467 +556,631 @@ const LocalMultiplayer = () => {
         ></div>
       </div>
 
-      {/* Game UI Container */}
-      <div className="relative z-10 py-8 md:py-16 min-h-screen flex flex-col">
-        {/* Game Header Banner */}
-        <div className="w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-yellow-400 mb-2 pixelated drop-shadow-md">
-              LOCAL MULTIPLAYER
-            </h1>
-            <div className="h-1 w-32 mx-auto bg-yellow-500 mb-4"></div>
-            <p className="text-lg text-blue-100">Play chess with a friend on the same device</p>
-          </div>
+      {/* Header */}
+      <header className="relative z-10 w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4 mt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">
+            LOCAL MULTIPLAYER
+          </h1>
+
+          {/* Mobile menu button */}
+          <button
+            className="md:hidden bg-blue-800 p-2 rounded-lg border border-blue-600 flex items-center justify-center shadow-lg"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            aria-label="Chess options"
+          >
+            {showMobileMenu ?
+              <Settings size={20} className="text-white mr-1" /> :
+              <Settings size={20} className="text-white mr-1" />}
+            <span className="text-white font-bold">Settings</span>
+          </button>
         </div>
+      </header>
 
-        {/* Game Menu Tabs */}
-        <nav className="bg-gray-900 border-b-2 border-blue-800 shadow-md">
-          <div className="max-w-6xl mx-auto px-4 py-2 flex justify-center overflow-x-auto">
-            {["game", "settings", "help"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 mx-2 text-lg font-bold uppercase transition-all ${
-                  activeTab === tab
-                    ? "bg-blue-800 text-yellow-400 border-2 border-yellow-500 shadow-yellow-400/20 shadow-md"
-                    : "text-blue-300 hover:bg-blue-900 border-2 border-transparent"
-                }`}
-              >
-                {tab === "game" && "Game"}
-                {tab === "settings" && "Settings"}
-                {tab === "help" && "Help"}
-              </button>
-            ))}
-          </div>
-        </nav>
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="relative z-20 bg-gray-900 border-b-2 border-blue-700 md:hidden"
+          >
+            <div className="p-4 space-y-3">
+              {/* Game mode toggle */}
+              <div className="bg-blue-900/50 rounded-lg p-3 border border-blue-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    {mobileMode ?
+                      <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                      <Monitor className="h-5 w-5 text-blue-300 mr-2" />
+                    }
+                    <span className="font-bold text-white">
+                      {mobileMode ? "Mobile Mode" : "Desktop Mode"}
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={mobileMode}
+                      onChange={handleMobileModeToggle}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+                <p className="text-xs text-blue-200 mt-1">
+                  {mobileMode ? "Tap to select and move pieces" : "Drag and drop pieces to move"}
+                </p>
+              </div>
 
-        {/* Main Content Area - Game Panel Style */}
-        <div className="flex-grow px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            {/* Game Tab Content */}
-            {activeTab === "game" && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Chess board container with stylish border */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-full"
+              {/* Quick settings */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
                 >
-                  <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
-                    <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-                      <h2 className="text-2xl font-bold text-yellow-400 uppercase">Chess Board</h2>
-                    </div>
+                  {soundEnabled ?
+                    <Volume2 className="h-5 w-5 text-blue-300 mr-1" /> :
+                    <VolumeX className="h-5 w-5 text-gray-400 mr-1" />
+                  }
+                  <span className="text-sm text-white">Sound</span>
+                </button>
 
-                    <div className="relative backdrop-blur-sm bg-black/30 p-4 rounded-lg border-2 border-blue-600">
-                      <div ref={chessRef} style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}></div>
-                    </div>
+                <button
+                  onClick={() => setVisualHints(!visualHints)}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
+                >
+                  {visualHints ?
+                    <Eye className="h-5 w-5 text-blue-300 mr-1" /> :
+                    <EyeOff className="h-5 w-5 text-gray-400 mr-1" />
+                  }
+                  <span className="text-sm text-white">Hints</span>
+                </button>
 
-                    {/* Status display */}
-                    <div className="mt-4">
-                      <motion.div
-                        initial={{ scale: 0.95 }}
-                        animate={{ scale: 1 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 260,
-                          damping: 20,
-                        }}
-                        className="rounded-lg text-center p-3 bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white border border-white/30 shadow-lg"
-                      >
-                        <p className="text-xl font-semibold">{currentStatus ? currentStatus : "White to move"}</p>
-                      </motion.div>
-                    </div>
+                <button
+                  onClick={() => setShowHelpModal(true)}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
+                >
+                  <HelpCircle className="h-5 w-5 text-blue-300 mr-1" />
+                  <span className="text-sm text-white">Help</span>
+                </button>
 
-                    {/* Help text for mobile mode */}
-                    {mobileMode && (
-                      <div className="mt-4 p-3 bg-black/50 text-white text-center rounded-lg border border-blue-600">
-                        {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
+                <button
+                  onClick={handleRestart}
+                  className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
+                >
+                  <RotateCcw className="h-5 w-5 text-blue-300 mr-1" />
+                  <span className="text-sm text-white">Restart</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main content */}
+      <main className="relative z-10 py-6 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Game status banner */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6 bg-gradient-to-r from-blue-900 to-indigo-900 rounded-lg p-3 border-2 border-blue-700 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="bg-blue-800 p-2 rounded-full mr-3">
+                  <Clock className="h-5 w-5 text-yellow-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Game Status</h2>
+                  <p className="text-yellow-300 font-semibold">{currentStatus || "White to move"}</p>
+                </div>
+              </div>
+
+              {/* Desktop controls */}
+              <div className="hidden md:flex items-center space-x-3">
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg border border-blue-600 text-white flex items-center"
+                >
+                  <Settings className="h-5 w-5 mr-1" />
+                  <span>Settings</span>
+                </button>
+
+                <button
+                  onClick={handleRestart}
+                  className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg border border-blue-600 text-white flex items-center"
+                >
+                  <RotateCcw className="h-5 w-5 mr-1" />
+                  <span>Restart</span>
+                </button>
+
+                <button
+                  onClick={() => setShowHelpModal(true)}
+                  className="bg-blue-800 hover:bg-blue-700 p-2 rounded-lg border border-blue-600 text-white flex items-center"
+                >
+                  <HelpCircle className="h-5 w-5 mr-1" />
+                  <span>Help</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Settings panel (desktop) */}
+          <AnimatePresence>
+            {showSettings && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 bg-gray-900 rounded-lg border-2 border-blue-700 overflow-hidden shadow-lg"
+              >
+                <div className="bg-blue-800 py-2 px-4 border-b border-blue-700 flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-yellow-400">Game Settings</h3>
+                  <button
+                    onClick={() => setShowSettings(false)}
+                    className="text-white hover:text-gray-300"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Game mode */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Game Mode</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {mobileMode ?
+                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                          <Monitor className="h-5 w-5 text-blue-300 mr-2" />
+                        }
+                        <span className="text-white">
+                          {mobileMode ? "Mobile Mode" : "Desktop Mode"}
+                        </span>
                       </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={mobileMode}
+                          onChange={handleMobileModeToggle}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Visual hints */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Visual Hints</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {visualHints ?
+                          <Eye className="h-5 w-5 text-cyan-300 mr-2" /> :
+                          <EyeOff className="h-5 w-5 text-gray-400 mr-2" />
+                        }
+                        <span className="text-white">
+                          {visualHints ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visualHints}
+                          onChange={() => setVisualHints(!visualHints)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Sound */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Sound Effects</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {soundEnabled ?
+                          <Volume2 className="h-5 w-5 text-purple-300 mr-2" /> :
+                          <VolumeX className="h-5 w-5 text-gray-400 mr-2" />
+                        }
+                        <span className="text-white">
+                          {soundEnabled ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={soundEnabled}
+                          onChange={() => setSoundEnabled(!soundEnabled)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Board theme */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Board Theme</h4>
+                    <div className="flex items-center">
+                      <Palette className="h-5 w-5 text-pink-300 mr-2" />
+                      <select
+                        value={theme}
+                        onChange={(e) => setTheme(e.target.value)}
+                        className="w-full bg-gray-700 text-white p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
+                      >
+                        <option value="classic">Classic</option>
+                        <option value="forest">Forest</option>
+                        <option value="ocean">Ocean</option>
+                        <option value="night">Night</option>
+                        <option value="royal">Royal</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Promotion piece */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Promotion Piece</h4>
+                    <div className="flex items-center">
+                      <select
+                        value={promotionPiece}
+                        onChange={(e) => setPromotionPiece(e.target.value)}
+                        className="w-full bg-gray-700 text-white p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
+                      >
+                        <option value="q">Queen</option>
+                        <option value="r">Rook</option>
+                        <option value="b">Bishop</option>
+                        <option value="n">Knight</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Move history toggle */}
+                  <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
+                    <h4 className="text-blue-300 font-bold mb-2">Move History</h4>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <History className="h-5 w-5 text-blue-300 mr-2" />
+                        <span className="text-white">
+                          {showMovesList ? "Visible" : "Hidden"}
+                        </span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showMovesList}
+                          onChange={() => setShowMovesList(!showMovesList)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Game layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* Chess board section - takes 3/5 of the space on large screens */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="lg:col-span-3"
+            >
+              <div className="bg-gradient-to-b from-gray-900 to-gray-950 rounded-lg border-2 border-blue-700 shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-900 to-blue-800 py-3 px-4 border-b border-blue-700 flex justify-between items-center">
+                  <div className="flex items-center">
+                    <Shield className="h-6 w-6 text-yellow-400 mr-2" />
+                    <h2 className="text-xl font-bold text-yellow-400">Chess Board</h2>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium text-blue-200 mr-2">
+                      Local Multiplayer
+                    </span>
+                    <div className="bg-blue-800 p-1 rounded-full">
+                      <Users className="h-4 w-4 text-yellow-400" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4">
+                  {/* Chess board container */}
+                  <div className="backdrop-blur-sm bg-black/30 p-2 sm:p-4 rounded-lg border-2 border-blue-600 shadow-inner">
+                    <div
+                      ref={chessRef}
+                      style={{
+                        width: "100%",
+                        maxWidth: "min(100%, 600px)",
+                        margin: "0 auto",
+                        touchAction: mobileMode ? "manipulation" : "auto",
+                      }}
+                    ></div>
+
+                    {/* Mobile mode indicator */}
+                    {mobileMode && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 p-3 bg-gradient-to-r from-blue-900/80 to-indigo-900/80 text-white text-center rounded-lg border border-blue-600 shadow-md"
+                      >
+                        <div className="flex items-center justify-center">
+                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" />
+                          <p className="font-medium">
+                            {selectedSquare ? "Tap a highlighted square to move" : "Tap a piece to select"}
+                          </p>
+                        </div>
+                      </motion.div>
                     )}
 
-                    {/* Quick controls */}
-                    <div className="mt-4 flex flex-wrap justify-center gap-3">
+                    {/* Quick controls for mobile */}
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleRestart}
-                        className="bg-gradient-to-r from-red-600 to-red-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                        className="bg-gradient-to-r from-red-600 to-red-500 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center"
                       >
-                        <RotateCcw size={18} />
+                        <RotateCcw size={16} className="mr-1" />
                         Restart
                       </motion.button>
 
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={toggleSound}
-                        className={`px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2 ${
-                          soundEnabled
-                            ? "bg-gradient-to-r from-purple-600 to-purple-400 text-white"
-                            : "bg-gradient-to-r from-gray-700 to-gray-600 text-gray-300"
-                        }`}
+                        onClick={() => setSoundEnabled(!soundEnabled)}
+                        className={`${soundEnabled
+                            ? "bg-gradient-to-r from-purple-600 to-purple-500"
+                            : "bg-gradient-to-r from-gray-700 to-gray-600"
+                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
                       >
-                        {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                        {soundEnabled ? <Volume2 size={16} className="mr-1" /> : <VolumeX size={16} className="mr-1" />}
                         {soundEnabled ? "Sound On" : "Sound Off"}
                       </motion.button>
 
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => setShowHelpModal(true)}
-                        className="bg-gradient-to-r from-blue-600 to-blue-400 text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center gap-2"
+                        onClick={() => setVisualHints(!visualHints)}
+                        className={`${visualHints
+                            ? "bg-gradient-to-r from-cyan-600 to-cyan-500"
+                            : "bg-gradient-to-r from-gray-700 to-gray-600"
+                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
                       >
-                        <HelpCircle size={18} />
-                        How to Play
+                        {visualHints ? <Eye size={16} className="mr-1" /> : <EyeOff size={16} className="mr-1" />}
+                        {visualHints ? "Hints On" : "Hints Off"}
                       </motion.button>
                     </div>
                   </div>
-                </motion.div>
+                </div>
+              </div>
+            </motion.div>
 
-                {/* Game info and controls */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="w-full"
-                >
-                  <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel h-full">
-                    <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-                      <h2 className="text-2xl font-bold text-yellow-400 uppercase">Game Info</h2>
+            {/* Game info section - takes 2/5 of the space on large screens */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="lg:col-span-2"
+            >
+              <div className="bg-gradient-to-b from-gray-900 to-gray-950 rounded-lg border-2 border-blue-700 shadow-lg h-full">
+                <div className="bg-gradient-to-r from-blue-900 to-blue-800 py-3 px-4 border-b border-blue-700">
+                  <h2 className="text-xl font-bold text-yellow-400">Game Info</h2>
+                </div>
+
+                <div className="p-4 space-y-4">
+                  {/* Game stats */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-gradient-to-br from-blue-900/80 to-indigo-900/80 rounded-lg p-3 border border-blue-600 flex items-center"
+                    >
+                      <div className="mr-3 bg-blue-800 p-2 rounded-full border border-yellow-500">
+                        <Shield size={20} className="text-yellow-400" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-blue-300">Mode</div>
+                        <div className="text-lg font-bold text-white">Local Multiplayer</div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-gradient-to-br from-blue-900/80 to-indigo-900/80 rounded-lg p-3 border border-blue-600 flex items-center"
+                    >
+                      <div className="mr-3 bg-blue-800 p-2 rounded-full border border-yellow-500">
+                        <Award size={20} className="text-yellow-400" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-blue-300">Moves</div>
+                        <div className="text-lg font-bold text-white">{moves.length}</div>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Move history */}
+                  <div className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-lg border border-blue-600 overflow-hidden">
+                    <div className="bg-blue-900/80 py-2 px-3 border-b border-blue-700 flex justify-between items-center">
+                      <div className="flex items-center">
+                        <History className="h-5 w-5 text-yellow-400 mr-2" />
+                        <h3 className="text-lg font-semibold text-yellow-400">Move History</h3>
+                      </div>
+                      <button
+                        onClick={() => setShowMovesList(!showMovesList)}
+                        className="text-white bg-blue-800 hover:bg-blue-700 px-2 py-1 rounded text-sm border border-blue-600 flex items-center"
+                      >
+                        {showMovesList ? (
+                          <>
+                            <ChevronUp className="h-4 w-4 mr-1" />
+                            Hide
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4 mr-1" />
+                            Show
+                          </>
+                        )}
+                      </button>
                     </div>
 
-                    <div className="space-y-6">
-                      {/* Game stats */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
-                          <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
-                            <Network size={24} className="text-yellow-400" />
-                          </div>
-                          <div>
-                            <div className="text-lg font-bold text-yellow-400">Mode</div>
-                            <div className="text-blue-200">Local Multiplayer</div>
-                          </div>
-                        </div>
+                    <AnimatePresence>
+                      {showMovesList && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="max-h-[200px] sm:max-h-[300px] overflow-y-auto"
+                        >
+                          {moves.length > 0 ? (
+                            <table className="w-full border-collapse text-sm">
+                              <thead>
+                                <tr className="bg-blue-900/50 text-white border-b border-blue-700">
+                                  <th className="p-2 text-left">#</th>
+                                  <th className="p-2 text-left">From</th>
+                                  <th className="p-2 text-left">To</th>
+                                  <th className="p-2 text-left">Player</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {moves.map((move, index) => (
+                                  <tr
+                                    key={index}
+                                    className={`text-white ${index % 2 === 0 ? "bg-blue-900/20" : "bg-blue-900/10"
+                                      } hover:bg-blue-800/30`}
+                                  >
+                                    <td className="p-2">{index + 1}</td>
+                                    <td className="p-2 font-mono">{move.from}</td>
+                                    <td className="p-2 font-mono">{move.to}</td>
+                                    <td className="p-2">{index % 2 === 0 ? "White" : "Black"}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div className="text-center py-4 text-blue-300">No moves yet</div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
 
-                        <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 flex items-center">
-                          <div className="mr-4 bg-blue-900 p-3 rounded-full border-2 border-yellow-500">
-                            <Activity size={24} className="text-yellow-400" />
-                          </div>
-                          <div>
-                            <div className="text-lg font-bold text-yellow-400">Moves</div>
-                            <div className="text-blue-200">{moves.length}</div>
-                          </div>
-                        </div>
-                      </div>
+                  {/* Game settings for desktop */}
+                  <div className="hidden md:block">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Board theme */}
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-lg p-3 border border-blue-600"
+                      >
+                        <h3 className="text-lg font-semibold text-blue-300 mb-2 flex items-center">
+                          <Palette className="h-5 w-5 mr-2" />
+                          Board Theme
+                        </h3>
+                        <select
+                          value={theme}
+                          onChange={(e) => setTheme(e.target.value)}
+                          className="w-full bg-gray-800 text-blue-100 p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
+                        >
+                          <option value="classic">Classic</option>
+                          <option value="forest">Forest</option>
+                          <option value="ocean">Ocean</option>
+                          <option value="night">Night</option>
+                          <option value="royal">Royal</option>
+                        </select>
+                      </motion.div>
 
-                      {/* Promotion piece selector */}
-                      <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                        <h3 className="text-xl font-bold text-yellow-400 mb-3">Promotion Piece</h3>
-                        <p className="text-blue-300 text-sm mb-4">Choose which piece to promote pawns to</p>
+                      {/* Promotion piece */}
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-lg p-3 border border-blue-600"
+                      >
+                        <h3 className="text-lg font-semibold text-blue-300 mb-2 flex items-center">
+                          <Award className="h-5 w-5 mr-2" />
+                          Promotion Piece
+                        </h3>
                         <select
                           value={promotionPiece}
-                          onChange={handlePromotionChange}
-                          className="w-full bg-gray-800 text-blue-100 p-3 rounded-md border-2 border-blue-500 focus:border-yellow-500 focus:outline-none"
+                          onChange={(e) => setPromotionPiece(e.target.value)}
+                          className="w-full bg-gray-800 text-blue-100 p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
                         >
                           <option value="q">Queen</option>
                           <option value="r">Rook</option>
                           <option value="b">Bishop</option>
                           <option value="n">Knight</option>
                         </select>
-                      </div>
-
-                      {/* Move history */}
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-semibold text-yellow-400">Move History</h3>
-                          <button
-                            onClick={toggleMovesList}
-                            className="text-white bg-blue-600/80 px-3 py-1 rounded-md text-sm border border-blue-400"
-                          >
-                            {showMovesList ? "Hide" : "Show"}
-                          </button>
-                        </div>
-
-                        {showMovesList && (
-                          <div className="bg-black/30 rounded-lg p-2 max-h-[300px] overflow-y-auto border-2 border-blue-600">
-                            {moves.length > 0 ? (
-                              <table className="w-full border-collapse">
-                                <thead>
-                                  <tr className="text-white border-b border-white/20">
-                                    <th className="p-2 text-left">#</th>
-                                    <th className="p-2 text-left">From</th>
-                                    <th className="p-2 text-left">To</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {moves.map((move, index) => (
-                                    <tr key={index} className={`text-white ${index % 2 === 0 ? "bg-white/5" : ""}`}>
-                                      <td className="p-2">{index + 1}</td>
-                                      <td className="p-2">{move.from}</td>
-                                      <td className="p-2">{move.to}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            ) : (
-                              <div className="text-center py-4 text-blue-300">No moves yet</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Mobile mode toggle */}
-                      <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-lg font-bold text-yellow-400">Mobile Mode</h3>
-                            <p className="text-blue-300 text-sm">Tap to select and move pieces</p>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <label className="relative inline-flex items-center cursor-pointer mb-1">
-                              <input
-                                type="checkbox"
-                                checked={mobileMode}
-                                onChange={handleCheckboxChange}
-                                className="sr-only peer"
-                              />
-                              <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                            <span className="text-sm font-medium text-yellow-400">
-                              {mobileMode ? "Enabled" : "Disabled"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-8 text-white text-center">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={handleRestart}
-                          className="bg-gradient-to-r from-red-600 to-blue-700 bg-opacity-30 text-white border border-gray-200 px-6 py-3 rounded-lg w-full text-lg lg:text-xl"
-                        >
-                          Restart Game
-                        </motion.button>
-                      </div>
+                      </motion.div>
                     </div>
                   </div>
-                </motion.div>
-              </div>
-            )}
 
-            {/* Settings Tab Content */}
-            {activeTab === "settings" && (
-              <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
-                <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-                  <h2 className="text-2xl font-bold text-yellow-400 uppercase">Game Settings</h2>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Board Theme</h3>
-                    <p className="text-blue-300 text-sm mb-4">Choose your preferred board style</p>
-                    <select
-                      value={theme}
-                      onChange={handleThemeChange}
-                      className="w-full bg-gray-800 text-blue-100 p-3 rounded-md border-2 border-blue-500 focus:border-yellow-500 focus:outline-none"
+                  {/* How to play */}
+                  <div className="bg-gradient-to-br from-blue-900/50 to-indigo-900/50 rounded-lg p-4 border border-blue-600">
+                    <h3 className="text-lg font-semibold text-yellow-400 mb-2 flex items-center">
+                      <HelpCircle className="h-5 w-5 mr-2" />
+                      How to Play
+                    </h3>
+                    <ul className="text-blue-100 text-sm space-y-2">
+                      <li className="flex items-start">
+                        <span className="text-yellow-400 mr-2">•</span>
+                        <span>Two players take turns moving pieces on the same device</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-yellow-400 mr-2">•</span>
+                        <span>White moves first, followed by Black</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-yellow-400 mr-2">•</span>
+                        <span>The goal is to checkmate your opponent's king</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-yellow-400 mr-2">•</span>
+                        <span>Use mobile mode for touchscreens or desktop mode for mouse control</span>
+                      </li>
+                    </ul>
+                    <button
+                      onClick={() => setShowHelpModal(true)}
+                      className="mt-3 w-full bg-blue-800 hover:bg-blue-700 text-white py-2 rounded-md text-sm border border-blue-600"
                     >
-                      <option value="classic">Classic</option>
-                      <option value="forest">Forest</option>
-                      <option value="ocean">Ocean</option>
-                      <option value="night">Night</option>
-                      <option value="royal">Royal</option>
-                    </select>
-                  </div>
-
-                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-yellow-400">Visual Hints</h3>
-                        <p className="text-blue-300 text-sm">Show possible moves and highlights</p>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <label className="relative inline-flex items-center cursor-pointer mb-1">
-                          <input
-                            type="checkbox"
-                            checked={visualHints}
-                            onChange={toggleVisualHints}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                        <span className="text-sm font-medium text-yellow-400">
-                          {visualHints ? "Enabled" : "Disabled"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-yellow-400">Sound Effects</h3>
-                        <p className="text-blue-300 text-sm">Enable or disable game sounds</p>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <label className="relative inline-flex items-center cursor-pointer mb-1">
-                          <input
-                            type="checkbox"
-                            checked={soundEnabled}
-                            onChange={toggleSound}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                        <span className="text-sm font-medium text-yellow-400">
-                          {soundEnabled ? "Enabled" : "Disabled"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-yellow-400">Mobile Mode</h3>
-                        <p className="text-blue-300 text-sm">Tap to select and move pieces</p>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <label className="relative inline-flex items-center cursor-pointer mb-1">
-                          <input
-                            type="checkbox"
-                            checked={mobileMode}
-                            onChange={handleCheckboxChange}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                        <span className="text-sm font-medium text-yellow-400">
-                          {mobileMode ? "Enabled" : "Disabled"}
-                        </span>
-                      </div>
-                    </div>
+                      View Full Rules
+                    </button>
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Help Tab Content */}
-            {activeTab === "help" && (
-              <div className="bg-gray-900 border-2 border-blue-700 rounded-lg p-6 shadow-lg game-panel">
-                <div className="bg-blue-800 -mt-8 -mx-6 mb-6 py-2 px-4 border-b-2 border-yellow-500">
-                  <h2 className="text-2xl font-bold text-yellow-400 uppercase">How to Play</h2>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Basic Rules</h3>
-                    <ul className="space-y-3 text-blue-100">
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500">
-                          1
-                        </div>
-                        <p>Two players take turns moving pieces on the board.</p>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500">
-                          2
-                        </div>
-                        <p>White always moves first, followed by Black.</p>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500">
-                          3
-                        </div>
-                        <p>The goal is to checkmate your opponent's king.</p>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Controls</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-lg font-semibold text-blue-200 mb-2">Desktop Mode</h4>
-                        <p className="text-blue-100 mb-2">
-                          Click and drag pieces to make moves. Hover over pieces to see possible moves when visual hints
-                          are enabled.
-                        </p>
-                      </div>
-
-                      <div>
-                        <h4 className="text-lg font-semibold text-blue-200 mb-2">Mobile Mode</h4>
-                        <p className="text-blue-100 mb-2">
-                          Tap a piece to select it, then tap a highlighted square to move. This mode is perfect for
-                          touchscreens.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600">
-                    <h3 className="text-xl font-bold text-yellow-400 mb-3">Special Moves</h3>
-                    <ul className="space-y-3 text-blue-100">
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500 text-xs">
-                          P
-                        </div>
-                        <p>
-                          Pawn Promotion: When a pawn reaches the opposite end of the board, it can be promoted to a
-                          Queen, Rook, Bishop, or Knight.
-                        </p>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500 text-xs">
-                          C
-                        </div>
-                        <p>
-                          Castling: The king can move two squares toward a rook, and the rook moves to the square the
-                          king crossed.
-                        </p>
-                      </li>
-                      <li className="flex items-start">
-                        <div className="h-6 w-6 rounded-full bg-blue-800 flex items-center justify-center text-yellow-400 mr-3 mt-0.5 flex-shrink-0 border border-yellow-500 text-xs">
-                          E
-                        </div>
-                        <p>
-                          En Passant: A pawn can capture an opponent's pawn that has just moved two squares forward.
-                        </p>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
+            </motion.div>
           </div>
+
+          {/* Call to action */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-8 bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg text-center"
+          >
+            <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Play with a Friend!</h2>
+
+            <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+              Challenge a friend to a game of chess on the same device. Take turns making moves and see who has the better strategy.
+            </p>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleRestart}
+              className="px-8 py-4 bg-gradient-to-r from-yellow-500 to-yellow-400 text-blue-900 text-xl font-bold uppercase rounded-lg hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-600"
+            >
+              START NEW GAME
+            </motion.button>
+          </motion.div>
         </div>
+      </main>
 
-        {/* Call to Action - Game Button Style */}
-        <div className="w-full bg-gray-900 border-t-4 border-blue-800 py-8 px-4 mt-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg">
-              <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Enjoy Your Game!</h2>
-
-              <p className="text-blue-100 mb-6">
-                Challenge a friend to a game of chess and see who has the better strategy.
-              </p>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleRestart}
-                className="px-8 py-4 bg-yellow-500 text-blue-900 text-xl font-bold uppercase rounded-lg hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-700"
-              >
-                START NEW GAME
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Help Modal */}
-      <HelpModal />
+      <HelpModal showHelpModal={showHelpModal} setShowHelpModal={setShowHelpModal} />
 
       {/* Game Over Modal */}
       <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
@@ -1119,4 +1188,4 @@ const LocalMultiplayer = () => {
   )
 }
 
-export default LocalMultiplayer
+export default LocalPlayer
