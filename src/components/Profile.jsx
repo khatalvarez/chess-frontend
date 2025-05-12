@@ -7,7 +7,19 @@ import { login, logout } from "../store/authSlice"
 import Cookies from "js-cookie"
 import { useNavigate } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { Trophy, Target, Calendar, LogOut, User, Activity, RefreshCw, ChevronDown, ChevronUp, Shield, HelpCircle } from 'lucide-react'
+import {
+  Trophy,
+  Target,
+  Calendar,
+  LogOut,
+  User,
+  Activity,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  HelpCircle,
+} from "lucide-react"
 import { BASE_URL } from "../url"
 import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -68,7 +80,13 @@ function Profile() {
       const newStats = calculateStats(res.data)
       setStats(newStats)
 
-      toast.success("Profile updated successfully")
+      // Only show success message when manually refreshed, not on initial load or auto-refresh
+      if (isRefreshing && !window.initialLoad) {
+        toast.success("Profile updated successfully")
+      }
+
+      // Set initialLoad to false after first load
+      window.initialLoad = false
     } catch (error) {
       console.error("Error fetching profile:", error)
       toast.error("Failed to load profile data")
@@ -268,21 +286,21 @@ function Profile() {
           <div>
             <h3 className="text-lg font-bold text-yellow-400 mb-1">Rating System</h3>
             <p>
-              Your rating is calculated based on your win/loss record. Winning games increases your rating, while losing games decreases it.
+              Your rating is calculated based on your win/loss record. Winning games increases your rating, while losing
+              games decreases it.
             </p>
           </div>
 
           <div>
             <h3 className="text-lg font-bold text-yellow-400 mb-1">Match History</h3>
-            <p>
-              View your past games, filtered by wins, losses, or draws. Click on any match to see more details.
-            </p>
+            <p>View your past games, filtered by wins, losses, or draws. Click on any match to see more details.</p>
           </div>
 
           <div>
             <h3 className="text-lg font-bold text-yellow-400 mb-1">Stats</h3>
             <p>
-              Your profile shows your total games played, win rate, and current rating. These stats are updated automatically after each game.
+              Your profile shows your total games played, win rate, and current rating. These stats are updated
+              automatically after each game.
             </p>
           </div>
         </div>
@@ -374,8 +392,8 @@ function Profile() {
                         </span>
                       </div>
                       <div className="w-full bg-gray-800 rounded-full h-2 mb-1 border border-blue-900">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${Math.min((stats.rating / 3000) * 100, 100)}%` }}
                         ></div>
                       </div>
@@ -395,10 +413,7 @@ function Profile() {
                         </span>
                       </div>
                       <div className="w-full bg-gray-800 rounded-full h-2 mb-1 border border-green-900">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
-                          style={{ width: `${stats.winRate}%` }}
-                        ></div>
+                        <div className="bg-green-600 h-2 rounded-full" style={{ width: `${stats.winRate}%` }}></div>
                       </div>
                     </div>
 
@@ -411,7 +426,7 @@ function Profile() {
                         <p className="text-blue-200 text-sm mb-1">Wins</p>
                         <p className="text-2xl font-bold text-white">{userData?.wins || 0}</p>
                       </div>
-                      
+
                       <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 text-center">
                         <div className="w-10 h-10 rounded-full bg-blue-900 border-2 border-yellow-500 flex items-center justify-center mx-auto mb-2">
                           <Activity size={18} className="text-yellow-400" />
@@ -419,7 +434,7 @@ function Profile() {
                         <p className="text-blue-200 text-sm mb-1">Losses</p>
                         <p className="text-2xl font-bold text-white">{userData?.loses || 0}</p>
                       </div>
-                      
+
                       <div className="bg-black/30 rounded-lg p-4 border-2 border-blue-600 text-center">
                         <div className="w-10 h-10 rounded-full bg-blue-900 border-2 border-yellow-500 flex items-center justify-center mx-auto mb-2">
                           <Target size={18} className="text-yellow-400" />
@@ -449,7 +464,7 @@ function Profile() {
                         <LogOut className="mr-2" size={18} />
                         Logout
                       </motion.button>
-                      
+
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -496,8 +511,8 @@ function Profile() {
                     <button
                       onClick={() => setActiveTab("all")}
                       className={`flex-1 py-3 text-center font-medium ${
-                        activeTab === "all" 
-                          ? "text-blue-400 border-b-2 border-blue-400" 
+                        activeTab === "all"
+                          ? "text-blue-400 border-b-2 border-blue-400"
                           : "text-gray-400 hover:text-gray-200"
                       }`}
                     >
@@ -506,8 +521,8 @@ function Profile() {
                     <button
                       onClick={() => setActiveTab("wins")}
                       className={`flex-1 py-3 text-center font-medium ${
-                        activeTab === "wins" 
-                          ? "text-green-400 border-b-2 border-green-400" 
+                        activeTab === "wins"
+                          ? "text-green-400 border-b-2 border-green-400"
                           : "text-gray-400 hover:text-gray-200"
                       }`}
                     >
@@ -516,8 +531,8 @@ function Profile() {
                     <button
                       onClick={() => setActiveTab("losses")}
                       className={`flex-1 py-3 text-center font-medium ${
-                        activeTab === "losses" 
-                          ? "text-red-400 border-b-2 border-red-400" 
+                        activeTab === "losses"
+                          ? "text-red-400 border-b-2 border-red-400"
                           : "text-gray-400 hover:text-gray-200"
                       }`}
                     >
@@ -526,8 +541,8 @@ function Profile() {
                     <button
                       onClick={() => setActiveTab("draws")}
                       className={`flex-1 py-3 text-center font-medium ${
-                        activeTab === "draws" 
-                          ? "text-yellow-400 border-b-2 border-yellow-400" 
+                        activeTab === "draws"
+                          ? "text-yellow-400 border-b-2 border-yellow-400"
                           : "text-gray-400 hover:text-gray-200"
                       }`}
                     >
@@ -537,7 +552,7 @@ function Profile() {
 
                   {/* Match History Content */}
                   <div className="p-4 max-h-[500px] overflow-y-auto">
-                    {(!filterMatchHistory() || filterMatchHistory().length === 0) ? (
+                    {!filterMatchHistory() || filterMatchHistory().length === 0 ? (
                       <div className="text-center py-12 px-4 bg-black/30 rounded-lg border-2 border-blue-600">
                         <Trophy className="mx-auto mb-4 text-yellow-400 opacity-50" size={48} />
                         <p className="text-xl font-medium text-white mb-2">No matches found</p>
@@ -603,8 +618,8 @@ function Profile() {
                               >
                                 <div
                                   className={`rounded-lg p-3 cursor-pointer transition-all border-2 ${
-                                    expandedMatch === match._id 
-                                      ? "bg-gray-800 border-blue-600" 
+                                    expandedMatch === match._id
+                                      ? "bg-gray-800 border-blue-600"
                                       : "bg-gray-800/50 hover:bg-opacity-70 border-gray-700"
                                   }`}
                                   onClick={() => toggleMatchDetails(match._id)}
@@ -693,9 +708,7 @@ function Profile() {
             <div className="bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg">
               <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Ready to Play?</h2>
 
-              <p className="text-blue-100 mb-6">
-                Challenge players from around the world and improve your rating!
-              </p>
+              <p className="text-blue-100 mb-6">Challenge players from around the world and improve your rating!</p>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}

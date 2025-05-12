@@ -37,12 +37,7 @@ import bg from "../../assets/images/bgprofile.webp"
 import { BASE_URL } from "../../url"
 import GameOverModal from "../GameOverModal"
 
-// Initialize sound effects
-const moveSound = new Howl({ src: [moveSoundFile] })
-const captureSound = new Howl({ src: [captureSoundFile] })
-const checkSound = new Howl({ src: [checkSoundFile] })
-const checkmateSound = new Howl({ src: [checkmateSoundFile] })
-
+// Debounce function to limit the rate at which a function can fire
 const debounce = (func, delay) => {
   let timeoutId
   return (...args) => {
@@ -53,10 +48,17 @@ const debounce = (func, delay) => {
   }
 }
 
-const Puzzle1 = () => {
-  // The specific puzzle FEN position
-  const puzzleFEN = "8/3P3k/n2K3p/2p3n1/1b4N1/2p1p1P1/8/3B4 w - - 0 1"
+// Initialize sound effects
+const moveSound = new Howl({ src: [moveSoundFile] })
+const captureSound = new Howl({ src: [captureSoundFile] })
+const checkSound = new Howl({ src: [checkSoundFile] })
+const checkmateSound = new Howl({ src: [checkmateSoundFile] })
 
+const Puzzle6 = () => {
+  // The specific puzzle FEN position for puzzle6
+  const puzzleFEN = "r6r/ppp4Q/3qb3/3p4/3P2kP/5R2/P3B1P1/5RK1 w - - 7 29"
+
+  // Fetch best move from Stockfish engine
   const fetchBestMove = async (FEN) => {
     try {
       const response = await axios.get(`${BASE_URL}/stockfish`, {
@@ -98,7 +100,7 @@ const Puzzle1 = () => {
   // SEO setup
   useEffect(() => {
     window.scrollTo(0, 0)
-    document.title = "The Magician's Puzzle | Chess Master - Challenging Chess Puzzles"
+    document.title = "Mate in One Move | Chess Master - Challenging Chess Puzzles"
 
     let metaDescription = document.querySelector('meta[name="description"]')
     if (!metaDescription) {
@@ -107,7 +109,7 @@ const Puzzle1 = () => {
       document.head.appendChild(metaDescription)
     }
     metaDescription.content =
-      "Challenge yourself with 'The Magician's Puzzle' - one of the hardest chess puzzles ever composed. Even grandmasters and engines struggle to solve this masterpiece by Gijs van Breukelen."
+      "Challenge yourself with 'Mate in One Move' - a hard chess puzzle that tests your tactical vision. Find the winning move that leads to checkmate."
 
     let canonicalLink = document.querySelector('link[rel="canonical"]')
     if (!canonicalLink) {
@@ -115,14 +117,14 @@ const Puzzle1 = () => {
       canonicalLink.rel = "canonical"
       document.head.appendChild(canonicalLink)
     }
-    canonicalLink.href = window.location.origin + "/puzzles/magician"
+    canonicalLink.href = window.location.origin + "/puzzles/mate-in-one"
 
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Game",
-      name: "The Magician's Puzzle - Chess Challenge",
+      name: "Mate in One Move - Chess Challenge",
       description:
-        "Challenge yourself with one of the hardest chess puzzles ever composed. Even grandmasters and engines struggle to solve this masterpiece by Gijs van Breukelen.",
+        "Challenge yourself with a hard chess puzzle. Find the winning move that leads to checkmate in just one move.",
       genre: "Chess Puzzle",
       gamePlatform: "Web Browser",
       applicationCategory: "GameApplication",
@@ -676,7 +678,7 @@ const Puzzle1 = () => {
       {/* Header */}
       <header className="relative z-10 w-screen bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4 mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">THE MAGICIAN'S PUZZLE</h1>
+          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">MATE IN ONE MOVE (HARD)</h1>
 
           {/* Mobile menu button */}
           <button
@@ -795,18 +797,14 @@ const Puzzle1 = () => {
                       <Lightbulb className="h-5 w-5 text-yellow-400" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-yellow-400 mb-2">The Magician's Puzzle</h2>
+                      <h2 className="text-xl font-bold text-yellow-400 mb-2">Mate in One Move</h2>
                       <p className="text-white mb-2">
-                        "Grandmasters and Engines Couldn't Solve This Puzzle. Then Came The Magician". This puzzle was
-                        composed by Gijs van Breukelen in around 1970 but published in the 1990s.
+                        This challenging puzzle requires you to find a checkmate in just one move. The position looks
+                        complex, but there's a single winning move that ends the game immediately.
                       </p>
                       <p className="text-white">
-                        This is one of the hardest puzzles ever composed. Even grandmasters and engines struggle to
-                        solve it! Everyone thinks that Black is winning with passed pawns and knights. Yet white can
-                        force a win soon...
-                      </p>
-                      <p className="mt-3 text-center text-lg text-red-400 font-semibold">
-                        If board position changes to original after promotion, just attempt an illegal move
+                        White has a powerful queen and two rooks, while Black's king is exposed. Can you spot the
+                        winning move that delivers an immediate checkmate?
                       </p>
                     </div>
                   </div>
@@ -996,7 +994,7 @@ const Puzzle1 = () => {
 
                   {/* Video solution toggle */}
                   <div className="bg-gray-800 rounded-lg p-3 border border-blue-600">
-                    <h4 className="text-blue-300 font-bold mb-2">Video Solution</h4>
+                    <h4 className="text-blue-300 font-bold mb-2">Solution</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <Youtube className="h-5 w-5 text-red-400 mr-2" />
@@ -1136,7 +1134,7 @@ const Puzzle1 = () => {
                       </div>
                       <div>
                         <div className="text-sm font-medium text-blue-300">Difficulty</div>
-                        <div className="text-lg font-bold text-white">Extreme</div>
+                        <div className="text-lg font-bold text-white">Hard</div>
                       </div>
                     </motion.div>
 
@@ -1239,12 +1237,12 @@ const Puzzle1 = () => {
                     </AnimatePresence>
                   </div>
 
-                  {/* Video solution */}
+                  {/* Solution */}
                   <div className="bg-gradient-to-br from-blue-900/50 to-blue-900/50 rounded-lg border border-blue-600 overflow-hidden">
                     <div className="bg-blue-900/80 py-2 px-3 border-b border-blue-700 flex justify-between items-center">
                       <div className="flex items-center">
-                        <Youtube className="h-5 w-5 text-red-400 mr-2" />
-                        <h3 className="text-lg font-semibold text-yellow-400">Video Solution</h3>
+                        <Lightbulb className="h-5 w-5 text-yellow-400 mr-2" />
+                        <h3 className="text-lg font-semibold text-yellow-400">Solution</h3>
                       </div>
                       <button
                         onClick={() => setIsVideoCollapsed(!isVideoCollapsed)}
@@ -1272,18 +1270,13 @@ const Puzzle1 = () => {
                           exit={{ opacity: 0, height: 0 }}
                           className="p-4"
                         >
-                          <div className="aspect-video w-full overflow-hidden rounded-lg border-2 border-blue-600 shadow-lg">
-                            <iframe
-                              width="100%"
-                              height="100%"
-                              src="https://www.youtube.com/embed/8wCJalNkTEI?si=G7f0-adhIoT3IJFz"
-                              title="The Magician's Puzzle Solution"
-                              frameBorder="0"
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                              referrerPolicy="strict-origin-when-cross-origin"
-                              allowFullScreen
-                              className="w-full h-full"
-                            ></iframe>
+                          <div className="bg-blue-900/30 p-4 rounded-lg border border-blue-600">
+                            <h4 className="text-xl font-bold text-yellow-400 mb-2 text-center">Winning Move</h4>
+                            <p className="text-white text-center text-xl font-mono">Rook to b3</p>
+                            <p className="text-blue-200 mt-3 text-center">
+                              Moving the rook to b3 delivers an immediate checkmate. The black king has no legal moves
+                              and is in check.
+                            </p>
                           </div>
                         </motion.div>
                       )}
@@ -1301,11 +1294,11 @@ const Puzzle1 = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-8 bg-gradient-to-b from-blue-900 to-blue-950 border-4 border-yellow-500 rounded-lg p-6 shadow-lg text-center"
           >
-            <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Can You Solve It?</h2>
+            <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Can You Find The Mate?</h2>
 
             <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-              This puzzle stumped grandmasters and chess engines alike. White appears to be in a losing position, but
-              there's a brilliant sequence that leads to victory. Can you find it?
+              This puzzle challenges you to find a checkmate in one move. The position may look complex, but there's a
+              single winning move that ends the game immediately. Can you spot it?
             </p>
 
             <motion.button
@@ -1326,4 +1319,4 @@ const Puzzle1 = () => {
   )
 }
 
-export default Puzzle1
+export default Puzzle6
