@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
@@ -18,7 +20,7 @@ const GameOverModal = ({
   useEffect(() => {
     if (isOpen) {
       const previousTitle = document.title
-      
+
       if (message.toLowerCase().includes("win")) {
         document.title = "Victory! | Chess Master Game Results"
       } else if (message.toLowerCase().includes("draw")) {
@@ -26,29 +28,29 @@ const GameOverModal = ({
       } else {
         document.title = "Game Over | Chess Master Game Results"
       }
-      
-      let gameResultSchema = document.querySelector('#game-result-schema')
+
+      let gameResultSchema = document.querySelector("#game-result-schema")
       if (!gameResultSchema) {
-        gameResultSchema = document.createElement('script')
-        gameResultSchema.id = 'game-result-schema'
-        gameResultSchema.type = 'application/ld+json'
+        gameResultSchema = document.createElement("script")
+        gameResultSchema.id = "game-result-schema"
+        gameResultSchema.type = "application/ld+json"
         document.head.appendChild(gameResultSchema)
       }
-      
+
       const schemaData = {
         "@context": "https://schema.org",
         "@type": "Game",
-        "name": "Chess Master Online Game",
-        "description": "An online chess game with multiple play modes",
-        "gameItem": {
+        name: "Chess Master Online Game",
+        description: "An online chess game with multiple play modes",
+        gameItem: {
           "@type": "Thing",
-          "name": "Chess Game Result",
-          "description": message
-        }
+          name: "Chess Game Result",
+          description: message,
+        },
       }
-      
+
       gameResultSchema.textContent = JSON.stringify(schemaData)
-      
+
       if (message.toLowerCase().includes("win")) {
         const duration = 3 * 1000
         const animationEnd = Date.now() + duration
@@ -81,7 +83,7 @@ const GameOverModal = ({
           })
         }, 250)
       }
-      
+
       return () => {
         document.title = previousTitle
       }
@@ -94,7 +96,7 @@ const GameOverModal = ({
         borderColor: "border-yellow-500",
         bgColor: "bg-blue-900",
         textColor: "text-yellow-400",
-        icon: <Trophy className="w-12 h-12 text-yellow-400" aria-hidden="true" />
+        icon: <Trophy className="w-12 h-12 text-yellow-400" aria-hidden="true" />,
       }
     } else if (message.toLowerCase().includes("draw")) {
       return {
@@ -109,7 +111,7 @@ const GameOverModal = ({
           >
             <Shield className="w-12 h-12 text-blue-300" />
           </motion.div>
-        )
+        ),
       }
     } else {
       return {
@@ -124,13 +126,16 @@ const GameOverModal = ({
           >
             <Sword className="w-12 h-12 text-red-400" />
           </motion.div>
-        )
+        ),
       }
     }
   }
 
-  const getResultMessage = () => {
+  function getResultMessage() {
     if (message.toLowerCase().includes("win")) {
+      if (message.toLowerCase().includes("computer")) {
+        return "Don't worry, every loss is a learning opportunity. Try again!"
+      }
       return "Congratulations on your victory! Your strategy and skill have paid off."
     } else if (message.toLowerCase().includes("draw")) {
       return "A balanced match! Both players showed great skill and determination."
@@ -193,16 +198,16 @@ const GameOverModal = ({
                 </h2>
 
                 <div className="bg-gray-800 border-2 border-blue-600 p-4 mb-6 w-full">
-                  <p className="text-blue-100">
-                    {resultMessage}
-                  </p>
+                  <p className="text-blue-100">{resultMessage}</p>
                 </div>
 
                 {opponentPlayAgainRequested ? (
                   <div className="w-full mb-6">
                     <div className="bg-gray-800 border-2 border-yellow-600 p-4">
                       <h3 className="text-xl font-bold text-yellow-400 uppercase mb-2">Rematch Request</h3>
-                      <p className="text-blue-100 mb-4">Your opponent wants to play again! Would you like to accept their challenge?</p>
+                      <p className="text-blue-100 mb-4">
+                        Your opponent wants to play again! Would you like to accept their challenge?
+                      </p>
 
                       <div className="flex gap-3">
                         <button
@@ -211,7 +216,10 @@ const GameOverModal = ({
                           aria-label="Accept rematch"
                         >
                           <span>Accept</span>
-                          <ChevronRight className="ml-1 h-4 w-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" aria-hidden="true" />
+                          <ChevronRight
+                            className="ml-1 h-4 w-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300"
+                            aria-hidden="true"
+                          />
                         </button>
 
                         <button
@@ -241,7 +249,7 @@ const GameOverModal = ({
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                     <button
-                      onClick={onPlayAgain}
+                      onClick={() => onPlayAgain()}
                       className="py-3 px-4 bg-blue-800 hover:bg-blue-700 border-2 border-yellow-500 rounded-lg text-yellow-400 font-bold flex items-center justify-center"
                       aria-label="Play another game"
                       type="button"
@@ -250,11 +258,7 @@ const GameOverModal = ({
                       <span>Play Again</span>
                     </button>
 
-                    <Link 
-                      to="/modeselector" 
-                      className="w-full"
-                      aria-label="Return to game mode selection"
-                    >
+                    <Link to="/modeselector" className="w-full" aria-label="Return to game mode selection">
                       <button
                         className="w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 border-2 border-blue-600 rounded-lg text-blue-100 font-bold flex items-center justify-center"
                         type="button"

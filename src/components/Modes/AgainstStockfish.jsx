@@ -24,10 +24,8 @@ import {
   Palette,
   Clock,
   History,
-  Menu,
   X,
   Brain,
-  Sword,
 } from "lucide-react"
 import pieceImages from "../pieceImages"
 import moveSoundFile from "../../assets/sounds/move.mp3"
@@ -93,7 +91,8 @@ const AgainstStockfish = () => {
   const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
-    const isMobile = window.innerWidth < 768 ||
+    const isMobile =
+      window.innerWidth < 768 ||
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     setMobileMode(isMobile)
   }, [])
@@ -626,7 +625,7 @@ const AgainstStockfish = () => {
     const moveColor = game.turn() === "w" ? "White" : "Black"
 
     if (game.isCheckmate()) {
-      const winner = moveColor === "White" ? "Computer" : "You"
+      const winner = game.turn() === "w" ? "Computer" : "You"
       setIsGameOver(true)
       setGameOverMessage(`${winner} wins by checkmate!`)
       playSound(checkmateSound)
@@ -657,10 +656,14 @@ const AgainstStockfish = () => {
 
   const getDifficultyColor = (level) => {
     switch (level) {
-      case "easy": return "text-green-400";
-      case "medium": return "text-yellow-400";
-      case "hard": return "text-red-400";
-      default: return "text-yellow-400";
+      case "easy":
+        return "text-green-400"
+      case "medium":
+        return "text-yellow-400"
+      case "hard":
+        return "text-red-400"
+      default:
+        return "text-yellow-400"
     }
   }
 
@@ -684,9 +687,7 @@ const AgainstStockfish = () => {
       {/* Header */}
       <header className="relative z-10 w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4 mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">
-            STOCKFISH CHALLENGE
-          </h1>
+          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">STOCKFISH CHALLENGE</h1>
 
           {/* Mobile menu button */}
           <button
@@ -694,9 +695,11 @@ const AgainstStockfish = () => {
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             aria-label="Chess options"
           >
-            {showMobileMenu ?
-              <Settings size={20} className="text-white mr-1" /> :
-              <Settings size={20} className="text-white mr-1" />}
+            {showMobileMenu ? (
+              <Settings size={20} className="text-white mr-1" />
+            ) : (
+              <Settings size={20} className="text-white mr-1" />
+            )}
             <span className="text-white font-bold">Settings</span>
           </button>
         </div>
@@ -716,13 +719,12 @@ const AgainstStockfish = () => {
               <div className="bg-blue-900/50 rounded-lg p-3 border border-blue-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {mobileMode ?
-                      <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                    {mobileMode ? (
+                      <Smartphone className="h-5 w-5 text-yellow-400 mr-2" />
+                    ) : (
                       <Monitor className="h-5 w-5 text-blue-300 mr-2" />
-                    }
-                    <span className="font-bold text-white">
-                      {mobileMode ? "Mobile Mode" : "Desktop Mode"}
-                    </span>
+                    )}
+                    <span className="font-bold text-white">{mobileMode ? "Mobile Mode" : "Desktop Mode"}</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -745,10 +747,11 @@ const AgainstStockfish = () => {
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
                 >
-                  {soundEnabled ?
-                    <Volume2 className="h-5 w-5 text-blue-300 mr-1" /> :
+                  {soundEnabled ? (
+                    <Volume2 className="h-5 w-5 text-blue-300 mr-1" />
+                  ) : (
                     <VolumeX className="h-5 w-5 text-gray-400 mr-1" />
-                  }
+                  )}
                   <span className="text-sm text-white">Sound</span>
                 </button>
 
@@ -756,10 +759,11 @@ const AgainstStockfish = () => {
                   onClick={() => setVisualHints(!visualHints)}
                   className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
                 >
-                  {visualHints ?
-                    <Eye className="h-5 w-5 text-blue-300 mr-1" /> :
+                  {visualHints ? (
+                    <Eye className="h-5 w-5 text-blue-300 mr-1" />
+                  ) : (
                     <EyeOff className="h-5 w-5 text-gray-400 mr-1" />
-                  }
+                  )}
                   <span className="text-sm text-white">Hints</span>
                 </button>
 
@@ -845,10 +849,7 @@ const AgainstStockfish = () => {
               >
                 <div className="bg-blue-800 py-2 px-4 border-b border-blue-700 flex justify-between items-center">
                   <h3 className="text-lg font-bold text-yellow-400">Game Settings</h3>
-                  <button
-                    onClick={() => setShowSettings(false)}
-                    className="text-white hover:text-gray-300"
-                  >
+                  <button onClick={() => setShowSettings(false)} className="text-white hover:text-gray-300">
                     <X size={20} />
                   </button>
                 </div>
@@ -859,13 +860,12 @@ const AgainstStockfish = () => {
                     <h4 className="text-blue-300 font-bold mb-2">Game Mode</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {mobileMode ?
-                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                        {mobileMode ? (
+                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" />
+                        ) : (
                           <Monitor className="h-5 w-5 text-blue-300 mr-2" />
-                        }
-                        <span className="text-white">
-                          {mobileMode ? "Mobile Mode" : "Desktop Mode"}
-                        </span>
+                        )}
+                        <span className="text-white">{mobileMode ? "Mobile Mode" : "Desktop Mode"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -884,13 +884,12 @@ const AgainstStockfish = () => {
                     <h4 className="text-blue-300 font-bold mb-2">Visual Hints</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {visualHints ?
-                          <Eye className="h-5 w-5 text-cyan-300 mr-2" /> :
+                        {visualHints ? (
+                          <Eye className="h-5 w-5 text-cyan-300 mr-2" />
+                        ) : (
                           <EyeOff className="h-5 w-5 text-gray-400 mr-2" />
-                        }
-                        <span className="text-white">
-                          {visualHints ? "Enabled" : "Disabled"}
-                        </span>
+                        )}
+                        <span className="text-white">{visualHints ? "Enabled" : "Disabled"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -909,13 +908,12 @@ const AgainstStockfish = () => {
                     <h4 className="text-blue-300 font-bold mb-2">Sound Effects</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {soundEnabled ?
-                          <Volume2 className="h-5 w-5 text-purple-300 mr-2" /> :
+                        {soundEnabled ? (
+                          <Volume2 className="h-5 w-5 text-purple-300 mr-2" />
+                        ) : (
                           <VolumeX className="h-5 w-5 text-gray-400 mr-2" />
-                        }
-                        <span className="text-white">
-                          {soundEnabled ? "Enabled" : "Disabled"}
-                        </span>
+                        )}
+                        <span className="text-white">{soundEnabled ? "Enabled" : "Disabled"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -958,9 +956,15 @@ const AgainstStockfish = () => {
                         onChange={(e) => setDifficulty(e.target.value)}
                         className="w-full bg-gray-700 text-white p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
                       >
-                        <option value="easy" className="text-green-400">Easy</option>
-                        <option value="medium" className="text-yellow-400">Medium</option>
-                        <option value="hard" className="text-red-400">Hard</option>
+                        <option value="easy" className="text-green-400">
+                          Easy
+                        </option>
+                        <option value="medium" className="text-yellow-400">
+                          Medium
+                        </option>
+                        <option value="hard" className="text-red-400">
+                          Hard
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -971,9 +975,7 @@ const AgainstStockfish = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <History className="h-5 w-5 text-blue-300 mr-2" />
-                        <span className="text-white">
-                          {showMovesList ? "Visible" : "Hidden"}
-                        </span>
+                        <span className="text-white">{showMovesList ? "Visible" : "Hidden"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -1061,10 +1063,11 @@ const AgainstStockfish = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSoundEnabled(!soundEnabled)}
-                        className={`${soundEnabled
+                        className={`${
+                          soundEnabled
                             ? "bg-gradient-to-r from-purple-600 to-purple-500"
                             : "bg-gradient-to-r from-gray-700 to-gray-600"
-                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
+                        } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
                       >
                         {soundEnabled ? <Volume2 size={16} className="mr-1" /> : <VolumeX size={16} className="mr-1" />}
                         {soundEnabled ? "Sound On" : "Sound Off"}
@@ -1074,10 +1077,11 @@ const AgainstStockfish = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setVisualHints(!visualHints)}
-                        className={`${visualHints
+                        className={`${
+                          visualHints
                             ? "bg-gradient-to-r from-cyan-600 to-cyan-500"
                             : "bg-gradient-to-r from-gray-700 to-gray-600"
-                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
+                        } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
                       >
                         {visualHints ? <Eye size={16} className="mr-1" /> : <EyeOff size={16} className="mr-1" />}
                         {visualHints ? "Hints On" : "Hints Off"}
@@ -1177,8 +1181,9 @@ const AgainstStockfish = () => {
                                 {moves.map((move, index) => (
                                   <tr
                                     key={index}
-                                    className={`text-white ${index % 2 === 0 ? "bg-blue-900/20" : "bg-blue-900/10"
-                                      } hover:bg-blue-800/30`}
+                                    className={`text-white ${
+                                      index % 2 === 0 ? "bg-blue-900/20" : "bg-blue-900/10"
+                                    } hover:bg-blue-800/30`}
                                   >
                                     <td className="p-2">{index + 1}</td>
                                     <td className="p-2 font-mono">{move.from}</td>
@@ -1235,9 +1240,15 @@ const AgainstStockfish = () => {
                           onChange={(e) => setDifficulty(e.target.value)}
                           className="w-full bg-gray-800 text-blue-100 p-2 rounded-md border border-blue-500 focus:border-yellow-500 focus:outline-none"
                         >
-                          <option value="easy" className="text-green-400">Easy</option>
-                          <option value="medium" className="text-yellow-400">Medium</option>
-                          <option value="hard" className="text-red-400">Hard</option>
+                          <option value="easy" className="text-green-400">
+                            Easy
+                          </option>
+                          <option value="medium" className="text-yellow-400">
+                            Medium
+                          </option>
+                          <option value="hard" className="text-red-400">
+                            Hard
+                          </option>
                         </select>
                       </motion.div>
                     </div>
@@ -1257,8 +1268,8 @@ const AgainstStockfish = () => {
             <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Challenge Stockfish!</h2>
 
             <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-              Test your skills against one of the strongest chess engines in the world. Adjust the difficulty,
-              customize your board, and improve your game with every match.
+              Test your skills against one of the strongest chess engines in the world. Adjust the difficulty, customize
+              your board, and improve your game with every match.
             </p>
 
             <motion.button
@@ -1277,7 +1288,17 @@ const AgainstStockfish = () => {
       <HelpModal showHelpModal={showHelpModal} setShowHelpModal={setShowHelpModal} />
 
       {/* Game Over Modal */}
-      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
+      <GameOverModal
+        isOpen={isGameOver}
+        message={gameOverMessage}
+        onRestart={handleRestart}
+        onPlayAgain={handleRestart}
+        playAgainRequested={false}
+        playAgainCountdown={0}
+        opponentPlayAgainRequested={false}
+        onAcceptPlayAgain={() => {}}
+        onDeclinePlayAgain={() => {}}
+      />
     </div>
   )
 }
