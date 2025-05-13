@@ -641,7 +641,7 @@ const RandomPlay = () => {
     if (game.isCheckmate()) {
       const winner = moveColor === "White" ? "Computer" : "You"
       setIsGameOver(true)
-      setGameOverMessage(`${winner} wins by checkmate!`)
+      setGameOverMessage(winner === "You" ? `${winner} win!` : "You lose!")
       playSound(checkmateSound)
 
       if (winner === "You") {
@@ -1302,7 +1302,17 @@ const RandomPlay = () => {
       <HelpModal showHelpModal={showHelpModal} setShowHelpModal={setShowHelpModal} />
 
       {/* Game Over Modal */}
-      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
+      <GameOverModal
+        isOpen={isGameOver}
+        message={gameOverMessage}
+        onRestart={handleRestart}
+        onPlayAgain={handleRestart}
+        playAgainRequested={false}
+        playAgainCountdown={0}
+        opponentPlayAgainRequested={false}
+        onAcceptPlayAgain={() => {}}
+        onDeclinePlayAgain={() => {}}
+      />
     </div>
   )
 }

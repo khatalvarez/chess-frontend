@@ -627,7 +627,7 @@ const AgainstStockfish = () => {
     if (game.isCheckmate()) {
       const winner = game.turn() === "w" ? "Computer" : "You"
       setIsGameOver(true)
-      setGameOverMessage(`${winner} wins by checkmate!`)
+      setGameOverMessage(winner === "You" ? `${winner} win!` : "You lose!")
       playSound(checkmateSound)
 
       if (winner === "You") {

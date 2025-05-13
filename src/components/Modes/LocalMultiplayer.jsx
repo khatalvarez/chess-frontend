@@ -6,7 +6,26 @@ import Chessboard from "chessboardjs"
 import { Howl } from "howler"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Award, Shield, RotateCcw, Volume2, VolumeX, HelpCircle, Smartphone, Monitor, Settings, ChevronDown, ChevronUp, Eye, EyeOff, Palette, Clock, History, Menu, X, Users } from 'lucide-react'
+import {
+  Award,
+  Shield,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+  HelpCircle,
+  Smartphone,
+  Monitor,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Palette,
+  Clock,
+  History,
+  X,
+  Users,
+} from "lucide-react"
 import pieceImages from "../pieceImages"
 import moveSoundFile from "../../assets/sounds/move.mp3"
 import captureSoundFile from "../../assets/sounds/capture.mp3"
@@ -53,7 +72,8 @@ const LocalPlayer = () => {
   const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
-    const isMobile = window.innerWidth < 768 ||
+    const isMobile =
+      window.innerWidth < 768 ||
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     setMobileMode(isMobile)
   }, [])
@@ -196,7 +216,7 @@ const LocalPlayer = () => {
     const onDrop = (source, target) => {
       removeHighlights()
 
-      let move = game.move({
+      const move = game.move({
         from: source,
         to: target,
         promotion: promotionPiece,
@@ -559,9 +579,7 @@ const LocalPlayer = () => {
       {/* Header */}
       <header className="relative z-10 w-full bg-gradient-to-r from-indigo-900 via-blue-800 to-indigo-900 border-b-4 border-yellow-500 shadow-lg py-4 mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">
-            LOCAL MULTIPLAYER
-          </h1>
+          <h1 className="text-xl md:text-3xl font-bold text-yellow-400 drop-shadow-md">LOCAL MULTIPLAYER</h1>
 
           {/* Mobile menu button */}
           <button
@@ -569,9 +587,11 @@ const LocalPlayer = () => {
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             aria-label="Chess options"
           >
-            {showMobileMenu ?
-              <Settings size={20} className="text-white mr-1" /> :
-              <Settings size={20} className="text-white mr-1" />}
+            {showMobileMenu ? (
+              <Settings size={20} className="text-white mr-1" />
+            ) : (
+              <Settings size={20} className="text-white mr-1" />
+            )}
             <span className="text-white font-bold">Settings</span>
           </button>
         </div>
@@ -591,13 +611,12 @@ const LocalPlayer = () => {
               <div className="bg-blue-900/50 rounded-lg p-3 border border-blue-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {mobileMode ?
-                      <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                    {mobileMode ? (
+                      <Smartphone className="h-5 w-5 text-yellow-400 mr-2" />
+                    ) : (
                       <Monitor className="h-5 w-5 text-blue-300 mr-2" />
-                    }
-                    <span className="font-bold text-white">
-                      {mobileMode ? "Mobile Mode" : "Desktop Mode"}
-                    </span>
+                    )}
+                    <span className="font-bold text-white">{mobileMode ? "Mobile Mode" : "Desktop Mode"}</span>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -620,10 +639,11 @@ const LocalPlayer = () => {
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
                 >
-                  {soundEnabled ?
-                    <Volume2 className="h-5 w-5 text-blue-300 mr-1" /> :
+                  {soundEnabled ? (
+                    <Volume2 className="h-5 w-5 text-blue-300 mr-1" />
+                  ) : (
                     <VolumeX className="h-5 w-5 text-gray-400 mr-1" />
-                  }
+                  )}
                   <span className="text-sm text-white">Sound</span>
                 </button>
 
@@ -631,10 +651,11 @@ const LocalPlayer = () => {
                   onClick={() => setVisualHints(!visualHints)}
                   className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 p-2 rounded-lg border border-blue-600"
                 >
-                  {visualHints ?
-                    <Eye className="h-5 w-5 text-blue-300 mr-1" /> :
+                  {visualHints ? (
+                    <Eye className="h-5 w-5 text-blue-300 mr-1" />
+                  ) : (
                     <EyeOff className="h-5 w-5 text-gray-400 mr-1" />
-                  }
+                  )}
                   <span className="text-sm text-white">Hints</span>
                 </button>
 
@@ -720,10 +741,7 @@ const LocalPlayer = () => {
               >
                 <div className="bg-blue-800 py-2 px-4 border-b border-blue-700 flex justify-between items-center">
                   <h3 className="text-lg font-bold text-yellow-400">Game Settings</h3>
-                  <button
-                    onClick={() => setShowSettings(false)}
-                    className="text-white hover:text-gray-300"
-                  >
+                  <button onClick={() => setShowSettings(false)} className="text-white hover:text-gray-300">
                     <X size={20} />
                   </button>
                 </div>
@@ -734,13 +752,12 @@ const LocalPlayer = () => {
                     <h4 className="text-blue-300 font-bold mb-2">Game Mode</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {mobileMode ?
-                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" /> :
+                        {mobileMode ? (
+                          <Smartphone className="h-5 w-5 text-yellow-400 mr-2" />
+                        ) : (
                           <Monitor className="h-5 w-5 text-blue-300 mr-2" />
-                        }
-                        <span className="text-white">
-                          {mobileMode ? "Mobile Mode" : "Desktop Mode"}
-                        </span>
+                        )}
+                        <span className="text-white">{mobileMode ? "Mobile Mode" : "Desktop Mode"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -759,13 +776,12 @@ const LocalPlayer = () => {
                     <h4 className="text-blue-300 font-bold mb-2">Visual Hints</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {visualHints ?
-                          <Eye className="h-5 w-5 text-cyan-300 mr-2" /> :
+                        {visualHints ? (
+                          <Eye className="h-5 w-5 text-cyan-300 mr-2" />
+                        ) : (
                           <EyeOff className="h-5 w-5 text-gray-400 mr-2" />
-                        }
-                        <span className="text-white">
-                          {visualHints ? "Enabled" : "Disabled"}
-                        </span>
+                        )}
+                        <span className="text-white">{visualHints ? "Enabled" : "Disabled"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -784,13 +800,12 @@ const LocalPlayer = () => {
                     <h4 className="text-blue-300 font-bold mb-2">Sound Effects</h4>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        {soundEnabled ?
-                          <Volume2 className="h-5 w-5 text-purple-300 mr-2" /> :
+                        {soundEnabled ? (
+                          <Volume2 className="h-5 w-5 text-purple-300 mr-2" />
+                        ) : (
                           <VolumeX className="h-5 w-5 text-gray-400 mr-2" />
-                        }
-                        <span className="text-white">
-                          {soundEnabled ? "Enabled" : "Disabled"}
-                        </span>
+                        )}
+                        <span className="text-white">{soundEnabled ? "Enabled" : "Disabled"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -846,9 +861,7 @@ const LocalPlayer = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <History className="h-5 w-5 text-blue-300 mr-2" />
-                        <span className="text-white">
-                          {showMovesList ? "Visible" : "Hidden"}
-                        </span>
+                        <span className="text-white">{showMovesList ? "Visible" : "Hidden"}</span>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -882,9 +895,7 @@ const LocalPlayer = () => {
                     <h2 className="text-xl font-bold text-yellow-400">Chess Board</h2>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-sm font-medium text-blue-200 mr-2">
-                      Local Multiplayer
-                    </span>
+                    <span className="text-sm font-medium text-blue-200 mr-2">Local Multiplayer</span>
                     <div className="bg-blue-800 p-1 rounded-full">
                       <Users className="h-4 w-4 text-yellow-400" />
                     </div>
@@ -936,10 +947,11 @@ const LocalPlayer = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSoundEnabled(!soundEnabled)}
-                        className={`${soundEnabled
+                        className={`${
+                          soundEnabled
                             ? "bg-gradient-to-r from-purple-600 to-purple-500"
                             : "bg-gradient-to-r from-gray-700 to-gray-600"
-                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
+                        } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
                       >
                         {soundEnabled ? <Volume2 size={16} className="mr-1" /> : <VolumeX size={16} className="mr-1" />}
                         {soundEnabled ? "Sound On" : "Sound Off"}
@@ -949,10 +961,11 @@ const LocalPlayer = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setVisualHints(!visualHints)}
-                        className={`${visualHints
+                        className={`${
+                          visualHints
                             ? "bg-gradient-to-r from-cyan-600 to-cyan-500"
                             : "bg-gradient-to-r from-gray-700 to-gray-600"
-                          } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
+                        } text-white px-4 py-2 rounded-md font-semibold shadow-md flex items-center`}
                       >
                         {visualHints ? <Eye size={16} className="mr-1" /> : <EyeOff size={16} className="mr-1" />}
                         {visualHints ? "Hints On" : "Hints Off"}
@@ -1052,8 +1065,9 @@ const LocalPlayer = () => {
                                 {moves.map((move, index) => (
                                   <tr
                                     key={index}
-                                    className={`text-white ${index % 2 === 0 ? "bg-blue-900/20" : "bg-blue-900/10"
-                                      } hover:bg-blue-800/30`}
+                                    className={`text-white ${
+                                      index % 2 === 0 ? "bg-blue-900/20" : "bg-blue-900/10"
+                                    } hover:bg-blue-800/30`}
                                   >
                                     <td className="p-2">{index + 1}</td>
                                     <td className="p-2 font-mono">{move.from}</td>
@@ -1165,7 +1179,8 @@ const LocalPlayer = () => {
             <h2 className="text-3xl font-bold text-yellow-400 mb-4 uppercase">Play with a Friend!</h2>
 
             <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-              Challenge a friend to a game of chess on the same device. Take turns making moves and see who has the better strategy.
+              Challenge a friend to a game of chess on the same device. Take turns making moves and see who has the
+              better strategy.
             </p>
 
             <motion.button
@@ -1183,7 +1198,17 @@ const LocalPlayer = () => {
       <HelpModal showHelpModal={showHelpModal} setShowHelpModal={setShowHelpModal} />
 
       {/* Game Over Modal */}
-      <GameOverModal isOpen={isGameOver} message={gameOverMessage} onRestart={handleRestart} />
+      <GameOverModal
+        isOpen={isGameOver}
+        message={gameOverMessage}
+        onRestart={handleRestart}
+        onPlayAgain={handleRestart}
+        playAgainRequested={false}
+        playAgainCountdown={0}
+        opponentPlayAgainRequested={false}
+        onAcceptPlayAgain={() => {}}
+        onDeclinePlayAgain={() => {}}
+      />
     </div>
   )
 }
