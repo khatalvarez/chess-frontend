@@ -52,7 +52,7 @@ function Login() {
       metaDescription.name = "description";
       document.head.appendChild(metaDescription);
     }
-    metaDescription.content = "Sign in to Chess Master to continue your chess journey. Access personalized training, play matches against AI or real players, and track your progress.";
+    metaDescription.content = "Sign in to Chess Master ULTRA CRL to continue your chess journey. Access personalized training, play matches against AI or real players, and track your progress.";
     
     let canonicalLink = document.querySelector('link[rel="canonical"]');
     if (!canonicalLink) {
@@ -63,7 +63,7 @@ function Login() {
     canonicalLink.href = window.location.origin + "/login";
     
     return () => {
-      document.title = "Chess Master | Online Chess Training & Games";
+      document.title = "Chess Master ULTRA CRL | Online Chess Training & Games";
     };
   }, []);
 
@@ -99,7 +99,7 @@ function Login() {
           }),
         )
 
-        toast.success("Login successful! Preparing your chessboard...")
+        toast.success("✅Succefully Preparing your chessboard...")
 
         setTimeout(async () => {
           try {
@@ -167,7 +167,7 @@ function Login() {
             </h1>
             <div className="h-1 w-32 mx-auto bg-yellow-500 mb-4"></div>
             <p className="text-lg text-blue-100">
-              Sign in to continue your chess journey
+              Mag Sign kana dito sa ULTRA CHESS CRL
             </p>
           </div>
         </header>
@@ -234,9 +234,9 @@ function Login() {
                       type="button"
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-400 hover:text-yellow-400"
                       onClick={togglePasswordVisibility}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? "Hide password" : "see password"}
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
                 </div>
@@ -246,13 +246,13 @@ function Login() {
                     to="/forgot-password"
                     className="text-sm font-medium text-blue-400 hover:text-yellow-400 transition duration-150 ease-in-out"
                   >
-                    Forgot your password?
+                    mag forgot password ka!
                   </Link>
                 </div>
 
                 <div>
                   <button
-                    type="submit"
+                    type="s/confirm"
                     className="w-full px-8 py-4 bg-yellow-500 text-blue-900 text-xl font-bold uppercase rounded-lg hover:bg-yellow-400 transition-colors shadow-lg border-2 border-yellow-700 transform hover:scale-105 transition-transform flex justify-center items-center"
                     disabled={isLoading || isSuccess}
                     aria-busy={isLoading}
@@ -275,7 +275,7 @@ function Login() {
 
               <div className="mt-8 text-center">
                 <p className="text-blue-200">
-                  Need a player account?{" "}
+                  Kailangan ng dalawang player?{" "}
                   <Link
                     to="/signup"
                     className="font-medium text-yellow-400 hover:text-yellow-300 transition duration-150 ease-in-out"
